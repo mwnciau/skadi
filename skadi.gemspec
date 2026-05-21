@@ -22,11 +22,19 @@ Gem::Specification.new do |s|
 
   s.license = "MIT"
   s.required_ruby_version = ">= 3.3.0"
+
+  s.post_install_message = <<~MSG
+    Thanks for installing Skadi!
+
+    To finish setup, run:
+
+        rails generate skadi:install
+        rails db:migrate
+
+    See `rails g skadi:install --help` for options (database engine, user id type).
+  MSG
   
-  s.add_dependency "activerecord", ">=7"
-  s.add_dependency "activesupport", ">=7"
-  s.add_dependency "actionpack", ">=7"
-  s.add_dependency "railties", ">=7"
+  s.add_dependency "rails", ">=7"
 
   s.add_development_dependency "minitest", "~> 6.0"
   s.add_development_dependency "standard", "~> 1.0"

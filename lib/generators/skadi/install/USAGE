@@ -1,0 +1,20 @@
+Description:
+    Creates a migration for the Skadi Analytics tables in your application.
+
+    Run `rails db:migrate` afterwards to apply the migration.
+
+Options:
+    --db-engine=ENGINE        # Database engine: postgres, mysql, sqlite
+                              # Default: postgres
+    --user-id-type=TYPE       # Column type of your users table primary key:
+                              # bigint, integer, uuid, string
+                              # Default: bigint
+
+Example:
+    rails generate skadi:install
+
+    This will create:
+        db/migrate/<timestamp>_install_skadi.rb
+
+    For a MySQL app with UUID user ids:
+        rails generate skadi:install --db-engine=mysql --user-id-type=uuid

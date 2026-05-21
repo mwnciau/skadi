@@ -1,15 +1,18 @@
-<%# locals: (class_name:, table_prefix:, active_record_version:, user_id_type: :bigint) -%>
-class <%= class_name %> < ActiveRecord::Migration<%= active_record_version %>
+class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord::VERSION::MAJOR}.#{ActiveRecord::VERSION::MINOR}" %>]
   def change
     create_table :skadi_visits do |t|
       # A random uuid identifying the visit. This will be sent to the front-end to allow updates to the visit javascript flag without exposing details about the site analytics to the user.
-      t.uuid :visit_token, null: false
+      t.<%= uuid_column_type %> :visit_token<%= uuid_column_options %>, null: false
 
       # A token identifying the user. This will either be a token generated from an anonymisation set based on the user's IP and User Agent, or it will be sourced from a cookie.
-      t.uuid :tracking_token
+      t.<%= uuid_column_type %> :tracking_token<%= uuid_column_options %>
 
       # The ID of a logged in user. The FK is intentionally absent in case the host app doesn't have a users table.
-      t.references :user, type: <%= user_id_type.inspect %>, index: false
+      <%- if user_id_type == :uuid && db_engine != :postgres -%>
+      t.references :user, type: :string, limit: 36, index: false
+      <%- else -%>
+      t.references :user, type: :<%= user_id_type %>, index: false
+      <%- end -%>
 
       t.text :referrer
       t.text :landing_page
@@ -37,10 +40,10 @@ class <%= class_name %> < ActiveRecord::Migration<%= active_record_version %>
       t.references :visit, foreign_key: { on_delete: :cascade }, index: false
 
       # A random uuid identifying the view. This will be sent to the front-end to allow updates to the view metrics without exposing details about the site analytics to the user.
-      t.uuid :view_token, null: false
+      t.<%= uuid_column_type %> :view_token<%= uuid_column_options %>, null: false
 
       t.text :path, null: false
-      t.jsonb :query_params
+      t.<%= json_column_type %> :query_params
 
       # Referrer URL, as reported by the user's browser
       t.text :referrer
@@ -67,7 +70,7 @@ class <%= class_name %> < ActiveRecord::Migration<%= active_record_version %>
       t.references :view, foreign_key: { on_delete: :cascade }, index: false
 
       t.string :name, null: false
-      t.jsonb :properties
+      t.<%= json_column_type %> :properties
 
       t.datetime :created_at, null: false
     end
@@ -75,7 +78,9 @@ class <%= class_name %> < ActiveRecord::Migration<%= active_record_version %>
     add_index :skadi_events, [:name, :created_at]
     add_index :skadi_events, [:view_id, :created_at]
     add_index :skadi_events, [:visit_id, :created_at]
+    <%- if db_engine == :postgres -%>
     add_index :skadi_events, :properties, using: :gin, opclass: :jsonb_path_ops
+    <%- end -%>
 
     # Store demographic data separately so that it cannot be used to identify users
     # E.g. screen size, language, timezone, pointer type (mouse, touch), can-hover, prefers reduced motion, prefers contrast, forced colours, prefers dark mode
