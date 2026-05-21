@@ -22,6 +22,9 @@ Gem::Specification.new do |s|
 
   s.license = "MIT"
   s.required_ruby_version = ">= 2.0.0"
+  
+  s.add_dependency "activesupport", ">=7"
+  s.add_dependency "actionpack", ">=7"
 
   s.add_development_dependency "minitest", "~> 6.0"
   s.add_development_dependency "standard", "~> 1.0"

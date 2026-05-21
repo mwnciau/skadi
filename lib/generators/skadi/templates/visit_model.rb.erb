@@ -1,0 +1,6 @@
+class Skadi::Visit < ApplicationRecord
+  self.table_name = "skadi_visits"
+
+  has_many :events, class_name: "Skadi::Event"
+  belongs_to :user, optional: true
+end
