@@ -1,5 +1,5 @@
 require "test_helper"
-require "generators/skadi/install_generator"
+require "generators/skadi/install/install_generator"
 
 class Skadi::Generators::InstallGeneratorTest < Rails::Generators::TestCase
   tests Skadi::Generators::InstallGenerator
