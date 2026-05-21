@@ -7,6 +7,12 @@ module Skadi::Configuration
     @anonymisation_set_reset_hour = 3
 
     @user_method = nil
+    @user_model = nil
+
+    @use_query_param_whitelist = true
+    @query_param_whitelist = []
+
+    @db_connects_to = nil
   end
 
   # An anonymisation set is a token keeps track of a user using a hash of their IP address and User Agent. A
@@ -24,7 +30,20 @@ module Skadi::Configuration
   # @return [Integer, false]
   attr_accessor :anonymisation_set_reset_hour
 
+  # The parent app's User class, used to link visits to users
+  # @return [Class, nil]
+  attr_accessor :user_model
+
   # Method to call within controllers to get the current user.
   # @return [Symbol, nil]
   attr_accessor :user_method
+
+  # Enable filtering of query parameters to prevent sensitive data being exposed
+  attr_accessor :use_query_param_whitelist
+
+  # An array of query parameters to whitelist for storage in views
+  attr_accessor :query_param_whitelist
+
+  # The database connection to use for Skadi models
+  attr_accessor :db_connects_to
 end
