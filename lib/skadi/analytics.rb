@@ -16,9 +16,9 @@ module Skadi
     #   @return [ActionDispatch::Cookies::CookieJar]
 
     def track_visit
-      @tracking_token = Skadi::Analytics.calculate_tracking_token(request.remote_ip, request.user_agent)
+      tracking_token = Skadi::Analytics.calculate_tracking_token(request.remote_ip, request.user_agent)
 
-      has_utm_params = params.keys.any? { it.to_s.start_with?("utm_") }
+      has_utm_params = params.keys.any? { |it| it.to_s.start_with?("utm_") }
       has_external_referrer = request.referer.present? && !request.referer.include?(request.host)
       user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
 
