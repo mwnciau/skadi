@@ -39,4 +39,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency "minitest", "~> 6.0"
   s.add_development_dependency "standard", "~> 1.0"
   s.add_development_dependency "rubocop", "~> 1.0"
+  s.add_development_dependency "sqlite3"
 end
