@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_23_073003) do
+ActiveRecord::Schema[8.1].define(version: 2026_05_25_184620) do
   create_table "skadi_demographics", force: :cascade do |t|
     t.integer "count", default: 0, null: false
     t.string "metric_name", null: false
@@ -31,14 +31,22 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_073003) do
   end
 
   create_table "skadi_views", force: :cascade do |t|
+    t.string "action", null: false
     t.integer "active_time_seconds"
+    t.string "controller", null: false
     t.datetime "created_at", null: false
     t.text "exit_page"
+    t.integer "load_time"
     t.integer "max_scroll_percent"
     t.text "path", null: false
     t.json "query_params"
     t.text "referrer"
+    t.integer "time_to_download"
+    t.integer "time_to_first_byte"
+    t.integer "time_to_load_dom"
+    t.integer "total_time_to_load"
     t.datetime "updated_at", null: false
+    t.string "verb", null: false
     t.string "view_token", limit: 36, null: false
     t.integer "visit_id"
     t.index ["path", "created_at"], name: "index_skadi_views_on_path_and_created_at"
@@ -66,7 +74,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_23_073003) do
     t.index ["visit_token"], name: "index_skadi_visits_on_visit_token", unique: true
   end
 
-  add_foreign_key "skadi_events", "views", on_delete: :cascade
-  add_foreign_key "skadi_events", "visits", on_delete: :cascade
-  add_foreign_key "skadi_views", "visits", on_delete: :cascade
+  add_foreign_key "skadi_events", "skadi_views", column: "view_id", on_delete: :cascade
+  add_foreign_key "skadi_events", "skadi_visits", column: "visit_id", on_delete: :cascade
+  add_foreign_key "skadi_views", "skadi_visits", column: "visit_id", on_delete: :cascade
 end

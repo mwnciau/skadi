@@ -33,11 +33,14 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
     create_table :skadi_views do |t|
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :visit, foreign_key: { on_delete: :cascade }, index: false
+      t.references :visit, foreign_key: { to_table: :skadi_visits, on_delete: :cascade }, index: false
 
       # A random uuid identifying the view. This will be sent to the front-end to allow updates to the view metrics without exposing details about the site analytics to the user.
       t.string :view_token, limit: 36, null: false
 
+      t.string :controller, null: false
+      t.string :action, null: false
+      t.string :verb, null: false
       t.text :path, null: false
       t.json :query_params
 
@@ -51,6 +54,28 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       t.integer :active_time_seconds
       t.integer :max_scroll_percent
 
+      # Todo: figure out which performance metrics we want from js`performance.getEntriesByType("navigation")`
+
+      # I.e. server response time
+      # navEntry.responseStart - navEntry.startTime
+      t.integer :time_to_first_byte
+
+      # I.e. how big the response is
+      # navEntry.responseEnd - navEntry.responseStart
+      t.integer :time_to_download
+
+      # Some sort of intermediary?? Maybe not useful
+      # navEntry.domContentLoadedEventEnd - navEntry.responseEnd
+      t.integer :time_to_load_dom
+
+      # I.e. how long the browser took to render the page
+      # navEntry.loadEventEnd - navEntry.responseEnd
+      t.integer :total_time_to_load
+
+      # FP/FCP?? https://developer.mozilla.org/en-US/docs/Web/API/PerformancePaintTiming
+
+      t.integer :load_time
+
       t.timestamps
     end
 
@@ -60,10 +85,10 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
     create_table :skadi_events do |t|
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :visit, foreign_key: { on_delete: :cascade }, index: false
+      t.references :visit, foreign_key: { to_table: :skadi_visits, on_delete: :cascade }, index: false
 
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :view, foreign_key: { on_delete: :cascade }, index: false
+      t.references :view, foreign_key: { to_table: :skadi_views, on_delete: :cascade }, index: false
 
       t.string :name, null: false
       t.json :properties

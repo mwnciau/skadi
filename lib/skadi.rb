@@ -4,9 +4,11 @@ require "active_support/core_ext"
 
 require "action_dispatch/http/request"
 
+require_relative "skadi/anonymity_set"
 require_relative "skadi/analytics"
 require_relative "skadi/configuration"
 require_relative "skadi/engine"
+require_relative "skadi/url"
 
 module Skadi
   VERSION = "0.0.0"

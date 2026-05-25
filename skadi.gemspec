@@ -36,8 +36,14 @@ Gem::Specification.new do |s|
   
   s.add_dependency "rails", ">=7"
 
+  # Gems to enhance testing
   s.add_development_dependency "minitest", "~> 6.0"
-  s.add_development_dependency "standard", "~> 1.0"
+  s.add_development_dependency "factory_bot_rails", "~> 6.0"
+
+  # Gems to enforce coding-standards
   s.add_development_dependency "rubocop", "~> 1.0"
-  s.add_development_dependency "sqlite3"
+  s.add_development_dependency "standard", "~> 1.0"
+
+  # Database gem for the dummy rails app
+  s.add_development_dependency "sqlite3", "~> 2.0"
 end
