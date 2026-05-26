@@ -13,8 +13,8 @@ module Skadi
       "#{hash[0, 8]}-#{hash[8, 4]}-#{hash[12, 4]}-#{hash[16, 4]}-#{hash[20, 12]}"
     end
 
-    # Generate a pepper to be used
-    # return [String]
+    # Generate a pepper to be used in the anonymity set hash
+    # @return [String]
     def self.anonymity_set_pepper
       duration = Skadi.configuration.anonymisation_set_duration
       reset_hour = Skadi.configuration.anonymisation_set_reset_hour
@@ -29,7 +29,6 @@ module Skadi
 
         pepper_expiry = pepper_expiry.change(hour: reset_hour)
       end
-
 
       Rails.cache.fetch("skadi/anonymity_set_pepper", expires_in: pepper_expiry.to_i - Time.current.to_i) do
         SecureRandom.hex(32)

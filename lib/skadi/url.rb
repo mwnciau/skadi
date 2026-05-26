@@ -32,5 +32,20 @@ module Skadi
 
       whitelisted_params
     end
+
+    # @param url [String]
+    # @return [String|nil]
+    def self.whitelist_query_params_for_url(url)
+      return nil unless url.present?
+
+      uri = URI.parse(url)
+      query_params = HashWithIndifferentAccess.new(Rack::Utils.parse_nested_query(uri.query))
+
+      param_string = whitelist_query_params(query_params).to_query
+
+      "#{uri.scheme}://#{uri.host}#{uri.path}#{param_string.present? ? "?#{param_string}" : ""}"
+    rescue URI::InvalidURIError
+      nil
+    end
   end
 end

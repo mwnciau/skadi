@@ -39,12 +39,18 @@ module Skadi
 
     # Called before the action to find or build the Skadi visit model
     def track_visit
-      tracking_token = cookies[:skadi_id].presence || AnonymitySet.calculate(request.remote_ip, request.user_agent)
-      user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
+      puts "cookies: #{cookies.inspect}"
+      # If the user has opted out of tracking, we do not use cookies or anonymisation sets
+      unless cookies["skadi_tracking_opt_out"] == "1"
+        tracking_token = cookies[:skadi_id].presence || AnonymitySet.calculate(request.remote_ip, request.user_agent)
+        user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
 
-      @skadi_visit = Skadi::Analytics.find_existing_visit(tracking_token, user)
+        @skadi_visit = Skadi::Analytics.find_existing_visit(tracking_token, user)
 
-      return if @skadi_visit
+        return if @skadi_visit
+      end
+
+      puts "tracking token: #{tracking_token}"
 
       has_utm_params = params.keys.any? { |it| it.to_s.start_with?("utm_") }
       has_external_referrer = request.referer.present? && !request.referer.include?(request.host)
@@ -64,8 +70,8 @@ module Skadi
       @skadi_view.verb = request.request_method
       @skadi_view.path = Skadi::Url.view_path_from_request(request)
 
-      @skadi_view.query_params = Skadi::Url.whitelist_query_params(params)
-      @skadi_view.referrer = request.referrer
+      @skadi_view.query_params = Skadi::Url.whitelist_query_params(request.query_parameters)
+      @skadi_view.referrer = Skadi::Url.whitelist_query_params_for_url(request.referrer)
     end
 
     # Saves the visit and view models to the database, if they have been created and tracking is enabled
@@ -102,7 +108,7 @@ module Skadi
       visit.tracking_token = tracking_token
       visit.user_id = user&.id
 
-      visit.referrer = request.referrer
+      visit.referrer = Skadi::Url.whitelist_query_params_for_url(request.referrer)
       visit.landing_page = Skadi::Url.view_path_from_request(request)
 
       visit.utm_source = request.query_parameters["utm_source"]

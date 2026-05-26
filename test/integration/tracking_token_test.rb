@@ -1,14 +1,10 @@
 require "integration/test_case"
 
 module Skadi::Integration
-  class AnonymisationSetTest < TestCase
+  class TrackingTokenTest < TestCase
     TEST_IP = "127.0.0.1"
     TEST_USER_AGENT = "Test User Agent"
     DEFAULT_HEADERS = { "HTTP_USER_AGENT" => TEST_USER_AGENT, "REMOTE_ADDR" => TEST_IP, "REFERER" => "https://example.com" }
-
-    setup do
-      Skadi.configuration.use_anonymisation_sets = true
-    end
 
     test "anonymisation set is reused between visits" do
       3.times { get_tracked_action }
@@ -35,18 +31,27 @@ module Skadi::Integration
     test "anonymisation set is disabled by configuration" do
       Skadi.configuration.use_anonymisation_sets = false
 
-      get_tracked_action(referrer: "https://example.com/something")
-      get_tracked_action(referrer: "https://example.com/other")
+      get_tracked_action(referrer: "https://example.com/")
 
-      assert_equal 2, Skadi::Visit.count
-      assert_equal 2, Skadi::View.count
+      assert_equal 1, Skadi::Visit.count
+      assert_equal 1, Skadi::View.count
 
-      anonymisation_set_ids = Skadi::Visit.pluck(:tracking_token)
-      assert_nil anonymisation_set_ids[0]
-      assert_nil anonymisation_set_ids[1]
+      visit = Skadi::Visit.first
+      assert_nil visit.tracking_token
     end
 
-    # Todo: this test in inconsistent. Write some unit tests!
+    test "anonymisation set is disabled by opt out track cookie" do
+      cookies["skadi_tracking_opt_out"] = "1"
+
+      get_tracked_action(referrer: "https://example.com/")
+
+      assert_equal 1, Skadi::Visit.count
+      assert_equal 1, Skadi::View.count
+
+      visit = Skadi::Visit.first
+      assert_nil visit.tracking_token
+    end
+
     test "anonymisation set is reset after reset hour" do
       travel_to Time.zone.now.change(hour: 2, min: 50) do
         get_tracked_action
@@ -64,6 +69,25 @@ module Skadi::Integration
       # Ensure the two visits have different anonymisation set ids
       anonymisation_set_ids = Skadi::Visit.pluck(:tracking_token)
       refute_equal anonymisation_set_ids[0], anonymisation_set_ids[1]
+    end
+
+    test "tracking cookie takes precedence over anonymisation set" do
+      cookies[:skadi_id] = "00000000-0000-0000-0000-000000000000"
+
+      get_tracked_action
+
+      visit = Skadi::Visit.first!
+      assert_equal "00000000-0000-0000-0000-000000000000", visit.tracking_token
+    end
+
+    test "tracking cookie is ignore with opt out cookie" do
+      cookies["skadi_tracking_opt_out"] = "1"
+      cookies[:skadi_id] = "00000000-0000-0000-0000-000000000000"
+
+      get_tracked_action(referrer: "https://example.com/")
+
+      visit = Skadi::Visit.first!
+      assert_nil visit.tracking_token
     end
   end
 end
