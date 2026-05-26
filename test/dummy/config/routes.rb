@@ -4,7 +4,10 @@ Rails.application.routes.draw do
   get "up" => "rails/health#show", as: :rails_health_check
 
   # Defines the root path route ("/")
-  root "example#index"
+  root "tracked#tracked_action"
 
-  get "example", to: "example#index", as: :example_index
+  match "track", to: "tracked#tracked_action", as: :tracked_action, via: :all
+
+  get "untracked_action", to: "tracked#untracked_action", as: :untracked_action
+  get "untracked_controller", to: "untracked#untracked_controller", as: :untracked_controller
 end
