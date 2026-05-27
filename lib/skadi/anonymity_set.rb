@@ -22,12 +22,13 @@ module Skadi
       pepper_expiry = Time.current + duration
 
       if reset_hour
-        # We always want to go back to the reset hour, so if the expiry hour is before the reset hour, go back to the previous day
-        if pepper_expiry.hour < reset_hour
-          pepper_expiry = pepper_expiry.yesterday
-        end
+        # We always want to truncate the duration to the reset hour, so if the expiry hour is before the reset hour, go back to the previous day
+        pepper_expiry -= 1.day if pepper_expiry.hour < reset_hour
+        
+        pepper_expiry = pepper_expiry.change(hour: reset_hour, min: 0, sec: 0)
 
-        pepper_expiry = pepper_expiry.change(hour: reset_hour)
+        # Handle the case where the duration is less than one day, so the expiry is in the past
+        pepper_expiry += 1.day if pepper_expiry < Time.current
       end
 
       Rails.cache.fetch("skadi/anonymity_set_pepper", expires_in: pepper_expiry.to_i - Time.current.to_i) do

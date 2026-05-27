@@ -9,7 +9,7 @@ module Skadi::Integration
       assert_equal({}, view.query_params)
     end
 
-    test "whitelisted query parameters are saved" do
+    test "whitelisted view query parameters are saved" do
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
       get tracked_action_path, params: { whitelisted: "value", not_whitelisted: "other_value" }
@@ -18,16 +18,16 @@ module Skadi::Integration
       assert_equal({"whitelisted" => "value"}, view.query_params)
     end
 
-    test "query parameter whitelist accepts symbol or string keys" do
-      Skadi.configuration.query_param_whitelist = [:whitelisted_symbol, "whitelisted_string"]
+    test "view query parameter whitelist symbol or string keys" do
+      Skadi.configuration.query_param_whitelist = [:whitelisted_symbol, :whitelisted_string]
 
-      get tracked_action_path, params: { whitelisted_symbol: "symbol", whitelisted_string: "string" }
+      get tracked_action_path, params: { whitelisted_symbol: "symbol", "whitelisted_string" => "string" }
 
       view = Skadi::View.first!
       assert_equal({"whitelisted_symbol" => "symbol", "whitelisted_string" => "string"}, view.query_params)
     end
 
-    test "query parameter whitelist is disabled by config" do
+    test "view query parameter whitelist is disabled by config" do
       Skadi.configuration.use_query_param_whitelist = false
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
@@ -37,7 +37,7 @@ module Skadi::Integration
       assert_equal({"whitelisted" => "value", "not_whitelisted" => "other_value"}, view.query_params)
     end
 
-    test "post query parameters are saved as query parameters" do
+    test "post query parameters are saved as view query parameters" do
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
       post "#{tracked_action_path}?whitelisted=value"
@@ -46,7 +46,7 @@ module Skadi::Integration
       assert_equal({"whitelisted" => "value"}, view.query_params)
     end
 
-    test "post parameters are not saved as query parameters" do
+    test "post parameters are not saved as view query parameters" do
       Skadi.configuration.use_query_param_whitelist = false
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
@@ -56,7 +56,7 @@ module Skadi::Integration
       assert_equal({}, view.query_params)
     end
 
-    test "referrer query parameters are filtered" do
+    test "referrer query parameters are whitelisted" do
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
       get_tracked_action(referrer: "https://example.com/?whitelisted=value&not_whitelisted=other_value")

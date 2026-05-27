@@ -71,7 +71,7 @@ module Skadi
       @skadi_view.path = Skadi::Url.view_path_from_request(request)
 
       @skadi_view.query_params = Skadi::Url.whitelist_query_params(request.query_parameters)
-      @skadi_view.referrer = Skadi::Url.whitelist_query_params_for_url(request.referrer)
+      @skadi_view.referrer = Skadi::Url.redact_and_normalise_url(request.referrer)
     end
 
     # Saves the visit and view models to the database, if they have been created and tracking is enabled
@@ -108,7 +108,7 @@ module Skadi
       visit.tracking_token = tracking_token
       visit.user_id = user&.id
 
-      visit.referrer = Skadi::Url.whitelist_query_params_for_url(request.referrer)
+      visit.referrer = Skadi::Url.redact_and_normalise_url(request.referrer)
       visit.landing_page = Skadi::Url.view_path_from_request(request)
 
       visit.utm_source = request.query_parameters["utm_source"]

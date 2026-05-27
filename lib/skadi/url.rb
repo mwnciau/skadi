@@ -1,49 +1,57 @@
 module Skadi
   # Helper functions for generating and redacting URLs
   class Url
+    # Formats the path for Skadi views. Note that the path here uses PATH_INFO, which does not include the query string or fragment.
     # @param request [ActionDispatch::Request]
-    # @param query_param_whitelist [Array<Symbol>]
+    # @return [String]
     def self.view_path_from_request(request)
       path = +""
 
       if Skadi.configuration.store_domain_in_views
-        path << "#{request.host_with_port}/"
+        path << "#{request.host_with_port}"
       end
 
-      path << "#{request.path}"
+      # Normalise the path by removing any trailing slashes
+      path << "#{request.path == "/" || request.path == "" ? "/" : request.path.chomp("/")}"
 
       path
     end
 
-    # @param query_params [ActiveSupport::HashWithIndifferentAccess]=
+    # @param query_params [Hash, ActiveSupport::HashWithIndifferentAccess]
     # @return [Hash]
     def self.whitelist_query_params(query_params)
+      # Normalise the input to a Hash with symbolic keys
+      query_params = query_params.to_h.symbolize_keys
+
       return query_params unless Skadi.configuration.use_query_param_whitelist
+
       whitelist = Skadi.configuration.query_param_whitelist
       return {} if whitelist.empty?
 
-      whitelisted_params = {}
-
-      whitelist.each do |whitelisted_key|
-        if query_params.has_key?(whitelisted_key)
-          whitelisted_params[whitelisted_key] = query_params[whitelisted_key]
-        end
-      end
-
-      whitelisted_params
+      query_params.slice(*whitelist)
     end
 
+    # Strips non-whitelisted query params and normalises URLs
     # @param url [String]
-    # @return [String|nil]
-    def self.whitelist_query_params_for_url(url)
+    # @return [String, nil]
+    def self.redact_and_normalise_url(url)
       return nil unless url.present?
 
       uri = URI.parse(url)
-      query_params = HashWithIndifferentAccess.new(Rack::Utils.parse_nested_query(uri.query))
+      query_params = Rack::Utils.parse_nested_query(uri.query) if uri.query.present?
+      param_string = whitelist_query_params(query_params).to_query if query_params.present?
 
-      param_string = whitelist_query_params(query_params).to_query
+      result = +"#{uri.scheme}://#{uri.host}"
 
-      "#{uri.scheme}://#{uri.host}#{uri.path}#{param_string.present? ? "?#{param_string}" : ""}"
+      # Only include port if it's non-standard
+      result << ":#{uri.port}" if uri.port != uri.default_port
+
+      # Normalise the trailing slash
+      result << (uri.path == "" || uri.path == "/" ? "/" : uri.path.chomp("/"))
+
+      result << (param_string.present? ? "?#{param_string}" : "")
+
+      result
     rescue URI::InvalidURIError
       nil
     end
