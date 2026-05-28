@@ -9,5 +9,10 @@ module Skadi
         Skadi::Visit.belongs_to :user, class_name: Skadi.configuration.user_model.to_s, optional: true
       end
     end
+
+    initialize "after_initialize" do
+      # Validate the configuration and output any errors to the Rails log
+      Skadi.configuration.validate!
+    end
   end
 end
