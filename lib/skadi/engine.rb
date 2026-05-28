@@ -10,7 +10,7 @@ module Skadi
       end
     end
 
-    initialize "after_initialize" do
+    initializer "validate_config" do
       # Validate the configuration and output any errors to the Rails log
       Skadi.configuration.validate!
     end
