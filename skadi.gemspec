@@ -45,5 +45,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency "standard", "~> 1.0"
 
   # Database gem for the dummy rails app
+  s.add_development_dependency "puma", "~> 7.0"
   s.add_development_dependency "sqlite3", "~> 2.0"
 end

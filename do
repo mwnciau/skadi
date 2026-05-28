@@ -55,6 +55,20 @@ then
     exit 0
 fi
 
+if [ "$1" == "dummy:start" ] || [ "$1" == "ds" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm -p 3000:3000 ruby test/dummy/bin/dev ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm -p 3000:3000 ruby test/dummy/bin/dev "${@:2}"
+    exit 0
+fi
+
+if [ "$1" == "dummy:rails" ] || [ "$1" == "dr" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby test/dummy/bin/rails ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby test/dummy/bin/rails "${@:2}"
+    exit 0
+fi
+
 if [ "$1" == "npm" ]
 then
     echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm ${@:2}
