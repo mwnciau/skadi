@@ -1,0 +1,12 @@
+{
+  "name": "skadi",
+  "private": true,
+  "scripts": {
+    "build": "tsc && vite build",
+    "build:watch": "vite build --watch"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^6.0.0"
+  }
+}
