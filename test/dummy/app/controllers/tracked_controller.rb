@@ -9,4 +9,7 @@ class TrackedController < ApplicationController
 
     head :ok
   end
+
+  def test_action
+  end
 end

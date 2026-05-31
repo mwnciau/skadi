@@ -26,6 +26,14 @@ rails generate skadi:install
 rails db:migrate
 ```
 
+Add Skadi to your application controller:
+
+```ruby
+class ApplicationController
+  include Skadi::Analytics
+end
+```
+
 ## AI Disclaimer
 
 This gem is human-written, with AI used improve the quality of the code, corresponding to [level 3 to 4](https://www.visidata.org/blog/2026/ai/#self-assessed-ai-level-for-contributions) on the VisiData AI scale:

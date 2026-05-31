@@ -1,5 +1,7 @@
 module Skadi
   class Engine < ::Rails::Engine
+    isolate_namespace Skadi
+
     initializer "skadi.db_initialization" do
       if Skadi.configuration.db_connects_to
         Skadi::ApplicationRecord.connects_to(**Skadi.configuration.db_connects_to)

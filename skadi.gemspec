@@ -33,8 +33,9 @@ Gem::Specification.new do |s|
 
     See `rails g skadi:install --help` for options (database engine, user id type).
   MSG
-  
-  s.add_dependency "rails", ">=7"
+
+  # Rails 7.1 is required for ActionDispatch::Request#route_uri_pattern
+  s.add_dependency "rails", ">=7.1"
 
   # Gems to enhance testing
   s.add_development_dependency "minitest", "~> 6.0"

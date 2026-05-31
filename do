@@ -76,6 +76,13 @@ then
     exit 0
 fi
 
+if [ "$1" == "npx" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run "${@:2}"
+    exit 0
+fi
+
 if [ "$1" == "cs" ] || [ "$1" == "c" ]
 then
     echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop "${@:2}"

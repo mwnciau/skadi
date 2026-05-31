@@ -54,32 +54,6 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
       # The page the user clicked on when leaving the page
       t.text :exit_page
 
-      # Metrics calculated in the front end that update after the view event is created
-      t.integer :active_time_seconds
-      t.integer :max_scroll_percent
-
-      # Todo: figure out which performance metrics we want from js`performance.getEntriesByType("navigation")`
-
-      # I.e. server response time
-      # navEntry.responseStart - navEntry.startTime
-      t.integer :time_to_first_byte
-
-      # I.e. how big the response is
-      # navEntry.responseEnd - navEntry.responseStart
-      t.integer :time_to_download
-
-      # Some sort of intermediary?? Maybe not useful
-      # navEntry.domContentLoadedEventEnd - navEntry.responseEnd
-      t.integer :time_to_load_dom
-
-      # I.e. how long the browser took to render the page
-      # navEntry.loadEventEnd - navEntry.responseEnd
-      t.integer :total_time_to_load
-
-      # FP/FCP?? https://developer.mozilla.org/en-US/docs/Web/API/PerformancePaintTiming
-
-      t.integer :load_time
-
       t.timestamps
     end
 
@@ -110,8 +84,9 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
     # Store demographic data separately so that it cannot be used to identify users
     # E.g. screen size, language, timezone, pointer type (mouse, touch), can-hover, prefers reduced motion, prefers contrast, forced colours, prefers dark mode
     create_table :skadi_demographics do |t|
-      t.string :metric_name, null: false
-      t.string :metric_value, null: false
+      t.string :uri
+      t.string :name, null: false
+      t.string :value_bucket, null: false
       t.date :recorded_on, null: false
       t.integer :count, null: false, default: 0
     end

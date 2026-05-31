@@ -11,6 +11,9 @@ module Skadi
       # Make thse methods available in the view for when we output the frontend script
       helper_method :skadi_visit, :skadi_view
 
+      # Add the Skadi view helper methods
+      helper Skadi::ApplicationHelper
+
       # Disable Skadi tracking for the current controller
       def self.do_not_track!
         skip_before_action :track_visit, :track_view

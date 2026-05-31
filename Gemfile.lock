@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     skadi (0.0.0)
-      rails (>= 7)
+      rails (>= 7.1)
 
 GEM
   remote: https://rubygems.org/

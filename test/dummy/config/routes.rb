@@ -3,6 +3,8 @@ Rails.application.routes.draw do
   # Can be used by load balancers and uptime monitors to verify that the app is live.
   get "up" => "rails/health#show", as: :rails_health_check
 
+  mount Skadi::Engine => "/skadi"
+
   # Defines the root path route ("/")
   root "tracked#tracked_action"
 
@@ -10,4 +12,6 @@ Rails.application.routes.draw do
 
   get "untracked_action", to: "tracked#untracked_action", as: :untracked_action
   get "untracked_controller", to: "untracked#untracked_controller", as: :untracked_controller
+
+  get "test", to: "tracked#test_action", as: :test
 end
