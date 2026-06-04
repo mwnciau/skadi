@@ -1,7 +1,7 @@
 module Skadi
   class TrackingController < ApplicationController
     def track
-      head :ok
+      head :no_content
     end
   end
 end

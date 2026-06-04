@@ -2,6 +2,8 @@ module Skadi
   module ApplicationHelper
     class InvalidSkadiTagType < StandardError; end
 
+    mattr_accessor :skadi_script_src
+
     def skadi_tag(type = :route)
       case type
         when :route
@@ -14,8 +16,21 @@ module Skadi
             },
             nonce: content_security_policy_nonce,
           })
+        when :inline
+          self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
+          content_tag(
+            "script",
+            self.skadi_script_src,
+            {
+              data: {
+                pageUri: request.route_uri_pattern,
+                endpoint: skadi.tracking_endpoint_path,
+                csrf: form_authenticity_token,
+              },
+              nonce: content_security_policy_nonce,
+            })
         else
-          raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, but got :#{type}.")
+          raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
       end
     end
   end
