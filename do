@@ -6,6 +6,9 @@ then
     DOCKER_COMPOSE_COMMAND="docker compose"
 fi
 
+export CURRENT_UID=$(id -u)
+export CURRENT_GID=$(id -g)
+
 if [ -z "$1" ]
 then
     echo "Usage:"

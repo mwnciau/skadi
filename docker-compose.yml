@@ -2,6 +2,7 @@ services:
   ruby:
     image: ruby:4.0.4
     working_dir: /var/source
+    user: ${CURRENT_UID}:${CURRENT_GID}
     volumes:
       - .:/var/source
       - ruby-gems:/usr/local/bundle
@@ -9,6 +10,7 @@ services:
   node:
     image: node:26
     working_dir: /var/source
+    user: ${CURRENT_UID}:${CURRENT_GID}
     volumes:
       - .:/var/source
 
