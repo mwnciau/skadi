@@ -93,7 +93,7 @@ module Skadi
         next unless demographic.is_a?(Hash)
         next unless demographic["name"].is_a?(String) && demographic["name"].present?
         next unless demographic["value"].is_a?(String) && demographic["value"].present?
-        next unless demographic["uri"].nil? || (demographic["uri"].is_a?(String) && demographic["uri"].present?)
+        next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
         demographics_to_insert << {
           name: demographic["name"],

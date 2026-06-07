@@ -6,9 +6,10 @@ module Skadi
 
     validates :path, presence: true
 
-    before_create :populate_view_token
+    before_create :populate_defaults
 
-    private def populate_view_token
+    private def populate_defaults
+      self.verified = false
       self.view_token ||= SecureRandom.uuid_v7
     end
   end

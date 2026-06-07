@@ -24,7 +24,7 @@ module Skadi
       if reset_hour
         # We always want to truncate the duration to the reset hour, so if the expiry hour is before the reset hour, go back to the previous day
         pepper_expiry -= 1.day if pepper_expiry.hour < reset_hour
-        
+
         pepper_expiry = pepper_expiry.change(hour: reset_hour, min: 0, sec: 0)
 
         # Handle the case where the duration is less than one day, so the expiry is in the past

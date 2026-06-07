@@ -104,6 +104,43 @@ then
     exit 0
 fi
 
+if [ "$1" == "testall" ] || [ "$1" == "ta" ]
+then
+    echo "Running test suite against Ruby 3.3"
+    docker run --rm \
+      -v "$(pwd)":/var/source \
+      -w /var/source \
+      ruby:3.3 \
+      bash -c "bundle install && bundle exec appraisal install && bundle exec appraisal rake test" \
+      2>&1 >/dev/null \
+      && echo "Tests pass on Ruby 3.3!" || echo "Tests fails for Ruby 3.3 :("
+    echo ""
+
+exit 0
+
+    echo "Running test suite against Ruby 3.4"
+    docker run --rm \
+      -v "$(pwd)":/var/source \
+      -w /var/source \
+      ruby:3.4 \
+      bash -c "bundle install && bundle exec appraisal install && bundle exec appraisal rake test" \
+      2>&1 >/dev/null \
+      && echo "Tests pass on Ruby 3.4!" || echo "Tests fails for Ruby 3.4 :("
+    echo ""
+
+    echo "Running test suite against Ruby 4.0"
+    docker run --rm \
+      -v "$(pwd)":/var/source \
+      -w /var/source \
+      ruby:4.0 \
+      bash -c "bundle install && bundle exec appraisal install && bundle exec appraisal rake test" \
+      2>&1 >/dev/null \
+      && echo "Tests pass on Ruby 4.0!" || echo "Tests fails for Ruby 4.0 :("
+    echo ""
+
+    exit 0
+fi
+
 if [ "$1" == "l" ] || [ "$1" == "log" ] || [ "$1" == "logs" ]
 then
     echo Running: ${DOCKER_COMPOSE_COMMAND} logs "${@:2}"

@@ -37,9 +37,9 @@ module Skadi
 
       def user_id_type = options[:user_id_type].to_sym
       def db_engine = options[:db_engine].to_sym
-      def uuid_column_type = db_engine == :postgres ? :uuid : :string
-      def uuid_column_options = db_engine == :postgres ? "" : ", limit: 36"
-      def json_column_type = db_engine == :postgres ? :jsonb : :json
+      def uuid_column_type = (db_engine == :postgres) ? :uuid : :string
+      def uuid_column_options = (db_engine == :postgres) ? "" : ", limit: 36"
+      def json_column_type = (db_engine == :postgres) ? :jsonb : :json
     end
   end
 end

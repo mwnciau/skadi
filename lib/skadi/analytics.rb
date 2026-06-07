@@ -42,7 +42,6 @@ module Skadi
 
     # Called before the action to find or build the Skadi visit model
     def track_visit
-      puts "cookies: #{cookies.inspect}"
       # If the user has opted out of tracking, we do not use cookies or anonymisation sets
       unless cookies["skadi_tracking_opt_out"] == "1"
         tracking_token = cookies[:skadi_id].presence || AnonymitySet.calculate(request.remote_ip, request.user_agent)
@@ -52,8 +51,6 @@ module Skadi
 
         return if @skadi_visit
       end
-
-      puts "tracking token: #{tracking_token}"
 
       has_utm_params = params.keys.any? { |it| it.to_s.start_with?("utm_") }
       has_external_referrer = request.referer.present? && !request.referer.include?(request.host)

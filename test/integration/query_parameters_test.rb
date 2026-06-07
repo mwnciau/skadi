@@ -3,7 +3,7 @@ require "integration/test_case"
 module Skadi::Integration
   class TrackingTest < TestCase
     test "view query parameters are filtered" do
-      get tracked_action_path, params: { not_whitelisted: "value" }
+      get tracked_action_path, params: {not_whitelisted: "value"}
 
       view = Skadi::View.first!
       assert_equal({}, view.query_params)
@@ -12,7 +12,7 @@ module Skadi::Integration
     test "whitelisted view query parameters are saved" do
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
-      get tracked_action_path, params: { whitelisted: "value", not_whitelisted: "other_value" }
+      get tracked_action_path, params: {whitelisted: "value", not_whitelisted: "other_value"}
 
       view = Skadi::View.first!
       assert_equal({"whitelisted" => "value"}, view.query_params)
@@ -21,7 +21,7 @@ module Skadi::Integration
     test "view query parameter whitelist symbol or string keys" do
       Skadi.configuration.query_param_whitelist = [:whitelisted_symbol, :whitelisted_string]
 
-      get tracked_action_path, params: { whitelisted_symbol: "symbol", "whitelisted_string" => "string" }
+      get tracked_action_path, params: {:whitelisted_symbol => "symbol", "whitelisted_string" => "string"}
 
       view = Skadi::View.first!
       assert_equal({"whitelisted_symbol" => "symbol", "whitelisted_string" => "string"}, view.query_params)
@@ -31,7 +31,7 @@ module Skadi::Integration
       Skadi.configuration.use_query_param_whitelist = false
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
-      get tracked_action_path, params: { whitelisted: "value", not_whitelisted: "other_value" }
+      get tracked_action_path, params: {whitelisted: "value", not_whitelisted: "other_value"}
 
       view = Skadi::View.first!
       assert_equal({"whitelisted" => "value", "not_whitelisted" => "other_value"}, view.query_params)
@@ -50,7 +50,7 @@ module Skadi::Integration
       Skadi.configuration.use_query_param_whitelist = false
       Skadi.configuration.query_param_whitelist = [:whitelisted]
 
-      post tracked_action_path, params: { whitelisted: "value" }
+      post tracked_action_path, params: {whitelisted: "value"}
 
       view = Skadi::View.first!
       assert_equal({}, view.query_params)

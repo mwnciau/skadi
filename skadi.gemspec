@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "skadi"
-  s.version = "0.0.0"
+  s.version = "0.1.0"
   s.summary = "First-party, privacy-by-default analytics for Rails."
   s.description = "Skadi adds flexible and lightweight first-party analytics to your Rails app. Track page views and events, perform A/B testing and more, giving you all the information you need to improve your website."
   s.authors = ["Simon J"]
@@ -38,8 +38,10 @@ Gem::Specification.new do |s|
   s.add_dependency "rails", ">=7.1"
 
   # Gems to enhance testing
-  s.add_development_dependency "minitest", "~> 6.0"
+  s.add_development_dependency "appraisal", "~> 2.0"
   s.add_development_dependency "factory_bot_rails", "~> 6.0"
+  # Pinned to 5 because older versions of rails raise an error for minitest 6
+  s.add_development_dependency "minitest", "~> 5.0"
 
   # Gems to enforce coding-standards
   s.add_development_dependency "rubocop", "~> 1.0"

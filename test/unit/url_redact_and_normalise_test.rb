@@ -5,49 +5,49 @@ module Skadi::Unit
     test "redact_and_normalise_url returns url with no query params" do
       url = Skadi::Url.redact_and_normalise_url("https://example.com/foo/bar/baz")
 
-      assert_equal"https://example.com/foo/bar/baz", url
+      assert_equal "https://example.com/foo/bar/baz", url
     end
 
     test "redact_and_normalise_url filters query parameters" do
       url = Skadi::Url.redact_and_normalise_url("https://example.com/path?foo=bar&baz=qux")
 
-      assert_equal"https://example.com/path", url
+      assert_equal "https://example.com/path", url
     end
 
     test "redact_and_normalise_url removes trailing slash" do
       url_1 = Skadi::Url.redact_and_normalise_url("https://example.com/path/")
       url_2 = Skadi::Url.redact_and_normalise_url("https://example.com/path")
 
-      assert_equal"https://example.com/path", url_1
-      assert_equal"https://example.com/path", url_2
+      assert_equal "https://example.com/path", url_1
+      assert_equal "https://example.com/path", url_2
     end
 
     test "redact_and_normalise_url keeps slash after host" do
       url_1 = Skadi::Url.redact_and_normalise_url("https://example.com/")
       url_2 = Skadi::Url.redact_and_normalise_url("https://example.com")
 
-      assert_equal"https://example.com/", url_1
-      assert_equal"https://example.com/", url_2
+      assert_equal "https://example.com/", url_1
+      assert_equal "https://example.com/", url_2
     end
 
     test "redact_and_normalise_url strips standard port" do
       http_url = Skadi::Url.redact_and_normalise_url("http://example.com:80")
       https_url = Skadi::Url.redact_and_normalise_url("https://example.com:443")
 
-      assert_equal"http://example.com/", http_url
-      assert_equal"https://example.com/", https_url
+      assert_equal "http://example.com/", http_url
+      assert_equal "https://example.com/", https_url
     end
 
     test "redact_and_normalise_url keeps non-standard port" do
       url = Skadi::Url.redact_and_normalise_url("http://example.com:3000")
 
-      assert_equal"http://example.com:3000/", url
+      assert_equal "http://example.com:3000/", url
     end
 
     test "redact_and_normalise_url strips uri fragment" do
       url = Skadi::Url.redact_and_normalise_url("http://example.com/#url-fragment")
 
-      assert_equal"http://example.com/", url
+      assert_equal "http://example.com/", url
     end
 
     test "redact_and_normalise_url returns nil for invalid URLs" do
@@ -69,7 +69,7 @@ module Skadi::Unit
 
       url = Skadi::Url.redact_and_normalise_url("http://example.com/?foo=bar&baz=qux")
 
-      assert_equal"http://example.com/?foo=bar", url
+      assert_equal "http://example.com/?foo=bar", url
     end
 
     test "redact_and_normalise_url allows all params when whitelist disabled" do
@@ -77,7 +77,7 @@ module Skadi::Unit
 
       url = Skadi::Url.redact_and_normalise_url("http://example.com/?baz=qux&foo=bar")
 
-      assert_equal"http://example.com/?baz=qux&foo=bar", url
+      assert_equal "http://example.com/?baz=qux&foo=bar", url
     end
 
     test "redact_and_normalise_url handles encoded characters" do

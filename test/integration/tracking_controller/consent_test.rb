@@ -14,7 +14,7 @@ module Skadi::Integration
         visit = create :visit, tracking_token: TRACKING_TOKEN
         view = create :view, visit: visit
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {id: true} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {id: true}}, as: :json
 
         assert_response :no_content
         assert_equal TRACKING_TOKEN, response.cookies["skadi_id"]
@@ -23,7 +23,7 @@ module Skadi::Integration
       test "sets tracking cookie without visit" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {id: true} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {id: true}}, as: :json
 
         assert_response :no_content
         assert_match UUID_REGEX, response.cookies["skadi_id"]
@@ -35,7 +35,7 @@ module Skadi::Integration
 
         cookies["skadi_id"] = TRACKING_TOKEN
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {id: false} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {id: false}}, as: :json
 
         assert_response :no_content
         assert_nil response.cookies["skadi_id"]
@@ -46,7 +46,7 @@ module Skadi::Integration
         view = create :view, visit: visit
         cookies["skadi_id"] = TRACKING_TOKEN
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {}}, as: :json
 
         assert_response :no_content
         refute response.cookies.has_key?("skadi_id")
@@ -60,7 +60,7 @@ module Skadi::Integration
         visit = create :visit, tracking_token: TRACKING_TOKEN
         view = create :view, visit: visit
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {opt_out: true} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {opt_out: true}}, as: :json
 
         assert_response :no_content
         assert_equal "1", response.cookies["skadi_tracking_opt_out"]
@@ -70,7 +70,7 @@ module Skadi::Integration
       test "opt out without visit" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {opt_out: true} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {opt_out: true}}, as: :json
 
         assert_response :no_content
         assert_equal "1", response.cookies["skadi_tracking_opt_out"]
@@ -79,7 +79,7 @@ module Skadi::Integration
       test "clears opt out" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {opt_out: false} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {opt_out: false}}, as: :json
 
         assert_response :no_content
         assert_nil response.cookies["skadi_tracking_opt_out"]
@@ -89,7 +89,7 @@ module Skadi::Integration
         view = create :view, visit: nil
         cookies["skadi_tracking_opt_out"] = "1"
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, consent: {} }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: {}}, as: :json
 
         assert_response :no_content
         refute response.cookies.has_key?("skadi_tracking_opt_out")

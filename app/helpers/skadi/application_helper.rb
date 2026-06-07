@@ -6,31 +6,32 @@ module Skadi
 
     def skadi_tag(type = :route)
       case type
-        when :route
-          content_tag("script", "", {
-            src: skadi.tracking_script_path(v: Skadi::VERSION),
+      when :route
+        content_tag("script", "", {
+          src: skadi.tracking_script_path(v: Skadi::VERSION),
+          data: {
+            pageUri: request.route_uri_pattern,
+            endpoint: skadi.tracking_endpoint_path,
+            csrf: form_authenticity_token,
+          },
+          nonce: content_security_policy_nonce,
+        })
+      when :inline
+        self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
+        content_tag(
+          "script",
+          self.skadi_script_src,
+          {
             data: {
               pageUri: request.route_uri_pattern,
               endpoint: skadi.tracking_endpoint_path,
               csrf: form_authenticity_token,
             },
             nonce: content_security_policy_nonce,
-          })
-        when :inline
-          self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
-          content_tag(
-            "script",
-            self.skadi_script_src,
-            {
-              data: {
-                pageUri: request.route_uri_pattern,
-                endpoint: skadi.tracking_endpoint_path,
-                csrf: form_authenticity_token,
-              },
-              nonce: content_security_policy_nonce,
-            })
-        else
-          raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
+          },
+        )
+      else
+        raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
       end
     end
   end

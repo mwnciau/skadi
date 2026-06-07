@@ -22,3 +22,8 @@ Style/MethodDefParentheses:
   Enabled: true
 Naming/MethodName:
   Enabled: true
+
+# Allow backwards compatible use of `it` parameter in blocks
+# Todo: add AllowNamedParameter if standard ever gets updated
+Style/ItAssignment:
+  Enabled: false

@@ -7,10 +7,10 @@ module Skadi::Integration
         visit = create :visit
         view = create :view, visit: visit
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
           {name: "my event", properties: {}},
           {name: "my event with properties", properties: {key: "value"}},
-        ] }, as: :json
+        ]}, as: :json
 
         assert_response :no_content
         assert_equal 2, Skadi::Event.count
@@ -31,9 +31,9 @@ module Skadi::Integration
       test "tracks events without visit" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
           {name: "my event", properties: {}},
-        ] }, as: :json
+        ]}, as: :json
 
         assert_response :no_content
         assert_equal 1, Skadi::Event.count
@@ -49,13 +49,13 @@ module Skadi::Integration
       test "ignores invalid events" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
           {properties: {}},
           {name: "", properties: {}},
           {name: "event"},
           {name: "event", properties: "string"},
           {name: "valid event", properties: {}},
-        ] }, as: :json
+        ]}, as: :json
 
         assert_response :no_content
         assert_equal 1, Skadi::Event.count
@@ -71,7 +71,7 @@ module Skadi::Integration
       test "non-array passed to events" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: { view: view.view_token, events: "not an array" }, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: "not an array"}, as: :json
 
         assert_response :no_content
         assert_equal 0, Skadi::Event.count

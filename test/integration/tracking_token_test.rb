@@ -4,7 +4,7 @@ module Skadi::Integration
   class TrackingTokenTest < TestCase
     TEST_IP = "127.0.0.1"
     TEST_USER_AGENT = "Test User Agent"
-    DEFAULT_HEADERS = { "HTTP_USER_AGENT" => TEST_USER_AGENT, "REMOTE_ADDR" => TEST_IP, "REFERER" => "https://example.com" }
+    DEFAULT_HEADERS = {"HTTP_USER_AGENT" => TEST_USER_AGENT, "REMOTE_ADDR" => TEST_IP, "REFERER" => "https://example.com"}
 
     test "anonymisation set is reused between visits" do
       3.times { get_tracked_action }

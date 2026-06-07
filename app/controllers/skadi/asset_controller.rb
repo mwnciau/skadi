@@ -9,7 +9,7 @@ module Skadi
 
       # Set a long expiry time - the include helper will append the app version number ensuring any changes will be loaded
       expires_in 1.year, public: true, must_revalidate: false
-verify_same_origin_request
+      verify_same_origin_request
       send_file file_path
     end
   end
