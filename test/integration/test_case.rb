@@ -1,8 +1,11 @@
 require "test_helper"
+require "factory_bot_rails"
 
 module Skadi
   module Integration
     class TestCase < ::ActionDispatch::IntegrationTest
+      include FactoryBot::Syntax::Methods
+
       setup do
         # Reset the configuration
         Skadi.configuration = Skadi::Configuration.new

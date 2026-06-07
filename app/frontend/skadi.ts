@@ -4,12 +4,11 @@ let events: SkadiEvent[] = [];
 let consent: Consent = {};
 let largestContentfulPaint: number = -1;
 let requestTimeout: number|null = null;
-let departureUrl: string|null = null;
-let useDepartureUrl: boolean = false;
+let exitPage: string|null = null;
+let useExitPage: boolean = false;
 
 // The minifier doesn't automatically shorten these variables, so we make a local variable to force it to
 const _window = window;
-const _performance = performance;
 const _document = document;
 
 // Reuse these strings to save space
@@ -26,8 +25,8 @@ type SkadiOptions = {
   endpoint: string;
   // The view's view_token
   view: string;
-  // The visit's visit_token, if available
-  visit?: string;
+  // Whether to send visit demographics
+  visit?: boolean;
 }
 
 type SkadiDemographic = {
@@ -42,8 +41,8 @@ type SkadiEvent = {
 }
 
 type Consent = {
-  cookies?: boolean;
-  doNotTrack?: boolean;
+  id?: boolean;
+  optOut?: boolean;
 }
 
 const options: SkadiOptions = {
@@ -66,7 +65,7 @@ const sendRequest = () => {
     demographics,
     events,
     consent,
-    ...(useDepartureUrl && {departureUrl})
+    ...(useExitPage && {exit_page: exitPage})
   })], {type: "application/json"}));
 
   // If the beacon was succesfully sent
@@ -74,6 +73,8 @@ const sendRequest = () => {
     demographics = [];
     events = [];
     consent = {};
+
+    // Note: no need to set useExitPage here as it is only set as the page is being unloaded.
   }
 }
 
@@ -96,7 +97,7 @@ const bucketise = (value: number, buckets: number[4]) => {
   return `> ${buckets[3]}ms`;
 };
 
-const addDemographic = (name: string, value: string|boolean, viewDemographic: boolean = true) => {
+const addDemographic = (name: string, value: string|boolean, viewDemographic: boolean = false) => {
   if (value === null) {
     return;
   }
@@ -110,43 +111,6 @@ const addDemographic = (name: string, value: string|boolean, viewDemographic: bo
   demographics.push(demographic);
 };
 
-const populatePerformanceDemographics = () => {
-  let navigationTiming = _performance.getEntriesByType("navigation")?.[0];
-  if (navigationTiming) {
-    // Server response time
-    addDemographic(
-      "time-to-first-byte",
-      bucketise(navigationTiming.responseStart - navigationTiming.requestStart, [200, 400, 800, 1500]),
-    );
-
-    // Network download time for the HTML page
-    addDemographic(
-      "time-to-download",
-      bucketise(navigationTiming.responseEnd - navigationTiming.responseStart, [50, 150, 400, 1000]),
-    );
-
-    // Time it took to parse the DOM and run blocking scripts
-    addDemographic(
-      "time-to-process-dom",
-      bucketise(navigationTiming.domInteractive - navigationTiming.responseEnd, [100, 300, 600, 1500]),
-    );
-
-    // Total time from request start to the window on load event fires
-    addDemographic(
-      "total-load-time",
-      bucketise(navigationTiming.loadEventEnd - navigationTiming.startTime, [2000, 3500, 6000, 10000]),
-    );
-  }
-
-  let paintTiming = _performance.getEntriesByName(firstContentfulPaintId)?.[0];
-  if (paintTiming) {
-    addDemographic(
-      firstContentfulPaintId,
-      bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]),
-    );
-  }
-};
-
 // The largest contentful paint is triggered multiple times during a page load, so we need to use the Observer API to keep track of each LCP as the page loads.
 new PerformanceObserver((entryList) => {
   let entries = entryList.getEntries();
@@ -158,24 +122,34 @@ const mediaMatches = (query: string): boolean => {
   return _window.matchMedia(query).matches;
 }
 
-const populateVisitDemographics = () => {
-  addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone, false);
-  addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale, false);
-  addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`, false);
-  addDemographic("input-device", mediaMatches('(pointer: fine)') ? "mouse" : "touch", false);
-}
-
 _window.addEventListener('load', () => {
-  // Send an initial ping once the page loads with the basic performance demographics
-  // Ensure this runs after the load event has finished to ensure the total load time is accurate
-  setTimeout(() => {
-    populatePerformanceDemographics();
-    if (options.visit) {
-      populateVisitDemographics();
-    }
-    sendRequest();
-  }, 0)
+  let paintTiming = performance.getEntriesByName(firstContentfulPaintId)?.[0];
+  if (paintTiming) {
+    addDemographic(
+      firstContentfulPaintId,
+      bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]),
+      true
+    );
+  }
+
+  if (options.visit) {
+    addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+    addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
+    addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);
+    addDemographic("input-device", mediaMatches('(pointer: fine)') ? "mouse" : "touch");
+  }
+
+  queueRequest();
 })
+
+setTimeout(() => {
+  addDemographic(
+    largestContentfulPaintId,
+    bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]),
+    true,
+  );
+  queueRequest();
+}, 6000);
 
 // Track clicks to detect when the user leaves the page
 _document.addEventListener('click', (event: MouseEvent) => {
@@ -185,31 +159,27 @@ _document.addEventListener('click', (event: MouseEvent) => {
     let isNewTab = link.target === '_blank' || event.ctrlKey || event.metaKey;
 
     if (!isNewTab) {
-      departureUrl = link.href;
+      exitPage = link.href;
     }
   }
 });
 
 _window.addEventListener('pagehide', () => {
-  // Flags that the page is unloading so the beacon send in bisi
-  useDepartureUrl = true;
+  // Flags that the page is unloading so the beacon sends the exit page
+  useExitPage = true;
+  sendRequest();
 })
 
-// Trigger sending the data when the user unloads the page
 _window.addEventListener('visibilitychange', () => {
-  sendRequest();
+  // Ensure a beacon is sent immediately if the user switches
+  if (requestTimeout !== null) {
+    sendRequest();
+  }
 });
-
-setTimeout(() => {
-  addDemographic(
-    largestContentfulPaintId,
-    bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]),
-  );
-}, 6000)
 
 
 _window.skadi = {
-  event: (name: string, properties: Record<string, unknown>) => {
+  event: (name: string, properties: Record<string, unknown> = {}) => {
     events.push({name, properties});
     queueRequest();
   },
@@ -218,11 +188,11 @@ _window.skadi = {
     queueRequest();
   },
   setCookieConsent: (newValue: boolean) => {
-    consent.cookies = newValue;
+    consent.id = newValue;
     sendRequest();
   },
   setTrackingOptOut: (newValue: boolean) => {
-    consent.doNotTrack = newValue;
+    consent.optOut = newValue;
     sendRequest();
   },
 };

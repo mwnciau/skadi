@@ -24,8 +24,8 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
       t.text :utm_content
       t.text :utm_campaign
 
-      # Flag to store whether JavaScript is enabled. This is updated when the first request is sent from the front-end.
-      t.boolean :javascript_enabled, null: false, default: false
+      # Whether the visit has been verified by the front-end
+      t.boolean :verified, null: false, default: false
 
       t.timestamps
     end
@@ -53,6 +53,12 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
 
       # The page the user clicked on when leaving the page
       t.text :exit_page
+
+      # Whether the view has been verified by the front-end
+      t.boolean :verified, null: false, default: false
+
+      # Version of the page presented to the user (e.g. branch A/B)
+      t.string :version
 
       t.timestamps
     end
@@ -84,13 +90,13 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
     # Store demographic data separately so that it cannot be used to identify users
     # E.g. screen size, language, timezone, pointer type (mouse, touch), can-hover, prefers reduced motion, prefers contrast, forced colours, prefers dark mode
     create_table :skadi_demographics do |t|
-      t.string :uri
+      t.string :uri, null: false
       t.string :name, null: false
-      t.string :value_bucket, null: false
+      t.string :value, null: false
       t.date :recorded_on, null: false
       t.integer :count, null: false, default: 0
     end
 
-    add_index :skadi_demographics, [:metric_name, :metric_value, :recorded_on], unique: true
+    add_index :skadi_demographics, [:uri, :name, :value, :recorded_on], unique: true
   end
 end

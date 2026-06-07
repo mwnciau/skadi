@@ -10,13 +10,14 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_05_25_184620) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_06_201633) do
   create_table "skadi_demographics", force: :cascade do |t|
     t.integer "count", default: 0, null: false
-    t.string "metric_name", null: false
-    t.string "metric_value", null: false
+    t.string "name", null: false
     t.date "recorded_on", null: false
-    t.index ["metric_name", "metric_value", "recorded_on"], name: "idx_on_metric_name_metric_value_recorded_on_02a02331f9", unique: true
+    t.string "uri", null: false
+    t.string "value", null: false
+    t.index ["uri", "name", "value", "recorded_on"], name: "idx_on_uri_name_value_recorded_on_79f5412e49", unique: true
   end
 
   create_table "skadi_events", force: :cascade do |t|
@@ -32,21 +33,16 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_25_184620) do
 
   create_table "skadi_views", force: :cascade do |t|
     t.string "action", null: false
-    t.integer "active_time_seconds"
     t.string "controller", null: false
     t.datetime "created_at", null: false
     t.text "exit_page"
-    t.integer "load_time"
-    t.integer "max_scroll_percent"
     t.text "path", null: false
     t.json "query_params"
     t.text "referrer"
-    t.integer "time_to_download"
-    t.integer "time_to_first_byte"
-    t.integer "time_to_load_dom"
-    t.integer "total_time_to_load"
     t.datetime "updated_at", null: false
     t.string "verb", null: false
+    t.boolean "verified", default: false, null: false
+    t.string "version"
     t.string "view_token", limit: 36, null: false
     t.integer "visit_id"
     t.index ["path", "created_at"], name: "index_skadi_views_on_path_and_created_at"
@@ -56,7 +52,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_25_184620) do
 
   create_table "skadi_visits", force: :cascade do |t|
     t.datetime "created_at", null: false
-    t.boolean "javascript_enabled", default: false, null: false
     t.text "landing_page"
     t.text "referrer"
     t.string "tracking_token", limit: 36
@@ -67,6 +62,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_05_25_184620) do
     t.text "utm_medium"
     t.text "utm_source"
     t.text "utm_term"
+    t.boolean "verified", default: false, null: false
     t.string "visit_token", limit: 36, null: false
     t.index ["created_at"], name: "index_skadi_visits_on_created_at"
     t.index ["tracking_token", "created_at"], name: "index_skadi_visits_on_tracking_token_and_created_at"

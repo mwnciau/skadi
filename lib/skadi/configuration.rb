@@ -18,6 +18,10 @@ module Skadi
       @db_connects_to = nil
 
       @store_domain_in_views = false
+
+      @max_tracking_payload_size = 1024 * 5
+
+      @cookie_domain = nil
     end
 
     cattr_accessor :validators
@@ -88,6 +92,16 @@ module Skadi
     # @return [Boolean]
     attr_accessor :store_domain_in_views
     validates(:store_domain_in_views, "boolean") { it == true || it == false }
+
+    # Sets a limit on the size of the tracking beacon. Defaults to 5KB.
+    # @return [Integer]
+    attr_accessor :max_tracking_payload_size
+    validates(:max_tracking_payload_size, "integer") { it.is_a?(Integer) && it > 0 }
+
+    # The domain to use when setting cookies. Set to include subdomains. Defaults to nil, which will not specify a domain when setting a cookie.
+    # @return [String, nil]
+    attr_accessor :cookie_domain
+    validates(:cookie_domain, "string or nil") { it == nil || (it.present? && it.is_a?(String)) }
 
     def validate!
       validators.each do |attribute, validator_config|

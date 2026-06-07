@@ -1,7 +1,7 @@
 FactoryBot.define do
-  factory :visit do
+  factory :visit, class: Skadi::Visit do
     visit_token { SecureRandom.uuid_v7 }
-    tracking_token { null }
+    tracking_token { nil }
 
     user_id { nil }
 
@@ -14,6 +14,6 @@ FactoryBot.define do
     utm_content { nil }
     utm_campaign { nil }
 
-    javascript_enabled { false }
+    verified { false }
   end
 end

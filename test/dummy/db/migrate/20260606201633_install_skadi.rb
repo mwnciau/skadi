@@ -20,8 +20,8 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       t.text :utm_content
       t.text :utm_campaign
 
-      # Flag to store whether JavaScript is enabled. This is updated when the first request is sent from the front-end.
-      t.boolean :javascript_enabled, null: false, default: false
+      # Whether the visit has been verified by the front-end
+      t.boolean :verified, null: false, default: false
 
       t.timestamps
     end
@@ -50,31 +50,11 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       # The page the user clicked on when leaving the page
       t.text :exit_page
 
-      # Metrics calculated in the front end that update after the view event is created
-      t.integer :active_time_seconds
-      t.integer :max_scroll_percent
+      # Whether the view has been verified by the front-end
+      t.boolean :verified, null: false, default: false
 
-      # Todo: figure out which performance metrics we want from js`performance.getEntriesByType("navigation")`
-
-      # I.e. server response time
-      # navEntry.responseStart - navEntry.startTime
-      t.integer :time_to_first_byte
-
-      # I.e. how big the response is
-      # navEntry.responseEnd - navEntry.responseStart
-      t.integer :time_to_download
-
-      # Some sort of intermediary?? Maybe not useful
-      # navEntry.domContentLoadedEventEnd - navEntry.responseEnd
-      t.integer :time_to_load_dom
-
-      # I.e. how long the browser took to render the page
-      # navEntry.loadEventEnd - navEntry.responseEnd
-      t.integer :total_time_to_load
-
-      # FP/FCP?? https://developer.mozilla.org/en-US/docs/Web/API/PerformancePaintTiming
-
-      t.integer :load_time
+      # Version of the page presented to the user (e.g. branch A/B)
+      t.string :version
 
       t.timestamps
     end
@@ -103,12 +83,13 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
     # Store demographic data separately so that it cannot be used to identify users
     # E.g. screen size, language, timezone, pointer type (mouse, touch), can-hover, prefers reduced motion, prefers contrast, forced colours, prefers dark mode
     create_table :skadi_demographics do |t|
-      t.string :metric_name, null: false
-      t.string :metric_value, null: false
+      t.string :uri, null: false
+      t.string :name, null: false
+      t.string :value, null: false
       t.date :recorded_on, null: false
       t.integer :count, null: false, default: 0
     end
 
-    add_index :skadi_demographics, [:metric_name, :metric_value, :recorded_on], unique: true
+    add_index :skadi_demographics, [:uri, :name, :value, :recorded_on], unique: true
   end
 end

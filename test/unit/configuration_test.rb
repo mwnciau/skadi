@@ -75,6 +75,18 @@ module Skadi::Unit
       assert_values_are_invalid(:store_domain_in_views, nil, "true", "false", 123)
     end
 
+    test "max_tracking_payload_size validates" do
+      assert_values_are_valid(:max_tracking_payload_size, 1000, 5000, 10000)
+
+      assert_values_are_invalid(:max_tracking_payload_size, nil, "1000", 0)
+    end
+
+    test "cookie_domain validates" do
+      assert_values_are_valid(:cookie_domain, nil, "example.com", ".example.com", "subdomain.example.com")
+
+      assert_values_are_invalid(:cookie_domain, "", 0)
+    end
+
     private def assert_values_are_valid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)
