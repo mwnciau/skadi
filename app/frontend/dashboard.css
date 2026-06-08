@@ -1,0 +1,99 @@
+@import "tailwindcss" source("../views/skadi/dashboard");
+
+@theme {
+  /* Ice https://tints.dev/palette/v1:aWNlfEEzRUNGM3wyMDB8cHw2fDExOXwxMHwxMDB8YQ */
+  --color-ice-50: oklch(0.974 0.009 247.89);
+  --color-ice-100: oklch(0.939 0.02 238.64);
+  --color-ice-200: oklch(0.876 0.046 233.06);
+  --color-ice-300: oklch(0.816 0.078 224.93);
+  --color-ice-400: oklch(0.728 0.078 228.47);
+  --color-ice-500: oklch(0.634 0.071 233.43);
+  --color-ice-600: oklch(0.54 0.064 238.76);
+  --color-ice-700: oklch(0.454 0.057 244.01);
+  --color-ice-800: oklch(0.362 0.049 247.19);
+  --color-ice-900: oklch(0.276 0.041 253.41);
+  --color-ice-950: oklch(0.225 0.038 257.16);
+
+  /* Dawn https://tints.dev/palette/v1:ZGF3bnxBRTAwMDB8NzAwfHB8NHwwfDEwfDEwMHxh */
+  --color-dawn-50: oklch(0.958 0.023 48.5);
+  --color-dawn-100: oklch(0.926 0.041 46.7);
+  --color-dawn-200: oklch(0.852 0.086 44);
+  --color-dawn-300: oklch(0.78 0.136 43.7);
+  --color-dawn-400: oklch(0.701 0.2 45.24);
+  --color-dawn-500: oklch(0.624 0.196 40.01);
+  --color-dawn-600: oklch(0.549 0.194 34.66);
+  --color-dawn-700: oklch(0.472 0.193 29.23);
+  --color-dawn-800: oklch(0.387 0.138 34.43);
+  --color-dawn-900: oklch(0.311 0.098 40.03);
+  --color-dawn-950: oklch(0.266 0.076 45.12);
+
+  /* Night https://tints.dev/palette/v1:bmlnaHR8N0IwMEZGfDcwMHxwfC0yfDB8MHwxMDB8YQ */
+  --color-night-50: oklch(0.966 0.016 278.57);
+  --color-night-100: oklch(0.925 0.037 280.64);
+  --color-night-200: oklch(0.857 0.072 282.18);
+  --color-night-300: oklch(0.782 0.114 284);
+  --color-night-400: oklch(0.717 0.154 285.62);
+  --color-night-500: oklch(0.647 0.2 287.33);
+  --color-night-600: oklch(0.587 0.243 289.57);
+  --color-night-700: oklch(0.525 0.293 292.3);
+  --color-night-800: oklch(0.401 0.23 287.69);
+  --color-night-900: oklch(0.271 0.162 282.12);
+  --color-night-950: oklch(0.214 0.135 274.82);
+}
+
+body {
+  @apply bg-gradient-to-t from-dawn-100/5 via-night-400/5 to-ice-600/5;
+}
+
+p {
+  @apply text-lg;
+}
+
+button {
+  @apply
+    flex gap-2 px-4 py-2
+    border-b-4 border-black/10 backdrop-brightness-95 backdrop-saturate-800
+    text-black/80 text-lg font-medium
+    cursor-pointer translate-0;
+
+  &:hover,
+  &:active {
+    @apply backdrop-brightness-92 backdrop-saturate-1000;
+  }
+
+  &:active {
+    @apply translate-y-1;
+    clip-path: inset(0 0 0.25rem 0);
+  }
+}
+
+header {
+}
+nav {
+  @apply
+    flex items-start gap-4
+    w-full max-w-256
+    mx-auto
+    border-b-2 border-ice-100
+  ;
+}
+nav > a,
+nav > button {
+  @apply
+    pb-2.5 -mb-0.5
+    border-0 backdrop-brightness-100 backdrop-saturate-100
+    text-base font-semibold
+  ;
+
+  &:active {
+    @apply translate-0;
+    clip-path: none;
+  }
+
+  &.selected,
+  &:hover {
+    @apply bg-ice-100;
+  }
+  &:not(.selected) {
+  }
+}

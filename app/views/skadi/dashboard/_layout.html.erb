@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>📈 Skadi Analytics</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+
+    <%= stylesheet_link_tag "#{skadi.dashboard_css_path}?#{Skadi::VERSION}", media: "all" %>
+    <%= javascript_include_tag "#{skadi.dashboard_js_path}?#{Skadi::VERSION}" %>
+  </head>
+
+  <body class="flex flex-col gap-4 min-h-screen">
+    <%= yield %>
+    <footer class="fixed bottom-2 right-6">
+      <p class="text-sm text-right text-dawn-900/65 font-semibold">
+        <a href="https://github.com/mwnciau/skadi" target="_blank">Powered by Skadi</a>
+      </p>
+    </footer>
+  </body>
+</html>

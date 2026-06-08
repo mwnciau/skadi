@@ -1,13 +1,16 @@
 import { defineConfig } from "vite";
 import { resolve } from "path";
+import tailwindcss from "@tailwindcss/vite";
+import {svelte} from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
   build: {
-    // Don't hash filenames — Rails asset pipeline handles that
     rollupOptions: {
       input: {
+        dashboard: resolve(__dirname, "app/frontend/dashboard.ts"),
         skadi: resolve(__dirname, "app/frontend/skadi.ts"),
       },
+      // Don't hash filenames — Rails asset pipeline handles that
       output: {
         entryFileNames: "[name].js",
         chunkFileNames: "[name].js",
@@ -17,7 +20,6 @@ export default defineConfig({
     },
     // Disable manifest — not needed without vite-rails
     manifest: false,
-    // Don't empty the output dir to avoid clobbering other assets
-    emptyOutDir: false,
   },
+  plugins: [tailwindcss(), svelte()],
 });
