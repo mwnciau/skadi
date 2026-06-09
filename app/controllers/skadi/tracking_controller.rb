@@ -33,7 +33,6 @@ module Skadi
       if @view.visit
         @view.visit.verified = true
         @view.visit.save
-        @view.changed?
       end
 
       head :no_content
