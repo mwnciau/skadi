@@ -114,18 +114,6 @@ module Skadi
       )
     end
 
-    def set_opt_out_cookie
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "skadi_tracking_opt_out=1; Path=/#{@cookie_domain}; HttpOnly; SameSite=Lax; Max-Age=31536000"
-    end
-
-    def set_tracking_cookie(tracking_token)
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "skadi_id=#{tracking_token}; Path=/#{@cookie_domain}; HttpOnly; SameSite=Lax; Max-Age=31536000"
-    end
-
     def set_cookie(name, value, age = 31536000)
       @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
 
