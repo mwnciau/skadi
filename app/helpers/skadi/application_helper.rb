@@ -12,7 +12,6 @@ module Skadi
           data: {
             pageUri: request.route_uri_pattern,
             endpoint: skadi.tracking_endpoint_path,
-            csrf: form_authenticity_token,
           },
           nonce: content_security_policy_nonce,
         })
@@ -25,7 +24,6 @@ module Skadi
             data: {
               pageUri: request.route_uri_pattern,
               endpoint: skadi.tracking_endpoint_path,
-              csrf: form_authenticity_token,
             },
             nonce: content_security_policy_nonce,
           },
