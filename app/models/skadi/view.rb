@@ -9,7 +9,7 @@ module Skadi
     after_initialize :populate_defaults
 
     private def populate_defaults
-      self.verified = false
+      self.verified ||= false
       self.view_token ||= SecureRandom.uuid_v7
     end
   end
