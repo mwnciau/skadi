@@ -6,7 +6,7 @@ module Skadi
 
     validates :path, presence: true
 
-    before_create :populate_defaults
+    after_initialize :populate_defaults
 
     private def populate_defaults
       self.verified = false

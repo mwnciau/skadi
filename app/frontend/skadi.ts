@@ -18,15 +18,13 @@ const largestContentfulPaintId = `largest${contentfulPaint}`;
 
 type SkadiOptions = {
   // The URI for the current page to be appended to view-specific demographic data
-  pageUri: string;
-  // The Rails authenticity token
-  csrf: string;
+  uri: string;
   // The URL to send data to
   endpoint: string;
   // The view's view_token
   view: string;
   // Whether to send visit demographics
-  visit?: boolean;
+  visit?: string;
 }
 
 type SkadiDemographic = {
@@ -105,7 +103,7 @@ const addDemographic = (name: string, value: string|boolean, viewDemographic: bo
   let demographic = {name, value: value.toString()};
 
   if (viewDemographic) {
-    demographic.uri = options.pageUri;
+    demographic.uri = options.uri;
   }
 
   demographics.push(demographic);
@@ -132,7 +130,7 @@ _window.addEventListener('load', () => {
     );
   }
 
-  if (options.visit) {
+  if (options.visit === "1") {
     addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
     addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
     addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);

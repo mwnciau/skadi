@@ -8,7 +8,7 @@ module Skadi
 
       after_action :skadi_persist
 
-      # Make thse methods available in the view for when we output the frontend script
+      # Make these methods available in the view for when we output the frontend script
       helper_method :skadi_visit, :skadi_view
 
       # Add the Skadi view helper methods
