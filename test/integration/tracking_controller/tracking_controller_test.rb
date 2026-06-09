@@ -29,6 +29,39 @@ module Skadi::Integration
         assert_response :bad_request
       end
 
+      test "view token expires" do
+        view = create :view, created_at: Time.current.change(hour: 9, min: 0, sec: 0)
+
+        travel_to Time.current.change(hour: 10, min: 59, sec: 59) do
+          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+
+          assert_response :no_content
+        end
+
+        travel_to Time.current.change(hour: 11, min: 0, sec: 0) do
+          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+
+          assert_response :gone
+        end
+      end
+
+      test "view token expiry time is changed by visit duration" do
+        Skadi.configuration.visit_duration = 4.hours
+        view = create :view, created_at: Time.current.change(hour: 9, min: 0, sec: 0)
+
+        travel_to Time.current.change(hour: 12, min: 59, sec: 59) do
+          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+
+          assert_response :no_content
+        end
+
+        travel_to Time.current.change(hour: 13, min: 0, sec: 0) do
+          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+
+          assert_response :gone
+        end
+      end
+
       test "not found when invalid view token" do
         post skadi.tracking_endpoint_path, params: {view: "00000000-0000-0000-0000-000000000000"}, as: :json
 

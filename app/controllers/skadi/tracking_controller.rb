@@ -50,7 +50,9 @@ module Skadi
 
       @view = Skadi::View.includes(:visit).find_by(view_token: @params["view"])
 
-      head :not_found unless @view
+      return head :not_found unless @view
+
+      head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
     end
 
     private def handle_consent(consent)
