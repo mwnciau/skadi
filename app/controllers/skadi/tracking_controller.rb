@@ -58,7 +58,7 @@ module Skadi
     end
 
     private def handle_consent(consent)
-      if consent["opt_out"]
+      if consent["opt_out"] == true
         set_cookie "skadi_tracking_opt_out", "1"
 
         # If an existing visit exists, update it with a random tracking token to anonymise the user immediately
@@ -69,7 +69,7 @@ module Skadi
         clear_cookie "skadi_tracking_opt_out"
       end
 
-      if consent["id"]
+      if consent["id"] == true
         set_cookie("skadi_id", @view.visit&.tracking_token || ::SecureRandom.uuid_v7)
       elsif consent["id"] == false
         clear_cookie "skadi_id"
