@@ -24,7 +24,7 @@ type SkadiOptions = {
   // The view's view_token
   view: string;
   // Whether to send visit demographics
-  visit?: string;
+  visit?: "1" | null;
 }
 
 type SkadiDemographic = {
@@ -44,7 +44,7 @@ type Consent = {
 }
 
 const options: SkadiOptions = {
-  ..._document.currentScript.dataset,
+  ..._document.currentScript.dataset as SkadiOptions,
 }
 
 const queueRequest = () => {
@@ -58,7 +58,6 @@ const sendRequest = () => {
   }
 
   const result = navigator.sendBeacon(options.endpoint, new Blob([JSON.stringify({
-    authenticity_token: options.csrf,
     view: options.view,
     demographics,
     events,
@@ -76,10 +75,10 @@ const sendRequest = () => {
   }
 }
 
-const bucketise = (value: number, buckets: number[4]) => {
+const bucketise = (value: number, buckets: [number, number, number, number]): string | null => {
   // Zero or negative values should not be appearing so are likely an edge-case browser behaviour we can discard
   if (value <= 0) {
-    return;
+    return null;
   }
 
   if (value < buckets[0]) {
@@ -95,12 +94,12 @@ const bucketise = (value: number, buckets: number[4]) => {
   return `> ${buckets[3]}ms`;
 };
 
-const addDemographic = (name: string, value: string|boolean, viewDemographic: boolean = false) => {
+const addDemographic = (name: string, value: string | boolean | null, viewDemographic: boolean = false) => {
   if (value === null) {
     return;
   }
 
-  let demographic = {name, value: value.toString()};
+  let demographic: SkadiDemographic = {name, value: value.toString()};
 
   if (viewDemographic) {
     demographic.uri = options.uri;
@@ -151,7 +150,7 @@ setTimeout(() => {
 
 // Track clicks to detect when the user leaves the page
 _document.addEventListener('click', (event: MouseEvent) => {
-  let link = event.target.closest('a');
+  let link = event.target?.closest('a');
 
   if (link && link.href) {
     let isNewTab = link.target === '_blank' || event.ctrlKey || event.metaKey;
