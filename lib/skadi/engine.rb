@@ -1,7 +1,7 @@
 module Skadi
   class Engine < ::Rails::Engine
     isolate_namespace Skadi
-    initializer 
+
     config.after_initialize do
       # Validate the configuration and output any errors to the Rails log
       Skadi.configuration.validate!
