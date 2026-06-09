@@ -1,5 +1,7 @@
 module Skadi
   class TrackingController < ActionController::API
+    include ActionController::Cookies
+
     # Disables the automatic wrapping of JSON parameters into a "tracking" hash
     wrap_parameters false
 
@@ -117,13 +119,18 @@ module Skadi
     end
 
     def set_cookie(name, value, age = 31536000)
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "#{name}=#{value}; Path=/#{@cookie_domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=#{age}"
+      cookies[name] = {
+        value:,
+        domain: Skadi.configuration.cookie_domain,
+        httponly: true,
+        secure: request.ssl?,
+        same_site: :lax,
+        expires: age.seconds.from_now
+      }
     end
 
     def clear_cookie(name)
-      set_cookie(name, "", 0)
+      cookies.delete(name, domain: Skadi.configuration.cookie_domain)
     end
 
     def limit_payload_size!
