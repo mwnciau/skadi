@@ -15,6 +15,16 @@ module Skadi::Unit
       assert_empty @log.string
     end
 
+    test "invalid configuration raises error in development" do
+      Skadi.configuration.cookie_domain = ""
+
+      mock_rails_env("development") do
+        assert_raises(Skadi::Configuration::Error) do
+          Skadi.configuration.validate!
+        end
+      end
+    end
+
     test "use_anonymisation_sets validates" do
       assert_values_are_valid(:use_anonymisation_sets, true, false)
 
@@ -105,6 +115,15 @@ module Skadi::Unit
 
         # Reset the log for the next iteration
         @log.string = ""
+      end
+    end
+
+    private def mock_rails_env(env)
+      Rails.env = env
+      begin
+        yield
+      ensure
+        Rails.env = "test"
       end
     end
   end
