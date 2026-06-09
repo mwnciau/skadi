@@ -55,7 +55,7 @@ module Skadi
       end
 
       has_utm_params = params.keys.any? { |it| it.to_s.start_with?("utm_") }
-      has_external_referrer = request.referer.present? && !request.referer.include?(request.host)
+      has_external_referrer = request.referer.present? && url_from(request.referer).nil?
 
       # Only create a visit if we have some useful data or way of tracking users across pages
       return unless tracking_token || user || has_utm_params || has_external_referrer
@@ -100,8 +100,8 @@ module Skadi
       visit_query&.first
     end
 
-    # @param tracking_token [String]
-    # @param user [Object]
+    # @param tracking_token [String, nil]
+    # @param user [ActiveModel::Model, nil]
     # @param request [ActionDispatch::Request]
     # @return [Skadi::Visit]
     def self.create_visit(tracking_token, user, request)
