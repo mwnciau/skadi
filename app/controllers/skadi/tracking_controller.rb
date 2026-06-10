@@ -106,7 +106,7 @@ module Skadi
           value: demographic["value"].trim[0, 255],
           # SQL specifies NULL values are not equal, so we need to default the URI to an empty string
           # to ensure the unique index works correctly
-          uri: demographic["uri"]&.trim[0, 255] || "",
+          uri: demographic["uri"]&.trim&.[](0, 255) || "",
           recorded_on: Time.now,
           count: 1,
         }
