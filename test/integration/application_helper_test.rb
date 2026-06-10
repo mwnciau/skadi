@@ -18,7 +18,7 @@ module Skadi::Integration
 
       @dummy.request = ActionDispatch::Request.new("HTTP_HOST" => "example.com")
       @dummy.skadi_visit = @visit = create :visit
-      @dummy.skadi_view = @view = create :view, visit: @dummy.skadi_visit
+      @dummy.skadi_view = @view = create(:view, visit: @dummy.skadi_visit)
       @dummy.content_security_policy_nonce = "12345-this-is-a-nonce"
     end
 
@@ -65,7 +65,7 @@ module Skadi::Integration
     end
 
     test "invalid type" do
-      assert_raises Skadi::ApplicationHelper::Error do
+      assert_raises Skadi::ApplicationHelper::InvalidSkadiTagType do
         skadi_tag(:invalid)
       end
     end

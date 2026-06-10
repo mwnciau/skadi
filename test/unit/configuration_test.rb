@@ -50,9 +50,9 @@ module Skadi::Unit
     end
 
     test "user_model validates" do
-      assert_values_are_valid(:user_model, nil, Class.new(ActiveRecord::Base))
+      assert_values_are_valid(:user_model, nil, "DummyUser")
 
-      assert_values_are_invalid(:user_model, Class.new, "User", :User)
+      assert_values_are_invalid(:user_model, Class.new, "Class", :DummyUser)
     end
 
     test "user_method validates" do

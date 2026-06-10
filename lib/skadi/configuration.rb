@@ -47,6 +47,7 @@ module Skadi
     attr_accessor :user_model
     validates(:user_model, "string or nil", default: nil) do |it, config|
       next true if it.nil?
+      next false unless it.is_a?(String)
 
       klass = it.constantize
 
