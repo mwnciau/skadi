@@ -77,10 +77,10 @@ module Skadi
     attr_accessor :store_domain_in_views
     validates(:store_domain_in_views, "boolean", default: false) { |it| it == true || it == false }
 
-    # Sets a limit on the size of the tracking beacon. Defaults to 5KB.
+    # Sets a limit on the size of the tracking beacon. Defaults to 1KB.
     # @return [Integer]
     attr_accessor :max_tracking_payload_size
-    validates(:max_tracking_payload_size, "integer", default: 1_024 * 5) { |it| it.is_a?(Integer) && it > 0 }
+    validates(:max_tracking_payload_size, "integer", default: 1_024) { |it| it.is_a?(Integer) && it > 0 }
 
     # The domain to use when setting cookies. Set to include subdomains. Defaults to nil, which will not specify a domain when setting a cookie.
     # @return [String, nil]
