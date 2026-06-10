@@ -82,7 +82,10 @@ module Skadi
       return if do_not_track?
 
       @skadi_visit&.save
-      @skadi_view&.save
+      if @skadi_view
+        @skadi_view.visit = @skadi_visit
+        @skadi_view.save
+      end
     end
 
     def self.find_existing_visit(tracking_token, user)

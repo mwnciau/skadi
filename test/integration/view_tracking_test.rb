@@ -44,6 +44,13 @@ module Skadi::Integration
       assert_equal tracked_action_path, view.path
     end
 
+    test "view is linked to visit" do
+      get_tracked_action
+
+      view = Skadi::View.first!
+      assert view.visit.present?
+    end
+
     test "view is tracked when visit is not" do
       cookies["skadi_tracking_opt_out"] = "1"
 
