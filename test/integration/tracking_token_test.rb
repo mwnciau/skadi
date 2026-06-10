@@ -80,7 +80,7 @@ module Skadi::Integration
       assert_equal "00000000-0000-0000-0000-000000000000", visit.tracking_token
     end
 
-    test "tracking cookie is ignore with opt out cookie" do
+    test "tracking cookie is ignored with opt out cookie" do
       cookies["skadi_tracking_opt_out"] = "1"
       cookies[:skadi_id] = "00000000-0000-0000-0000-000000000000"
 
@@ -88,6 +88,34 @@ module Skadi::Integration
 
       visit = Skadi::Visit.first!
       assert_nil visit.tracking_token
+    end
+
+    test "tracking cookie is ignored if not a valid uuid" do
+      # Opt out so visits are created for each request
+      cookies["skadi_tracking_opt_out"] = "1"
+
+      [
+        "invalid",
+        # Short
+        "00000000-0000-0000-0000-00000000000",
+        # Long
+        "00000000-0000-0000-0000-0000000000000",
+        # Invalid characters
+        "00000000-0000-0000-0000-00000000000x",
+        # Missing dashes
+        "00000000000000000000000000000000",
+        # Really long
+        "00000000-0000-0000-0000-000000000000-0000-0000-0000-000000000000" * 10,
+      ].each do |invalid_uuid|
+        cookies[:skadi_id] = invalid_uuid
+
+        assert_difference -> { Skadi::Visit.count }, 1, "expecting a visit to be created for uuid #{invalid_uuid}" do
+          get_tracked_action(referrer: "https://example.com/")
+        end
+
+        visit = Skadi::Visit.last!
+        refute_equal invalid_uuid, visit.tracking_token,  "expecting invalid uuid to not be saved #{invalid_uuid}"
+      end
     end
   end
 end
