@@ -1,5 +1,5 @@
 module Skadi
-  class AnonymitySet
+  module AnonymitySet
     # Generates a unique token for the given IP and user agent
     # @return [String]
     def self.calculate(ip, user_agent)
