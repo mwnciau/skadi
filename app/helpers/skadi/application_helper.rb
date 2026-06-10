@@ -5,29 +5,28 @@ module Skadi
     mattr_accessor :skadi_script_src
 
     def skadi_tag(type = :route)
-      tag_data = {
-        uri: request.route_uri_pattern,
-        endpoint: skadi.tracking_endpoint_path,
-        view: skadi_view.view_token,
+      tag_attributes = {
+        data: {
+          uri: request.route_uri_pattern,
+          endpoint: skadi.tracking_endpoint_path,
+          view: skadi_view.view_token,
+        },
+        nonce: content_security_policy_nonce,
       }
-      tag_data[:visit] = "1" if skadi_visit&.new_record?
-
+      tag_attributes[:data][:visit] = "1" if skadi_visit&.new_record?
+      
       case type
       when :route
         content_tag("script", "", {
           src: skadi.tracking_script_path(v: Skadi::VERSION),
-          data: tag_data,
-          nonce: content_security_policy_nonce,
+          **tag_attributes,
         })
       when :inline
         self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
         content_tag(
           "script",
           self.skadi_script_src,
-          {
-            data: tag_data,
-            nonce: content_security_policy_nonce,
-          },
+          tag_attributes,
         )
       else
         raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
