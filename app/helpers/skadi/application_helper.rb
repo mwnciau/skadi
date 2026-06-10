@@ -4,7 +4,7 @@ module Skadi
 
     mattr_accessor :skadi_script_src
 
-    def skadi_tag(type = :route)
+    def skadi_tag(type = :inline)
       tag_attributes = {
         data: {
           uri: request.route_uri_pattern,
