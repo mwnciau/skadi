@@ -86,7 +86,7 @@ module Skadi
         next unless event["name"].is_a?(String) && event["name"].present?
         next unless event["properties"].is_a?(Hash)
 
-        events_to_insert << {visit: @view.visit, name: event["name"], properties: event["properties"]}
+        events_to_insert << {visit: @view.visit, name: event["name"].trim[0, 255], properties: event["properties"]}
       end
 
       @view.events.create(events_to_insert)
@@ -102,11 +102,11 @@ module Skadi
         next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
         demographics_to_insert << {
-          name: demographic["name"],
-          value: demographic["value"],
+          name: demographic["name"].trim[0, 255],
+          value: demographic["value"].trim[0, 255],
           # SQL specifies NULL values are not equal, so we need to default the URI to an empty string
           # to ensure the unique index works correctly
-          uri: demographic["uri"] || "",
+          uri: demographic["uri"]&.trim[0, 255] || "",
           recorded_on: Time.now,
           count: 1,
         }
