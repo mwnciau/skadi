@@ -36,8 +36,9 @@ module Skadi
     end
 
     # Whether Skadi tracking has been disabled for the current request
+    # @return [Boolean]
     def do_not_track?
-      @skadi_do_not_track
+      !!@skadi_do_not_track
     end
 
     # Called before the action to find or build the Skadi visit model
