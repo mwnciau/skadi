@@ -1,6 +1,6 @@
 module Skadi
   # Helper functions for generating and redacting URLs
-  class Url
+  module Url
     # Formats the path for Skadi views. Note that the path here uses PATH_INFO, which does not include the query string or fragment.
     # @param request [ActionDispatch::Request]
     # @return [String]
