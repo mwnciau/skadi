@@ -75,6 +75,21 @@ module Skadi::Integration
         assert_equal 1, Skadi::Visit.count
       end
 
+      test "visit tracks by user" do
+        Skadi.configuration.user_model = "DummyUser"
+        Skadi.configuration.user_method = :current_user
+
+        user = DummyUser.new(username: "bob")
+        ::ApplicationController.current_user = user
+        create :visit, user: user
+
+        get_tracked_action
+
+        assert_equal 1, Skadi::Visit.count
+        visit = Skadi::Visit.first!
+        assert_equal user, visit.user
+      end
+
       private def assert_visit_is_tracked?(**params)
         get_tracked_action(**params)
 

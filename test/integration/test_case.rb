@@ -10,6 +10,9 @@ module Skadi
         # Reset the configuration
         Skadi.configuration = Skadi::Configuration.new
 
+        # Ensure the current user is reset
+        ::ApplicationController.current_user = nil
+
         Rails.cache.clear
       end
 

@@ -45,7 +45,18 @@ module Skadi
     # The parent app's User class, used to link visits to users
     # @return [Class, nil]
     attr_accessor :user_model
-    validates(:user_model, "Class or nil", default: nil) { |it| it.nil? || (it.is_a?(Class) && it < ActiveRecord::Base) }
+    validates(:user_model, "string or nil", default: nil) do |it, config|
+      next true if it.nil?
+
+      klass = it.constantize
+
+      next false unless klass.is_a?(Class) && klass < ActiveRecord::Base
+
+      # Update the user_model ref to the actual class rather than the string
+      config.user_model = klass
+
+      true
+    end
 
     # Method to call within controllers to get the current user.
     # @return [Symbol, nil]
@@ -93,7 +104,7 @@ module Skadi
         expecting = validator_config[:expecting]
         value = send(attribute)
 
-        if validator.call(value)
+        if validator.call(value, self)
           next
         end
 
