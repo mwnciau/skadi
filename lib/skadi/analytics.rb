@@ -15,8 +15,8 @@ module Skadi
       helper Skadi::ApplicationHelper
 
       # Disable Skadi tracking for the current controller
-      def self.do_not_track!
-        skip_before_action :track_visit, :track_view
+      def self.do_not_track!(**kwargs)
+        skip_before_action :track_visit, :track_view, **kwargs
       end
     end
 
