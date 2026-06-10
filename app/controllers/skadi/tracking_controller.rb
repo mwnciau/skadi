@@ -127,7 +127,7 @@ module Skadi
         httponly: true,
         secure: request.ssl?,
         same_site: :lax,
-        expires: age.seconds.from_now
+        expires: age.seconds.from_now,
       }
     end
 

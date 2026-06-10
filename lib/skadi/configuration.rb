@@ -3,7 +3,7 @@ module Skadi
     class Error < StandardError; end
 
     def initialize
-      self.validators.each do |attribute, validator_config|
+      validators.each do |attribute, validator_config|
         send("#{attribute}=", validator_config[:default])
       end
     end

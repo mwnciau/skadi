@@ -81,7 +81,7 @@ module Skadi::Integration
         view = create :view
 
         61.times do |it|
-          post skadi.tracking_endpoint_path,params: {
+          post skadi.tracking_endpoint_path, params: {
             view: view.view_token,
             events: [{name: "test#{it}", properties: {}}],
           }, as: :json
@@ -98,14 +98,14 @@ module Skadi::Integration
         view = create :view
 
         61.times do |it|
-          post skadi.tracking_endpoint_path,params: {
+          post skadi.tracking_endpoint_path, params: {
             view: view.view_token,
             events: [{name: "test#{it}", properties: {}}],
           }, as: :json
         end
 
         travel 61.seconds do
-          post skadi.tracking_endpoint_path,params: {
+          post skadi.tracking_endpoint_path, params: {
             view: view.view_token,
             events: [{name: "test61", properties: {}}],
           }, as: :json

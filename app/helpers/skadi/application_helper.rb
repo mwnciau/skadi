@@ -14,7 +14,7 @@ module Skadi
         nonce: content_security_policy_nonce,
       }
       tag_attributes[:data][:visit] = "1" if skadi_visit&.new_record?
-      
+
       case type
       when :route
         content_tag("script", "", {
