@@ -7,6 +7,8 @@ module Skadi
 
     prepend_before_action :limit_payload_size!
 
+    rate_limit to: 60, within: 1.minute, with: -> { head :too_many_requests }
+
     before_action :set_params
     before_action :set_view
 

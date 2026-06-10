@@ -76,6 +76,45 @@ module Skadi::Integration
         parsed_json = JSON.parse(response.body)
         assert_equal "Payload too large", parsed_json["error"]
       end
+
+      test "tracking payload size is rate limited" do
+        view = create :view
+
+        61.times do |it|
+          post skadi.tracking_endpoint_path,params: {
+            view: view.view_token,
+            events: [{name: "test#{it}", properties: {}}],
+          }, as: :json
+        end
+
+        assert_response :too_many_requests
+        assert_equal 60, Skadi::Event.count
+
+        # N.times start at 0, so 60 is the 61st request
+        refute Skadi::Event.where(name: "test60").exists?
+      end
+
+      test "rate limiting resets after a minute" do
+        view = create :view
+
+        61.times do |it|
+          post skadi.tracking_endpoint_path,params: {
+            view: view.view_token,
+            events: [{name: "test#{it}", properties: {}}],
+          }, as: :json
+        end
+
+        travel 61.seconds do
+          post skadi.tracking_endpoint_path,params: {
+            view: view.view_token,
+            events: [{name: "test61", properties: {}}],
+          }, as: :json
+        end
+
+        assert_response :no_content
+        assert_equal 61, Skadi::Event.count
+        assert Skadi::Event.where(name: "test61").exists?
+      end
     end
   end
 end
