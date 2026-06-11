@@ -6,6 +6,8 @@ module Skadi
     class TestCase < ::ActionDispatch::IntegrationTest
       include FactoryBot::Syntax::Methods
 
+      TRACKING_TOKEN = "8cec5a7a-7bf7-403f-b15e-b2e45944182c"
+
       setup do
         # Reset the configuration
         Skadi.configuration = Skadi::Configuration.new

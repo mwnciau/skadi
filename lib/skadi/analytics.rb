@@ -56,6 +56,9 @@ module Skadi
 
         @skadi_visit = Skadi::Visit.find_active_visit_for(tracking_token, user)
 
+        # Update the user if the user has logged in since the last view
+        @skadi_visit.user = user if @skadi_visit && @skadi_visit.user.nil?
+
         return if @skadi_visit
       end
 

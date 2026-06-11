@@ -90,6 +90,22 @@ module Skadi::Integration
         assert_equal user, visit.user
       end
 
+      test "existing visit user is updated" do
+        Skadi.configuration.user_model = "DummyUser"
+        Skadi.configuration.user_method = :current_user
+
+        user = create :user
+        ::ApplicationController.current_user = user
+        visit = create :visit, tracking_token: TRACKING_TOKEN, user: nil
+
+        cookies["skadi_id"] = visit.tracking_token
+
+        get tracked_action_path
+
+        assert_equal 1, Skadi::Visit.count
+        assert_equal user, visit.reload.user
+      end
+
       private def assert_visit_is_tracked?(**params)
         get_tracked_action(**params)
 

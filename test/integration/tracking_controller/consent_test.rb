@@ -3,7 +3,6 @@ require "integration/test_case"
 module Skadi::Integration
   module TrackingController
     class ConsentTest < TestCase
-      TRACKING_TOKEN = "8cec5a7a-7bf7-403f-b15e-b2e45944182c"
       UUID_REGEX = Skadi::Analytics::UUID_REGEX
 
       test "consent sets tracking cookie" do
