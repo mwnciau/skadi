@@ -41,7 +41,9 @@ module Skadi
       query_params = Rack::Utils.parse_nested_query(uri.query) if uri.query.present?
       param_string = whitelist_query_params(query_params).to_query if query_params.present?
 
-      result = "#{uri.scheme}://#{uri.host}"
+      result = ""
+      result += "#{uri.scheme}://" if uri.scheme.present?
+      result += "#{uri.host}" if uri.host.present?
 
       # Only include port if it's non-standard
       result << ":#{uri.port}" if uri.port != uri.default_port

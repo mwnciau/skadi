@@ -87,5 +87,11 @@ module Skadi::Unit
 
       assert_equal "http://example.com/path%20with%20spaces?foo=param+with+spaces", url
     end
+
+    test "redact_and_normalise_url handles relative urls" do
+      url = Skadi::Url.redact_and_normalise_url("/foo?bar=baz")
+
+      assert_equal "/foo", url
+    end
   end
 end

@@ -14,7 +14,7 @@ module Skadi
 
     def track
       if @params["exit_page"].present? && @params["exit_page"].is_a?(String)
-        @view.exit_page = @params["exit_page"]
+        @view.exit_page = Skadi::Url.redact_and_normalise_url(@params["exit_page"])
       end
 
       handle_consent @params["consent"]
