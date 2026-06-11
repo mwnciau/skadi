@@ -40,7 +40,8 @@ Gem::Specification.new do |s|
   MSG
 
   # Rails 7.1 is required for ActionDispatch::Request#route_uri_pattern
-  s.add_dependency "rails", ">=7.1"
+  # Rails 7.2 is required for ActionController::RateLimiting::ClassMethods#rate_limit
+  s.add_dependency "rails", ">=7.2"
 
   # Gems to enhance testing
   s.add_development_dependency "appraisal", "~> 2.0"
