@@ -59,7 +59,6 @@ module Skadi
 
     private def handle_consent(consent)
       if consent == true
-        puts "consent is true"
         tracking_token = @view.visit&.tracking_token || ::SecureRandom.uuid_v7
 
         set_cookie("skadi_id", tracking_token)
