@@ -121,7 +121,7 @@ module Skadi
       )
     end
 
-    def set_cookie(name, value, age = 31536000)
+    def set_cookie(name, value, age = 1.year)
       cookies[name] = {
         value:,
         domain: Skadi.configuration.cookie_domain,
