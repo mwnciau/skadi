@@ -33,7 +33,7 @@ module Skadi::Integration
         [
           nil,
           123,
-          true
+          true,
         ].each do |invalid_token|
           post skadi.tracking_endpoint_path, params: {view: invalid_token}, as: :json
 

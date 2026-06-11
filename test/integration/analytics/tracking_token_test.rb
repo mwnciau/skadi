@@ -115,7 +115,7 @@ module Skadi::Integration
           end
 
           visit = Skadi::Visit.last!
-          refute_equal invalid_uuid, visit.tracking_token,  "expecting invalid uuid to not be saved #{invalid_uuid}"
+          refute_equal invalid_uuid, visit.tracking_token, "expecting invalid uuid to not be saved #{invalid_uuid}"
         end
       end
     end
