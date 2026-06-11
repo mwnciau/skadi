@@ -2,17 +2,8 @@ require_relative "test_case"
 
 module Skadi::Unit
   class ConfigurationTest < TestCase
-    def setup
-      @log = StringIO.new
-      Rails.logger = Logger.new(@log)
-
-      Skadi.configuration = Skadi::Configuration.new
-    end
-
     test "default configuration is valid" do
       Skadi.configuration.validate!
-
-      assert_empty @log.string
     end
 
     test "invalid configuration raises error in development" do
@@ -100,21 +91,22 @@ module Skadi::Unit
     private def assert_values_are_valid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)
-        Skadi.configuration.validate!
-
-        assert_empty @log.string
+        
+        assert_nothing_raised do
+          Skadi.configuration.validate!
+        end
       end
     end
 
     private def assert_values_are_invalid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)
-        Skadi.configuration.validate!
 
-        assert_match("Skadi.configuration.#{attribute} error!", @log.string, "Expected error message for #{attribute}=#{value.inspect}")
+        error = assert_raises(Skadi::Configuration::Error) do
+          Skadi.configuration.validate!
+        end
 
-        # Reset the log for the next iteration
-        @log.string = ""
+        assert_match("Skadi.configuration.#{attribute} error!", error.message, "Expected error message for #{attribute}=#{value.inspect}")
       end
     end
 

@@ -110,7 +110,7 @@ module Skadi
         end
 
         error = "Skadi.configuration.#{attribute} error! Expecting a #{expecting}, but got a #{value.class}"
-        if Rails.env.development?
+        if Rails.env.local?
           raise Error.new(error)
         else
           Rails.logger.error error
