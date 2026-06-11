@@ -66,14 +66,18 @@ module Skadi::Integration
         assert_equal "1", response.cookies["skadi_tracking_opt_out"]
       end
 
-      test "opt out updates existing visit with new tracking token" do
+      test "opt out deletes tracking tokens in existing visits" do
         visit = create :visit, tracking_token: TRACKING_TOKEN
         view = create :view, visit: visit
+
+        # Simulate a second visit with the same tracking token
+        old_visit = create :visit, tracking_token: TRACKING_TOKEN
 
         post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: false}, as: :json
 
         assert_response :no_content
-        refute_equal TRACKING_TOKEN, visit.reload.tracking_token
+        assert_nil visit.reload.tracking_token
+        assert_nil old_visit.reload.tracking_token
       end
 
       test "opt out clears tracking cookie" do

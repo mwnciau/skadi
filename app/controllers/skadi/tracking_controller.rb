@@ -72,9 +72,13 @@ module Skadi
         set_cookie "skadi_tracking_opt_out", "1"
         clear_cookie "skadi_id"
 
-        # If an existing visit exists, update it with a random tracking token to anonymise the user immediately
-        if @view.visit
-          @view.visit.tracking_token = ::SecureRandom.uuid_v7
+        if @view.visit&.tracking_token
+          # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
+          # Note: this needs a DB update because there may be other visits outside the visit limit
+          Skadi::Visit.where(tracking_token: @view.visit.tracking_token).update_all(tracking_token: nil)
+
+          # Update the local copy so it doesn't get re-set
+          @view.visit.tracking_token = nil
         end
       end
     end
