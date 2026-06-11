@@ -9,7 +9,7 @@ module Skadi
         visit_query = where(tracking_token: tracking_token)
           .and(where("created_at > ?", Skadi.configuration.visit_duration.ago))
       end
-      if user
+      if user && user.persisted?
         user_visit_query = where(user_id: user.id)
           .and(where("created_at > ?", Skadi.configuration.visit_duration.ago))
 
