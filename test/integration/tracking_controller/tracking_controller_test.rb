@@ -23,8 +23,14 @@ module Skadi::Integration
         assert view.reload.verified?
       end
 
-      test "bad request when missing view token" do
+      test "bad request when missing post data" do
         post skadi.tracking_endpoint_path
+
+        assert_response :bad_request
+      end
+
+      test "bad request when empty post data" do
+        post skadi.tracking_endpoint_path, params: {}, as: :json
 
         assert_response :bad_request
       end
@@ -89,7 +95,7 @@ module Skadi::Integration
         assert_equal "Payload too large", parsed_json["error"]
       end
 
-      test "tracking payload size is rate limited" do
+      test "tracking is rate limited" do
         view = create :view
 
         61.times do |it|
