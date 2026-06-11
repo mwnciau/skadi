@@ -3,7 +3,9 @@ require_relative "test_case"
 module Skadi::Unit
   class ConfigurationTest < TestCase
     test "default configuration is valid" do
-      Skadi.configuration.validate!
+      assert_nothing_raised do
+        Skadi.configuration.validate!
+      end
     end
 
     test "invalid configuration raises error in development" do
@@ -91,7 +93,7 @@ module Skadi::Unit
     private def assert_values_are_valid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)
-        
+
         assert_nothing_raised do
           Skadi.configuration.validate!
         end
