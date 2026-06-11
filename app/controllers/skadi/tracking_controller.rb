@@ -94,6 +94,8 @@ module Skadi
         events_to_insert << {visit: @view.visit, name: event["name"].strip[0, 255], properties: event["properties"]}
       end
 
+      return if events_to_insert.empty?
+
       @view.events.create(events_to_insert)
     end
 
@@ -116,6 +118,8 @@ module Skadi
           count: 1,
         }
       end
+
+      return if demographics_to_insert.empty?
 
       Skadi::Demographic.upsert_all(
         demographics_to_insert,
