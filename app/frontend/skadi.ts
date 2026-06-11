@@ -1,7 +1,7 @@
 // Define these non-constant variables first so the minifier can group all the consts together
 let demographics: SkadiDemographic[] = [];
 let events: SkadiEvent[] = [];
-let consent: Consent = {};
+let consent: boolean | null = null;
 let largestContentfulPaint: number = -1;
 let requestTimeout: number|null = null;
 let exitPage: string|null = null;
@@ -38,11 +38,6 @@ type SkadiEvent = {
   properties: Record<string, unknown>;
 }
 
-type Consent = {
-  id?: boolean;
-  optOut?: boolean;
-}
-
 const options: SkadiOptions = {
   ..._document.currentScript.dataset as SkadiOptions,
 }
@@ -69,7 +64,7 @@ const sendRequest = () => {
   if (result) {
     demographics = [];
     events = [];
-    consent = {};
+    consent = null;
 
     // Note: no need to set useExitPage here as it is only set as the page is being unloaded.
   }
@@ -184,12 +179,12 @@ _window.skadi = {
     addDemographic(name, value, isPageSpecific);
     queueRequest();
   },
-  setCookieConsent: (newValue: boolean) => {
-    consent.id = newValue;
+  cookieConsent: () => {
+    consent = true;
     sendRequest();
   },
-  setTrackingOptOut: (newValue: boolean) => {
-    consent.optOut = newValue;
+  optOut: () => {
+    consent = false;
     sendRequest();
   },
 };

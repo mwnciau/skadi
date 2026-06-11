@@ -17,9 +17,7 @@ module Skadi
         @view.exit_page = @params["exit_page"]
       end
 
-      if @params["consent"].is_a? Hash
-        handle_consent @params["consent"]
-      end
+      handle_consent @params["consent"]
 
       if @params["events"].present? && @params["events"].is_a?(Array)
         handle_events @params["events"]
@@ -60,21 +58,25 @@ module Skadi
     end
 
     private def handle_consent(consent)
-      if consent["opt_out"] == true
+      if consent == true
+        puts "consent is true"
+        tracking_token = @view.visit&.tracking_token || ::SecureRandom.uuid_v7
+
+        set_cookie("skadi_id", tracking_token)
+        clear_cookie "skadi_tracking_opt_out"
+
+        # Update the existing visit with the tracking token if we've generated a new one
+        if @view.visit
+          @view.visit.tracking_token = tracking_token
+        end
+      elsif consent == false
         set_cookie "skadi_tracking_opt_out", "1"
+        clear_cookie "skadi_id"
 
         # If an existing visit exists, update it with a random tracking token to anonymise the user immediately
         if @view.visit
           @view.visit.tracking_token = ::SecureRandom.uuid_v7
         end
-      elsif consent["opt_out"] == false
-        clear_cookie "skadi_tracking_opt_out"
-      end
-
-      if consent["id"] == true
-        set_cookie("skadi_id", @view.visit&.tracking_token || ::SecureRandom.uuid_v7)
-      elsif consent["id"] == false
-        clear_cookie "skadi_id"
       end
     end
 
