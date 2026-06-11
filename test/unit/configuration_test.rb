@@ -27,31 +27,31 @@ module Skadi::Unit
     test "anonymisation_set_duration validates" do
       assert_values_are_valid(:anonymisation_set_duration, 5.minutes, 1.day, 1.hour, 3.weeks)
 
-      assert_values_are_invalid(:anonymisation_set_duration, nil, "1 day", 123)
+      assert_values_are_invalid(:anonymisation_set_duration, nil, "1 day", 123, true, false)
     end
 
     test "anonymisation_set_reset_hour validates" do
       assert_values_are_valid(:anonymisation_set_reset_hour, false, 0, 4, 23)
 
-      assert_values_are_invalid(:anonymisation_set_reset_hour, nil, "2pm", 123)
+      assert_values_are_invalid(:anonymisation_set_reset_hour, nil, "2pm", 123, true)
     end
 
     test "visit_duration validates" do
       assert_values_are_valid(:visit_duration, 5.minutes, 1.day, 1.hour, 3.weeks)
 
-      assert_values_are_invalid(:visit_duration, nil, "1 day", 123)
+      assert_values_are_invalid(:visit_duration, nil, "1 day", 123, true, false)
     end
 
     test "user_model validates" do
       assert_values_are_valid(:user_model, nil, "DummyUser")
 
-      assert_values_are_invalid(:user_model, Class.new, "Class", :DummyUser)
+      assert_values_are_invalid(:user_model, Class.new, "Class", :DummyUser, true, false)
     end
 
     test "user_method validates" do
       assert_values_are_valid(:user_method, nil, :current_user, :current_user_method)
 
-      assert_values_are_invalid(:user_method, "Current.user", "current_user")
+      assert_values_are_invalid(:user_method, "Current.user", "current_user", true, false)
     end
 
     test "use_query_param_whitelist validates" do
@@ -63,13 +63,13 @@ module Skadi::Unit
     test "query_param_whitelist validates" do
       assert_values_are_valid(:query_param_whitelist, [], [:symbol], [:two, :symbols])
 
-      assert_values_are_invalid(:query_param_whitelist, ["string"], [:symbol, "string"], :symbol, {symbol: true})
+      assert_values_are_invalid(:query_param_whitelist, ["string"], [:symbol, "string"], :symbol, {symbol: true}, true, false)
     end
 
     test "db_connects_to validates" do
       assert_values_are_valid(:db_connects_to, nil, {database: :primary}, {database: :primary, shards: :all}, {shards: :all})
 
-      assert_values_are_invalid(:db_connects_to, {}, {invalid_key: true}, {database: :primary, invalid_key: true})
+      assert_values_are_invalid(:db_connects_to, {}, {invalid_key: true}, {database: :primary, invalid_key: true}, true, false)
     end
 
     test "store_domain_in_views validates" do
@@ -81,13 +81,13 @@ module Skadi::Unit
     test "max_tracking_payload_size validates" do
       assert_values_are_valid(:max_tracking_payload_size, 1000, 5000, 10000)
 
-      assert_values_are_invalid(:max_tracking_payload_size, nil, "1000", 0)
+      assert_values_are_invalid(:max_tracking_payload_size, nil, "1000", 0, true, false)
     end
 
     test "cookie_domain validates" do
       assert_values_are_valid(:cookie_domain, nil, "example.com", ".example.com", "subdomain.example.com")
 
-      assert_values_are_invalid(:cookie_domain, "", 0)
+      assert_values_are_invalid(:cookie_domain, "", 0, true, false)
     end
 
     private def assert_values_are_valid(attribute, *values)
