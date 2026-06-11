@@ -53,5 +53,15 @@ module Skadi::Models
 
       assert_nil result
     end
+
+    test "does not return visit when user does not match" do
+      user = create :user
+      other_user = create :user
+      create :visit, tracking_token: TRACKING_TOKEN, user: other_user
+
+      result = Skadi::Visit.find_active_visit_for(TRACKING_TOKEN, user)
+
+      assert_nil result
+    end
   end
 end

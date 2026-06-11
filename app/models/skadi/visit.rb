@@ -9,14 +9,19 @@ module Skadi
         visit_query = where(tracking_token: tracking_token)
           .and(where("created_at > ?", Skadi.configuration.visit_duration.ago))
       end
-      if user && user.persisted?
+      if user&.persisted?
         user_visit_query = where(user_id: user.id)
           .and(where("created_at > ?", Skadi.configuration.visit_duration.ago))
 
         visit_query = visit_query ? visit_query.or(user_visit_query) : user_visit_query
       end
 
-      visit_query&.first
+      visit = visit_query&.order(created_at: :desc)&.limit(1)&.first
+
+      # If the user has changed since the last visit, create a new visit
+      return nil if visit&.user && user&.persisted? && visit.user != user
+
+      visit
     end
 
     # @param tracking_token [String, nil]
