@@ -37,14 +37,12 @@ module Skadi
 
       head :no_content
     end
-
-    private
-
-    def set_params
+    
+    private def set_params
       @params = request.request_parameters
     end
 
-    def set_view
+    private def set_view
       # Check that the view token is a valid UUID
       unless @params["view"].is_a?(String) && @params["view"].length == 36
         return head :bad_request

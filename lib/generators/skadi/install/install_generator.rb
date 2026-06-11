@@ -33,6 +33,7 @@ module Skadi
           "db/migrate/install_skadi.rb"
       end
 
+      # Thor requires us to use a private block rather than private on individual definitions
       private
 
       def user_id_type = options[:user_id_type].to_sym
