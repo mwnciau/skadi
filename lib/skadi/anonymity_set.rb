@@ -7,7 +7,7 @@ module Skadi
 
       user_fingerprint = "#{ip}|#{user_agent}"
 
-      hash = OpenSSL::HMAC.hexdigest("sha256", anonymity_set_pepper, user_fingerprint)
+      hash = OpenSSL::HMAC.hexdigest("sha256", pepper, user_fingerprint)
 
       # We want a UUID-like string to be compatible with the uuid type if the database is PostgreSQL, but don't need a valid UUID
       "#{hash[0, 8]}-#{hash[8, 4]}-#{hash[12, 4]}-#{hash[16, 4]}-#{hash[20, 12]}"
@@ -15,7 +15,7 @@ module Skadi
 
     # Generate a pepper to be used in the anonymity set hash
     # @return [String]
-    def self.anonymity_set_pepper
+    def self.pepper
       duration = Skadi.configuration.anonymisation_set_duration
       reset_hour = Skadi.configuration.anonymisation_set_reset_hour
 

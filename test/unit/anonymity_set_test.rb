@@ -27,11 +27,11 @@ module Skadi::Unit
       Skadi.configuration.anonymisation_set_reset_hour = 3
 
       pepper_1 = travel_to Time.zone.now.change(hour: 3, min: 1) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       pepper_2 = travel_to Time.zone.now.change(hour: 2, min: 59) + 1.day do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       assert_equal pepper_1, pepper_2
@@ -41,10 +41,10 @@ module Skadi::Unit
       Skadi.configuration.anonymisation_set_reset_hour = 3
 
       pepper_1 = travel_to Time.zone.now.change(hour: 2, min: 59) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
       pepper_2 = travel_to Time.zone.now.change(hour: 3, min: 1) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       assert_match(/\A[0-9a-f]{64}\z/, pepper_1)
@@ -56,10 +56,10 @@ module Skadi::Unit
       Skadi.configuration.anonymisation_set_reset_hour = 15
 
       pepper_1 = travel_to Time.zone.now.change(hour: 14, min: 59) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
       pepper_2 = travel_to Time.zone.now.change(hour: 15, min: 1) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       assert_match(/\A[0-9a-f]{64}\z/, pepper_1)
@@ -73,11 +73,11 @@ module Skadi::Unit
       Skadi.configuration.anonymisation_set_reset_hour = 3
 
       pepper_1 = travel_to Time.zone.now.change(hour: 3, min: 1) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       pepper_2 = travel_to Time.zone.now.change(hour: 2, min: 59) + 1.day do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       assert_equal pepper_1, pepper_2
@@ -89,19 +89,19 @@ module Skadi::Unit
       Skadi.configuration.anonymisation_set_reset_hour = 3
 
       pepper_1 = travel_to Time.zone.now.change(hour: 3, min: 1) do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       pepper_2 = travel_to Time.zone.now.change(hour: 2, min: 59) + 1.day do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       pepper_3 = travel_to Time.zone.now.change(hour: 2, min: 59) + 2.days do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       different_pepper = travel_to Time.zone.now.change(hour: 3, min: 1) + 2.days do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       assert_equal pepper_1, pepper_2
@@ -113,10 +113,10 @@ module Skadi::Unit
       Skadi.configuration.anonymisation_set_duration = 5.minutes
       Skadi.configuration.anonymisation_set_reset_hour = nil
 
-      pepper_1 = Skadi::AnonymitySet.anonymity_set_pepper
+      pepper_1 = Skadi::AnonymitySet.pepper
 
       pepper_2 = travel 6.minutes do
-        Skadi::AnonymitySet.anonymity_set_pepper
+        Skadi::AnonymitySet.pepper
       end
 
       refute_equal pepper_1, pepper_2
