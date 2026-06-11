@@ -29,6 +29,24 @@ module Skadi::Integration
         assert_response :bad_request
       end
 
+      test "bad request when invalid view token" do
+        [
+          nil,
+          123,
+          true
+        ].each do |invalid_token|
+          post skadi.tracking_endpoint_path, params: {view: invalid_token}, as: :json
+
+          assert_response :bad_request
+        end
+      end
+
+      test "not found when non-existent view token" do
+        post skadi.tracking_endpoint_path, params: {view: "00000000-0000-0000-0000-000000000000"}, as: :json
+
+        assert_response :not_found
+      end
+
       test "view token expires" do
         view = create :view, created_at: Time.current.change(hour: 9, min: 0, sec: 0)
 
@@ -60,12 +78,6 @@ module Skadi::Integration
 
           assert_response :gone
         end
-      end
-
-      test "not found when invalid view token" do
-        post skadi.tracking_endpoint_path, params: {view: "00000000-0000-0000-0000-000000000000"}, as: :json
-
-        assert_response :not_found
       end
 
       test "tracking payload size is limited" do
