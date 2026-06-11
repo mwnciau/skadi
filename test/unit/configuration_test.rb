@@ -1,7 +1,7 @@
 require_relative "test_case"
 
 module Skadi::Unit
-  class AnonymitySetTest < TestCase
+  class ConfigurationTest < TestCase
     def setup
       @log = StringIO.new
       Rails.logger = Logger.new(@log)
