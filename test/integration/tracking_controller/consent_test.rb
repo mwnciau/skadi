@@ -32,7 +32,7 @@ module Skadi::Integration
         post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: true}, as: :json
 
         assert_response :no_content
-        assert_match UUID_REGEX, visit.reload.visit_token
+        assert_match UUID_REGEX, visit.reload.tracking_token
       end
 
       test "consent clears opt out cookie" do
@@ -73,7 +73,7 @@ module Skadi::Integration
         post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: false}, as: :json
 
         assert_response :no_content
-        refute_equal TRACKING_TOKEN, visit.reload.visit_token
+        refute_equal TRACKING_TOKEN, visit.reload.tracking_token
       end
 
       test "opt out clears tracking cookie" do
