@@ -61,7 +61,7 @@ module Skadi
 
       unless tracking_token || user
         has_utm_params = params.keys.any? { |it| it.to_s.start_with?("utm_") }
-        has_external_referrer = request.referer.present? && url_from(request.referer).nil?
+        has_external_referrer = request.referrer.present? && url_from(request.referrer).nil?
       end
 
       # Only create a visit if we have some useful data or way of tracking users across pages
