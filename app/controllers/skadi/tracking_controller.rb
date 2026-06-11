@@ -126,7 +126,7 @@ module Skadi
         value:,
         domain: Skadi.configuration.cookie_domain,
         httponly: true,
-        secure: request.ssl?,
+        secure: Rails.env.production? || request.ssl?,
         same_site: :lax,
         expires: age.seconds.from_now,
       }
