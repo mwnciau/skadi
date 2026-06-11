@@ -1,7 +1,7 @@
 AllCops:
   DisabledByDefault: true
   SuggestExtensions: false
-  TargetRubyVersion: 4.0
+  TargetRubyVersion: 3.3
   UseCache: true
 
 inherit_gem:

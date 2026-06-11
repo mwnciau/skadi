@@ -43,7 +43,7 @@ module Skadi
 
       result = +""
       result += "#{uri.scheme}://" if uri.scheme.present?
-      result += "#{uri.host}" if uri.host.present?
+      result += uri.host if uri.host.present?
 
       # Only include port if it's non-standard
       result << ":#{uri.port}" if uri.port != uri.default_port

@@ -5,7 +5,7 @@ Gem::Specification.new do |s|
   s.description = "Skadi adds flexible and lightweight first-party analytics to your Rails app. Track page views and events, perform A/B testing and more, giving you all the information you need to improve your website."
   s.authors = ["Simon J"]
   s.email = "2857218+mwnciau@users.noreply.github.com"
-  
+
   app_files = `git ls-files -z`.split("\x0").reject do |f|
     !f.match(%r{^(app/assets|app/controllers|app/helpers|app/models|config|lib)/})
   end
