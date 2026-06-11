@@ -54,7 +54,7 @@ module Skadi
         tracking_token = cookie_id || AnonymitySet.calculate(request.remote_ip, request.user_agent)
         user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
 
-        @skadi_visit = Skadi::Analytics.find_existing_visit(tracking_token, user)
+        @skadi_visit = Skadi::Visit.find_active_visit_for(tracking_token, user)
 
         return if @skadi_visit
       end
@@ -95,22 +95,6 @@ module Skadi
         @skadi_view.visit = @skadi_visit
         @skadi_view.save
       end
-    end
-
-    def self.find_existing_visit(tracking_token, user)
-      visit_query = nil
-      if tracking_token
-        visit_query = Skadi::Visit.where(tracking_token: tracking_token)
-          .and(Skadi::Visit.where("created_at > ?", Skadi.configuration.visit_duration.ago))
-      end
-      if user
-        user_visit_query = Skadi::Visit.where(user_id: user.id)
-          .and(Skadi::Visit.where("created_at > ?", Skadi.configuration.visit_duration.ago))
-
-        visit_query = visit_query ? visit_query.or(user_visit_query) : user_visit_query
-      end
-
-      visit_query&.first
     end
 
     # @param tracking_token [String, nil]
