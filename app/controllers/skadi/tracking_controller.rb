@@ -78,6 +78,15 @@ module Skadi
           # Update the local copy so it doesn't get re-set
           @view.visit.tracking_token = nil
         end
+
+        if @view.visit&.user&.id
+          # If an existing user, delete any rows using it so existing data is anonymised instantly
+          # Note: this needs a DB update because there may be other visits outside the visit limit
+          Skadi::Visit.where(user_id: @view.visit.user.id).update_all(user_id: nil)
+
+          # Update the local copy so it doesn't get re-set
+          @view.visit.user = nil
+        end
       end
     end
 

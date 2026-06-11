@@ -79,7 +79,7 @@ module Skadi::Integration
         Skadi.configuration.user_model = "DummyUser"
         Skadi.configuration.user_method = :current_user
 
-        user = DummyUser.new(username: "bob")
+        user = create :user
         ::ApplicationController.current_user = user
         create :visit, user: user
 

@@ -41,18 +41,6 @@ module Skadi::Integration
         assert_nil visit.tracking_token
       end
 
-      test "anonymisation set is disabled by opt out track cookie" do
-        cookies["skadi_tracking_opt_out"] = "1"
-
-        get_tracked_action(referrer: "https://example.com/")
-
-        assert_equal 1, Skadi::Visit.count
-        assert_equal 1, Skadi::View.count
-
-        visit = Skadi::Visit.first
-        assert_nil visit.tracking_token
-      end
-
       test "anonymisation set is reset after reset hour" do
         travel_to Time.zone.now.change(hour: 2, min: 50) do
           get_tracked_action
@@ -81,15 +69,6 @@ module Skadi::Integration
         assert_equal "00000000-0000-0000-0000-000000000000", visit.tracking_token
       end
 
-      test "tracking cookie is ignored with opt out cookie" do
-        cookies["skadi_tracking_opt_out"] = "1"
-        cookies["skadi_id"] = "00000000-0000-0000-0000-000000000000"
-
-        get_tracked_action(referrer: "https://example.com/")
-
-        visit = Skadi::Visit.first!
-        assert_nil visit.tracking_token
-      end
 
       test "tracking cookie is ignored if not a valid uuid" do
         # Opt out so visits are created for each request

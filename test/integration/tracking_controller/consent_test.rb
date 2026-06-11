@@ -80,6 +80,23 @@ module Skadi::Integration
         assert_nil old_visit.reload.tracking_token
       end
 
+      test "opt out deletes user in existing visits" do
+        user = create :user
+        ApplicationController.current_user = user
+
+        visit = create :visit, user: user
+        view = create :view, visit: visit
+
+        # Simulate a second visit with the same tracking user
+        old_visit = create :visit, user: user
+
+        post skadi.tracking_endpoint_path, params: {view: view.view_token, consent: false}, as: :json
+
+        assert_response :no_content
+        assert_nil visit.reload.user
+        assert_nil old_visit.reload.user
+      end
+
       test "opt out clears tracking cookie" do
         view = create :view
 
