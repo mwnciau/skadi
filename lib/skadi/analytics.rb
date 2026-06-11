@@ -46,7 +46,7 @@ module Skadi
     # Called before the action to find or build the Skadi visit model
     def track_visit
       tracking_token, user, has_utm_params, has_external_referrer = nil
-      
+
       # If the user has opted out of tracking, we do not use cookies or anonymisation sets
       unless cookies["skadi_tracking_opt_out"] == "1"
         # Ensure the cookie is a UUID as expected
@@ -58,12 +58,12 @@ module Skadi
 
         return if @skadi_visit
       end
-      
+
       unless tracking_token || user
         has_utm_params = params.keys.any? { |it| it.to_s.start_with?("utm_") }
         has_external_referrer = request.referer.present? && url_from(request.referer).nil?
       end
-      
+
       # Only create a visit if we have some useful data or way of tracking users across pages
       return unless tracking_token || user || has_utm_params || has_external_referrer
 
@@ -73,6 +73,9 @@ module Skadi
     # Called before the action to build the Skadi view model
     def track_view
       @skadi_view = Skadi::View.new
+
+      @skadi_view.view_token = SecureRandom.uuid_v7
+      @skadi_view.verified = false
 
       @skadi_view.controller = controller_name
       @skadi_view.action = action_name
@@ -117,6 +120,7 @@ module Skadi
     def self.create_visit(tracking_token, user, request)
       visit = Skadi::Visit.new
 
+      visit.visit_token = SecureRandom.uuid_v7
       visit.tracking_token = tracking_token
       visit.user_id = user&.id
 
@@ -128,6 +132,8 @@ module Skadi
       visit.utm_term = request.query_parameters["utm_term"]
       visit.utm_content = request.query_parameters["utm_content"]
       visit.utm_campaign = request.query_parameters["utm_campaign"]
+
+      visit.verified = false
 
       visit
     end
