@@ -3,6 +3,8 @@ module Skadi
   module Analytics
     extend ActiveSupport::Concern
 
+    UUID_REGEX = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i
+
     included do
       before_action :track_visit, :track_view
 
@@ -46,7 +48,7 @@ module Skadi
       # If the user has opted out of tracking, we do not use cookies or anonymisation sets
       unless cookies["skadi_tracking_opt_out"] == "1"
         # Ensure the cookie is a UUID as expected
-        cookie_id = cookies[:skadi_id]&.match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/i) ? cookies[:skadi_id] : nil
+        cookie_id = cookies["skadi_id"]&.match(UUID_REGEX) ? cookies["skadi_id"] : nil
         tracking_token = cookie_id || AnonymitySet.calculate(request.remote_ip, request.user_agent)
         user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
 

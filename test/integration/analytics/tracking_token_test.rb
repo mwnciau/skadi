@@ -73,7 +73,7 @@ module Skadi::Integration
       end
 
       test "tracking cookie takes precedence over anonymisation set" do
-        cookies[:skadi_id] = "00000000-0000-0000-0000-000000000000"
+        cookies["skadi_id"] = "00000000-0000-0000-0000-000000000000"
 
         get_tracked_action
 
@@ -83,7 +83,7 @@ module Skadi::Integration
 
       test "tracking cookie is ignored with opt out cookie" do
         cookies["skadi_tracking_opt_out"] = "1"
-        cookies[:skadi_id] = "00000000-0000-0000-0000-000000000000"
+        cookies["skadi_id"] = "00000000-0000-0000-0000-000000000000"
 
         get_tracked_action(referrer: "https://example.com/")
 
@@ -108,7 +108,7 @@ module Skadi::Integration
           # Really long
           "00000000-0000-0000-0000-000000000000-0000-0000-0000-000000000000" * 10,
         ].each do |invalid_uuid|
-          cookies[:skadi_id] = invalid_uuid
+          cookies["skadi_id"] = invalid_uuid
 
           assert_difference -> { Skadi::Visit.count }, 1, "expecting a visit to be created for uuid #{invalid_uuid}" do
             get_tracked_action(referrer: "https://example.com/")
