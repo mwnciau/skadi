@@ -37,7 +37,7 @@ module Skadi
 
       head :no_content
     end
-    
+
     private def set_params
       @params = request.request_parameters
     end

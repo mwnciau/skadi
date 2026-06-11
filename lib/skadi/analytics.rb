@@ -67,7 +67,7 @@ module Skadi
       # Only create a visit if we have some useful data or way of tracking users across pages
       return unless tracking_token || user || has_utm_params || has_external_referrer
 
-      @skadi_visit = Skadi::Analytics.create_visit(tracking_token, user, request)
+      @skadi_visit = Skadi::Visit.build_from(tracking_token, user, request)
     end
 
     # Called before the action to build the Skadi view model
@@ -95,31 +95,6 @@ module Skadi
         @skadi_view.visit = @skadi_visit
         @skadi_view.save
       end
-    end
-
-    # @param tracking_token [String, nil]
-    # @param user [ActiveModel::Model, nil]
-    # @param request [ActionDispatch::Request]
-    # @return [Skadi::Visit]
-    def self.create_visit(tracking_token, user, request)
-      visit = Skadi::Visit.new
-
-      visit.visit_token = SecureRandom.uuid_v7
-      visit.tracking_token = tracking_token
-      visit.user_id = user&.id
-
-      visit.referrer = Skadi::Url.redact_and_normalise_url(request.referrer)
-      visit.landing_page = Skadi::Url.view_path_from_request(request)
-
-      visit.utm_source = request.query_parameters["utm_source"]
-      visit.utm_medium = request.query_parameters["utm_medium"]
-      visit.utm_term = request.query_parameters["utm_term"]
-      visit.utm_content = request.query_parameters["utm_content"]
-      visit.utm_campaign = request.query_parameters["utm_campaign"]
-
-      visit.verified = false
-
-      visit
     end
   end
 end
