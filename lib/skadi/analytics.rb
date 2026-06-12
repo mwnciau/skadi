@@ -47,12 +47,19 @@ module Skadi
     def track_visit
       tracking_token, user, has_utm_params, has_external_referrer = nil
 
+      skadi_id = cookies["skadi_id"]
+      consent = skadi_id.present?
+
       # If the user has opted out of tracking, we do not use cookies or anonymisation sets
       unless cookies["skadi_tracking_opt_out"] == "1"
         # Ensure the cookie is a UUID as expected
-        cookie_id = cookies["skadi_id"]&.match(UUID_REGEX) ? cookies["skadi_id"] : nil
+        cookie_id = skadi_id&.match(UUID_REGEX) ? skadi_id : nil
         tracking_token = cookie_id || AnonymitySet.calculate(request.remote_ip, request.user_agent)
-        user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
+
+        # Only track the user if we have consent
+        if consent
+          user = Skadi.configuration.user_method ? send(Skadi.configuration.user_method) : nil
+        end
 
         @skadi_visit = Skadi::Visit.find_active_visit_for(tracking_token, user)
 

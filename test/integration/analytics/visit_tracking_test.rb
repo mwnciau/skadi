@@ -75,7 +75,7 @@ module Skadi::Integration
         assert_equal 1, Skadi::Visit.count
       end
 
-      test "visit tracks by user" do
+      test "visit tracks user with consent" do
         Skadi.configuration.user_model = "DummyUser"
         Skadi.configuration.user_method = :current_user
 
@@ -83,11 +83,28 @@ module Skadi::Integration
         ::ApplicationController.current_user = user
         create :visit, user: user
 
-        get_tracked_action
+        cookies[:skadi_id] = TRACKING_TOKEN
+
+        get tracked_action_path
 
         assert_equal 1, Skadi::Visit.count
         visit = Skadi::Visit.first!
         assert_equal user, visit.user
+      end
+
+      test "visit does not track user without consent" do
+        Skadi.configuration.user_model = "DummyUser"
+        Skadi.configuration.user_method = :current_user
+
+        user = create :user
+        ::ApplicationController.current_user = user
+        create :visit, user: user
+
+        get_tracked_action(referrer: "https://example.com")
+
+        assert_equal 2, Skadi::Visit.count
+        visit = Skadi::Visit.last
+        assert_nil visit.user
       end
 
       test "existing visit user is updated" do
