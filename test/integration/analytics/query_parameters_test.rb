@@ -70,6 +70,7 @@ module Skadi::Integration
       end
 
       test "landing page query parameters are not stored" do
+        cookies[:skadi_id] = TRACKING_TOKEN
         Skadi.configuration.query_param_whitelist = [:whitelisted]
         get tracked_action_path, params: {whitelisted: "value"}
 

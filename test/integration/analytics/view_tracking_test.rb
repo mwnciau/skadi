@@ -18,7 +18,7 @@ module Skadi::Integration
       end
 
       test "controller and action is tracked" do
-        get tracked_action_path
+        get_tracked_action(tracking_token: TRACKING_TOKEN)
 
         assert_equal 1, Skadi::Visit.count
         assert_equal 1, Skadi::View.count
@@ -35,6 +35,8 @@ module Skadi::Integration
       test("DELETE request is tracked") { assert_verb_is_tracked(:delete) }
 
       private def assert_verb_is_tracked(verb)
+        cookies[:skadi_id] = TRACKING_TOKEN
+
         process verb, tracked_action_path
 
         assert_equal 1, Skadi::Visit.count
@@ -46,7 +48,7 @@ module Skadi::Integration
       end
 
       test "view is linked to visit" do
-        get_tracked_action
+        get_tracked_action(tracking_token: TRACKING_TOKEN)
 
         view = Skadi::View.first!
         assert view.visit.present?

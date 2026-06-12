@@ -18,10 +18,10 @@ module Skadi
     # An anonymisation set is a token keeps track of a user using a hash of their IP address and User Agent. A
     # cryptographic pepper is added to the hash, which, when discarded, makes the generated token no longer able to
     # be used to track the user. If disabled, views and events will not be linked to a visitor unless a tracking cookie
-    # is set. Defaults to true.
+    # is set. Defaults to false.
     # @return [Boolean]
     attr_accessor :use_anonymisation_sets
-    validates(:use_anonymisation_sets, "boolean", default: true) { |it| it == true || it == false }
+    validates(:use_anonymisation_sets, "boolean", default: false) { |it| it == true || it == false }
 
     # How long an anonymisation set should last before expiring. Defaults to 1 day.
     # @return [ActiveSupport::Duration]

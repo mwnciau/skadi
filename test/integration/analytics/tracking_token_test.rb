@@ -8,6 +8,8 @@ module Skadi::Integration
       DEFAULT_HEADERS = {"HTTP_USER_AGENT" => TEST_USER_AGENT, "REMOTE_ADDR" => TEST_IP, "REFERER" => "https://example.com"}
 
       test "anonymisation set is reused between visits" do
+        Skadi.configuration.use_anonymisation_sets = true
+
         3.times { get_tracked_action }
 
         assert_equal 1, Skadi::Visit.count
@@ -18,6 +20,8 @@ module Skadi::Integration
       end
 
       test "anonymisation set is changed on IP or User Agent change" do
+        Skadi.configuration.use_anonymisation_sets = true
+
         get_tracked_action
         get_tracked_action(user_agent: "Different User Agent")
         get_tracked_action(ip: "10.0.0.1")
@@ -29,9 +33,7 @@ module Skadi::Integration
         assert_equal 3, anonymisation_set_ids.size
       end
 
-      test "anonymisation set is disabled by configuration" do
-        Skadi.configuration.use_anonymisation_sets = false
-
+      test "anonymisation set is disabled by default" do
         get_tracked_action(referrer: "https://example.com/")
 
         assert_equal 1, Skadi::Visit.count
@@ -42,6 +44,8 @@ module Skadi::Integration
       end
 
       test "anonymisation set is reset after reset hour" do
+        Skadi.configuration.use_anonymisation_sets = true
+
         travel_to Time.zone.now.change(hour: 2, min: 50) do
           get_tracked_action
         end
@@ -61,6 +65,8 @@ module Skadi::Integration
       end
 
       test "tracking cookie takes precedence over anonymisation set" do
+        Skadi.configuration.use_anonymisation_sets = true
+
         cookies["skadi_id"] = "00000000-0000-0000-0000-000000000000"
 
         get_tracked_action

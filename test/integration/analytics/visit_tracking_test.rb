@@ -44,20 +44,20 @@ module Skadi::Integration
       end
 
       test "visit is tracked once within visit_duration" do
-        get_tracked_action
+        get_tracked_action(tracking_token: TRACKING_TOKEN)
 
         travel 119.minutes do
-          get_tracked_action
+          get_tracked_action(tracking_token: TRACKING_TOKEN)
         end
 
         assert_equal 1, Skadi::Visit.count
       end
 
       test "visit is tracked twice after visit_duration" do
-        get_tracked_action
+        get_tracked_action(tracking_token: TRACKING_TOKEN)
 
         travel 121.minutes do
-          get_tracked_action
+          get_tracked_action(tracking_token: TRACKING_TOKEN)
         end
 
         assert_equal 2, Skadi::Visit.count
@@ -66,10 +66,10 @@ module Skadi::Integration
       test "visit_duration config option works" do
         Skadi.configuration.visit_duration = 4.hours
 
-        get_tracked_action
+        get_tracked_action(tracking_token: TRACKING_TOKEN)
 
         travel 239.minutes do
-          get_tracked_action
+          get_tracked_action(tracking_token: TRACKING_TOKEN)
         end
 
         assert_equal 1, Skadi::Visit.count
