@@ -4,6 +4,8 @@ module Skadi
     has_many :events, class_name: "Skadi::Event", inverse_of: :visit
 
     def self.find_active_visit_for(tracking_token, user)
+      return nil if tracking_token.nil? && user.nil?
+
       visit_query = nil
       if tracking_token
         visit_query = where(tracking_token: tracking_token)
