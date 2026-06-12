@@ -143,7 +143,7 @@ module Skadi
         httponly: true,
         secure: Rails.env.production? || request.ssl?,
         same_site: :lax,
-        expires: age.seconds.from_now,
+        expires: age.from_now,
       }
     end
 
