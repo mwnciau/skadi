@@ -7,7 +7,7 @@ module Skadi::Integration
       TEST_USER_AGENT = "Test User Agent"
       DEFAULT_HEADERS = {"HTTP_USER_AGENT" => TEST_USER_AGENT, "REMOTE_ADDR" => TEST_IP, "REFERER" => "https://example.com"}
 
-      test "anonymisation set is disabled by opt out track cookie" do
+      test "anonymity set is disabled by opt out track cookie" do
         cookies["skadi_tracking_opt_out"] = "1"
 
         get_tracked_action(referrer: "https://example.com/")

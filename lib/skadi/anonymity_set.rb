@@ -3,7 +3,7 @@ module Skadi
     # Generates a unique token for the given IP and user agent
     # @return [String]
     def self.calculate(ip, user_agent)
-      return nil unless Skadi.configuration.use_anonymisation_sets
+      return nil unless Skadi.configuration.use_anonymity_sets
 
       user_fingerprint = "#{ip}|#{user_agent}"
 
@@ -16,8 +16,8 @@ module Skadi
     # Generate a pepper to be used in the anonymity set hash
     # @return [String]
     def self.pepper
-      duration = Skadi.configuration.anonymisation_set_duration
-      reset_hour = Skadi.configuration.anonymisation_set_reset_hour
+      duration = Skadi.configuration.anonymity_set_duration
+      reset_hour = Skadi.configuration.anonymity_set_reset_hour
 
       current_time = Time.current
       pepper_expiry = current_time + duration
@@ -32,7 +32,7 @@ module Skadi
         pepper_expiry += 1.day if pepper_expiry < current_time
       end
 
-      Rails.cache.fetch("#{Skadi.configuration.anonymisation_set_cache_key}/v1", expires_in: [1, pepper_expiry.to_i - current_time.to_i].max) do
+      Rails.cache.fetch("#{Skadi.configuration.anonymity_set_cache_key}/v1", expires_in: [1, pepper_expiry.to_i - current_time.to_i].max) do
         SecureRandom.hex(32)
       end
     end

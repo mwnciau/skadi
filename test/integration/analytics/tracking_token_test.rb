@@ -7,8 +7,8 @@ module Skadi::Integration
       TEST_USER_AGENT = "Test User Agent"
       DEFAULT_HEADERS = {"HTTP_USER_AGENT" => TEST_USER_AGENT, "REMOTE_ADDR" => TEST_IP, "REFERER" => "https://example.com"}
 
-      test "anonymisation set is reused between visits" do
-        Skadi.configuration.use_anonymisation_sets = true
+      test "anonymity set is reused between visits" do
+        Skadi.configuration.use_anonymity_sets = true
 
         3.times { get_tracked_action }
 
@@ -19,8 +19,8 @@ module Skadi::Integration
         refute_nil visit.tracking_token
       end
 
-      test "anonymisation set is changed on IP or User Agent change" do
-        Skadi.configuration.use_anonymisation_sets = true
+      test "anonymity set is changed on IP or User Agent change" do
+        Skadi.configuration.use_anonymity_sets = true
 
         get_tracked_action
         get_tracked_action(user_agent: "Different User Agent")
@@ -29,11 +29,11 @@ module Skadi::Integration
         assert_equal 3, Skadi::Visit.count
         assert_equal 3, Skadi::View.count
 
-        anonymisation_set_ids = Skadi::Visit.pluck(:tracking_token).uniq
-        assert_equal 3, anonymisation_set_ids.size
+        anonymity_set_ids = Skadi::Visit.pluck(:tracking_token).uniq
+        assert_equal 3, anonymity_set_ids.size
       end
 
-      test "anonymisation set is disabled by default" do
+      test "anonymity set is disabled by default" do
         get_tracked_action(referrer: "https://example.com/")
 
         assert_equal 1, Skadi::Visit.count
@@ -43,8 +43,8 @@ module Skadi::Integration
         assert_nil visit.tracking_token
       end
 
-      test "anonymisation set is reset after reset hour" do
-        Skadi.configuration.use_anonymisation_sets = true
+      test "anonymity set is reset after reset hour" do
+        Skadi.configuration.use_anonymity_sets = true
 
         travel_to Time.zone.now.change(hour: 2, min: 50) do
           get_tracked_action
@@ -55,17 +55,17 @@ module Skadi::Integration
           get_tracked_action
         end
 
-        # The anonymisation set id should have changed between the two requests, so we expect two visits
+        # The anonymity set id should have changed between the two requests, so we expect two visits
         assert_equal 2, Skadi::Visit.count
         assert_equal 2, Skadi::View.count
 
-        # Ensure the two visits have different anonymisation set ids
-        anonymisation_set_ids = Skadi::Visit.pluck(:tracking_token)
-        refute_equal anonymisation_set_ids[0], anonymisation_set_ids[1]
+        # Ensure the two visits have different anonymity set ids
+        anonymity_set_ids = Skadi::Visit.pluck(:tracking_token)
+        refute_equal anonymity_set_ids[0], anonymity_set_ids[1]
       end
 
-      test "tracking cookie takes precedence over anonymisation set" do
-        Skadi.configuration.use_anonymisation_sets = true
+      test "tracking cookie takes precedence over anonymity set" do
+        Skadi.configuration.use_anonymity_sets = true
 
         cookies["skadi_id"] = "00000000-0000-0000-0000-000000000000"
 

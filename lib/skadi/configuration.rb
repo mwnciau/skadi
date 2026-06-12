@@ -15,32 +15,32 @@ module Skadi
       validators[attribute] = {expecting: expecting, default: default, validator: block}
     end
 
-    # An anonymisation set is a token keeps track of a user using a hash of their IP address and User Agent. A
+    # An anonymity set is a token keeps track of a user using a hash of their IP address and User Agent. A
     # cryptographic pepper is added to the hash, which, when discarded, makes the generated token no longer able to
     # be used to track the user. If disabled, views and events will not be linked to a visitor unless a tracking cookie
     # is set. Defaults to false.
     # @return [Boolean]
-    attr_accessor :use_anonymisation_sets
-    validates(:use_anonymisation_sets, "boolean", default: false) { |it| it == true || it == false }
+    attr_accessor :use_anonymity_sets
+    validates(:use_anonymity_sets, "boolean", default: false) { |it| it == true || it == false }
 
-    attr_accessor :anonymisation_set_cache_key
-    validates(:anonymisation_set_cache_key, "string", default: "skadi/anonymity_set_pepper") { |it| it.is_a?(String) && it.present? }
+    attr_accessor :anonymity_set_cache_key
+    validates(:anonymity_set_cache_key, "string", default: "skadi/anonymity_set_pepper") { |it| it.is_a?(String) && it.present? }
 
-    # How long an anonymisation set should last before expiring. Defaults to 1 day.
+    # How long an anonymity set should last before expiring. Defaults to 1 day.
     # @return [ActiveSupport::Duration]
-    attr_accessor :anonymisation_set_duration
-    validates(:anonymisation_set_duration, "ActiveSupport::Duration", default: 1.day) { |it| it.is_a?(ActiveSupport::Duration) }
+    attr_accessor :anonymity_set_duration
+    validates(:anonymity_set_duration, "ActiveSupport::Duration", default: 1.day) { |it| it.is_a?(ActiveSupport::Duration) }
 
-    # Set the hour of the day to reset the anonymisation set. Set to false to strictly use the set duration. Defaults to 3 (3am).
+    # Set the hour of the day to reset the anonymity set. Set to false to strictly use the set duration. Defaults to 3 (3am).
     # @return [Integer, false]
-    attr_accessor :anonymisation_set_reset_hour
-    validates(:anonymisation_set_reset_hour, "Integer or false", default: 3) do |it|
+    attr_accessor :anonymity_set_reset_hour
+    validates(:anonymity_set_reset_hour, "Integer or false", default: 3) do |it|
       next true if it == false
 
       it.is_a?(Integer) && it >= 0 && it <= 23
     end
 
-    # How long a visit should last before expiring. Note: visits that cross anonymisation set boundaries will be counted as two visits. Defaults to 2 hours.
+    # How long a visit should last before expiring. Note: visits that cross anonymity set boundaries will be counted as two visits. Defaults to 2 hours.
     # @return [ActiveSupport::Duration]
     attr_accessor :visit_duration
     validates(:visit_duration, "ActiveSupport::Duration", default: 2.hours) { |it| it.is_a?(ActiveSupport::Duration) }

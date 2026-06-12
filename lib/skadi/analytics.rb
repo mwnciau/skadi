@@ -50,7 +50,7 @@ module Skadi
       skadi_id = cookies["skadi_id"]
       consent = skadi_id.present?
 
-      # If the user has opted out of tracking, we do not use cookies or anonymisation sets
+      # If the user has opted out of tracking, we do not use cookies or anonymity sets
       unless cookies["skadi_tracking_opt_out"] == "1"
         # Ensure the cookie is a UUID as expected
         cookie_id = skadi_id&.match(UUID_REGEX) ? skadi_id : nil

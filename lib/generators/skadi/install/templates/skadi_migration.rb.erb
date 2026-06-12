@@ -4,7 +4,7 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
       # A random uuid identifying the visit. This will be sent to the front-end to allow updates to the visit javascript flag without exposing details about the site analytics to the user.
       t.<%= uuid_column_type %> :visit_token<%= uuid_column_options %>, null: false
 
-      # A token identifying the user. This will either be a token generated from an anonymisation set based on the user's IP and User Agent, or it will be sourced from a cookie.
+      # A token identifying the user. This will either be a token generated from an anonymity set based on the user's IP and User Agent, or it will be sourced from a cookie.
       t.<%= uuid_column_type %> :tracking_token<%= uuid_column_options %>
 
       # The ID of a logged in user. The FK is intentionally absent in case the host app doesn't have a users table.
