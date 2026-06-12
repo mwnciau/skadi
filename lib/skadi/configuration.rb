@@ -23,6 +23,9 @@ module Skadi
     attr_accessor :use_anonymisation_sets
     validates(:use_anonymisation_sets, "boolean", default: false) { |it| it == true || it == false }
 
+    attr_accessor :anonymisation_set_cache_key
+    validates(:anonymisation_set_cache_key, "string", default: "skadi/anonymity_set_pepper") { |it| it.is_a?(String) && it.present? }
+
     # How long an anonymisation set should last before expiring. Defaults to 1 day.
     # @return [ActiveSupport::Duration]
     attr_accessor :anonymisation_set_duration

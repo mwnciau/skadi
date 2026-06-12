@@ -24,6 +24,12 @@ module Skadi::Unit
       assert_values_are_invalid(:use_anonymisation_sets, nil, "true", "false", 123)
     end
 
+    test "anonymisation_set_cache_key validates" do
+      assert_values_are_valid(:anonymisation_set_cache_key, "key", "cache key")
+
+      assert_values_are_invalid(:anonymisation_set_cache_key, nil, true, false, 123, "")
+    end
+
     test "anonymisation_set_duration validates" do
       assert_values_are_valid(:anonymisation_set_duration, 5.minutes, 1.day, 1.hour, 3.weeks)
 
