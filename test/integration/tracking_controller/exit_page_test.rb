@@ -9,7 +9,7 @@ module Skadi::Integration
         post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: "https://example.com"}, as: :json
 
         assert_response :no_content
-        assert_equal "https://example.com/", view.reload.exit_page
+        assert_equal "example.com/", view.reload.exit_page
       end
 
       test "tracks relative exit page" do
@@ -45,7 +45,7 @@ module Skadi::Integration
         post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: "https://example.com?sensitive_data=1234"}, as: :json
 
         assert_response :no_content
-        assert_equal "https://example.com/", view.reload.exit_page
+        assert_equal "example.com/", view.reload.exit_page
       end
     end
   end

@@ -63,10 +63,10 @@ module Skadi::Integration
         get_tracked_action(referrer: "https://example.com/?whitelisted=value&not_whitelisted=other_value")
 
         visit = Skadi::Visit.first!
-        assert_equal "https://example.com/?whitelisted=value", visit.referrer
+        assert_equal "example.com/?whitelisted=value", visit.referrer
 
         view = Skadi::View.first!
-        assert_equal "https://example.com/?whitelisted=value", view.referrer
+        assert_equal "example.com/?whitelisted=value", view.referrer
       end
 
       test "landing page query parameters are not stored" do

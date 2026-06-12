@@ -7,7 +7,7 @@ module Skadi::Integration
         get_tracked_action referrer: "https://example.com/referrer"
 
         visit = Skadi::Visit.first!
-        assert_equal "https://example.com/referrer", visit.referrer
+        assert_equal "example.com/referrer", visit.referrer
       end
 
       test "bad referrer is not tracked" do
