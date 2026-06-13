@@ -11,7 +11,7 @@ require_relative "skadi/engine"
 require_relative "skadi/url"
 
 module Skadi
-  VERSION = "0.1.0"
+  VERSION = "0.2.0"
 
   # @return [Skadi::Configuration] The Skadi configuration
   mattr_accessor :configuration, default: Configuration.new

@@ -11,6 +11,12 @@ _* See [compliance section](#compliance)_
 > [!NOTE]
 > This is a human-written project with limited AI assistance. See the [AI Disclaimer](#ai-disclaimer) for details.
 
+## Dependencies
+
+This gem requires Rails >= 7.2 and Ruby >= 3.3.
+
+This gem has no dependencies on other packages when installed as a gem.
+
 ## Quick start
 
 Install the gem:
@@ -57,7 +63,7 @@ AI was used for same-line autocomplete suggestions, research and code review. Hu
 
 ## Compliance
 
-Skadi respects users' privacy without any additional configuration. This means that Skadi will not store any personal data or track indiviidual users without explicit consent.
+Skadi respects users' privacy without any additional configuration. This means that Skadi will not store any personal data or track individual users without explicit consent.
 
 > [!NOTE]
 > It is your responsibility to comply with any applicable privacy laws. Skadi does not provide any legal advice as to the compliance of your use of Skadi.

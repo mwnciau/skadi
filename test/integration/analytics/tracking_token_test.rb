@@ -75,7 +75,6 @@ module Skadi::Integration
         assert_equal "00000000-0000-0000-0000-000000000000", visit.tracking_token
       end
 
-
       test "tracking cookie is ignored if not a valid uuid" do
         # Opt out so visits are created for each request
         cookies["skadi_tracking_opt_out"] = "1"
