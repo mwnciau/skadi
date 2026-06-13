@@ -1,21 +1,23 @@
 module Skadi
   class TrackingController < ActionController::API
+    include ActionController::Cookies
+
     # Disables the automatic wrapping of JSON parameters into a "tracking" hash
     wrap_parameters false
 
     prepend_before_action :limit_payload_size!
+
+    rate_limit to: 60, within: 1.minute, with: -> { head :too_many_requests }
 
     before_action :set_params
     before_action :set_view
 
     def track
       if @params["exit_page"].present? && @params["exit_page"].is_a?(String)
-        @view.exit_page = @params["exit_page"]
+        @view.exit_page = Skadi::Url.redact_and_normalise_url(@params["exit_page"])
       end
 
-      if @params["consent"].is_a? Hash
-        handle_consent @params["consent"]
-      end
+      handle_consent @params["consent"]
 
       if @params["events"].present? && @params["events"].is_a?(Array)
         handle_events @params["events"]
@@ -31,44 +33,60 @@ module Skadi
       if @view.visit
         @view.visit.verified = true
         @view.visit.save
-        @view.changed?
       end
 
       head :no_content
     end
 
-    private
-
-    def set_params
+    private def set_params
       @params = request.request_parameters
     end
 
-    def set_view
-      unless @params["view"]
+    private def set_view
+      # Check that the view token is a valid UUID
+      unless @params["view"].is_a?(String) && @params["view"].length == 36
         return head :bad_request
       end
 
       @view = Skadi::View.includes(:visit).find_by(view_token: @params["view"])
 
-      head :not_found unless @view
+      return head :not_found unless @view
+
+      head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
     end
 
     private def handle_consent(consent)
-      if consent["opt_out"]
-        set_cookie "skadi_tracking_opt_out", "1"
+      if consent == true
+        tracking_token = @view.visit&.tracking_token || ::SecureRandom.uuid_v7
 
-        # If an existing visit exists, update it with a random tracking token to anonymise the user immediately
-        if @view.visit
-          @view.visit.tracking_token = ::SecureRandom.uuid_v7
-        end
-      elsif consent["opt_out"] == false
+        set_cookie("skadi_id", tracking_token)
         clear_cookie "skadi_tracking_opt_out"
-      end
 
-      if consent["id"]
-        set_cookie("skadi_id", @view.visit&.tracking_token || ::SecureRandom.uuid_v7)
-      elsif consent["id"] == false
+        # Update the existing visit with the tracking token if we've generated a new one
+        if @view.visit
+          @view.visit.tracking_token = tracking_token
+        end
+      elsif consent == false
+        set_cookie "skadi_tracking_opt_out", "1"
         clear_cookie "skadi_id"
+
+        if @view.visit&.tracking_token
+          # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
+          # Note: this needs a DB update because there may be other visits outside the visit limit
+          Skadi::Visit.where(tracking_token: @view.visit.tracking_token).update_all(tracking_token: nil)
+
+          # Update the local copy so it doesn't get re-set
+          @view.visit.tracking_token = nil
+        end
+
+        if @view.visit&.user&.id
+          # If an existing user, delete any rows using it so existing data is anonymised instantly
+          # Note: this needs a DB update because there may be other visits outside the visit limit
+          Skadi::Visit.where(user_id: @view.visit.user.id).update_all(user_id: nil)
+
+          # Update the local copy so it doesn't get re-set
+          @view.visit.user = nil
+        end
       end
     end
 
@@ -80,8 +98,10 @@ module Skadi
         next unless event["name"].is_a?(String) && event["name"].present?
         next unless event["properties"].is_a?(Hash)
 
-        events_to_insert << {visit: @view.visit, name: event["name"], properties: event["properties"]}
+        events_to_insert << {visit: @view.visit, name: event["name"].strip[0, 255], properties: event["properties"]}
       end
+
+      return if events_to_insert.empty?
 
       @view.events.create(events_to_insert)
     end
@@ -96,15 +116,17 @@ module Skadi
         next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
         demographics_to_insert << {
-          name: demographic["name"],
-          value: demographic["value"],
+          name: demographic["name"].strip[0, 255],
+          value: demographic["value"].strip[0, 255],
           # SQL specifies NULL values are not equal, so we need to default the URI to an empty string
           # to ensure the unique index works correctly
-          uri: demographic["uri"] || "",
-          recorded_on: Time.now,
+          uri: demographic["uri"]&.strip&.[](0, 255) || "",
+          recorded_on: Time.current,
           count: 1,
         }
       end
+
+      return if demographics_to_insert.empty?
 
       Skadi::Demographic.upsert_all(
         demographics_to_insert,
@@ -114,26 +136,19 @@ module Skadi
       )
     end
 
-    def set_opt_out_cookie
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "skadi_tracking_opt_out=1; Path=/#{@cookie_domain}; HttpOnly; SameSite=Lax; Max-Age=31536000"
-    end
-
-    def set_tracking_cookie(tracking_token)
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "skadi_id=#{tracking_token}; Path=/#{@cookie_domain}; HttpOnly; SameSite=Lax; Max-Age=31536000"
-    end
-
-    def set_cookie(name, value, age = 31536000)
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "#{name}=#{value}; Path=/#{@cookie_domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=#{age}"
+    def set_cookie(name, value, age = 1.year)
+      cookies[name] = {
+        value:,
+        domain: Skadi.configuration.cookie_domain,
+        httponly: true,
+        secure: Rails.env.production? || request.ssl?,
+        same_site: :lax,
+        expires: age.from_now,
+      }
     end
 
     def clear_cookie(name)
-      set_cookie(name, "", 0)
+      cookies.delete(name, domain: Skadi.configuration.cookie_domain)
     end
 
     def limit_payload_size!

@@ -4,7 +4,7 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       # A random uuid identifying the visit. This will be sent to the front-end to allow updates to the visit javascript flag without exposing details about the site analytics to the user.
       t.string :visit_token, limit: 36, null: false
 
-      # A token identifying the user. This will either be a token generated from an anonymisation set based on the user's IP and User Agent, or it will be sourced from a cookie.
+      # A token identifying the user. This will either be a token generated from an anonymity set based on the user's IP and User Agent, or it will be sourced from a cookie.
       t.string :tracking_token, limit: 36
 
       # The ID of a logged in user. The FK is intentionally absent in case the host app doesn't have a users table.

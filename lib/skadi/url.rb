@@ -1,6 +1,6 @@
 module Skadi
   # Helper functions for generating and redacting URLs
-  class Url
+  module Url
     # Formats the path for Skadi views. Note that the path here uses PATH_INFO, which does not include the query string or fragment.
     # @param request [ActionDispatch::Request]
     # @return [String]
@@ -38,16 +38,23 @@ module Skadi
       return nil unless url.present?
 
       uri = URI.parse(url)
+      return nil if uri.opaque
+
       query_params = Rack::Utils.parse_nested_query(uri.query) if uri.query.present?
       param_string = whitelist_query_params(query_params).to_query if query_params.present?
 
-      result = "#{uri.scheme}://#{uri.host}"
+      result = +""
+
+      # Only record interesting schemes, e.g. "android-app://"
+      result += "#{uri.scheme}://" if uri.scheme.present? && !["http", "https"].include?(uri.scheme)
+
+      result += uri.host if uri.host.present?
 
       # Only include port if it's non-standard
       result << ":#{uri.port}" if uri.port != uri.default_port
 
       # Normalise the trailing slash
-      result << ((uri.path == "" || uri.path == "/") ? "/" : uri.path.chomp("/"))
+      result << ((uri.path == "" || uri.path == "/") ? "/" : uri.path.chomp("/")) unless uri.path.nil?
 
       result << (param_string.present? ? "?#{param_string}" : "")
 

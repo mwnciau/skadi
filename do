@@ -119,8 +119,6 @@ then
       && echo "Tests pass on Ruby 3.3!" || echo "Tests fails for Ruby 3.3 :("
     echo ""
 
-exit 0
-
     echo "Running test suite against Ruby 3.4"
     docker run --rm \
       -v "$(pwd)":/var/source \

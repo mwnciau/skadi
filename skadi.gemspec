@@ -1,15 +1,20 @@
 Gem::Specification.new do |s|
   s.name = "skadi"
-  s.version = "0.1.0"
+  s.version = "0.2.0"
   s.summary = "First-party, privacy-by-default analytics for Rails."
   s.description = "Skadi adds flexible and lightweight first-party analytics to your Rails app. Track page views and events, perform A/B testing and more, giving you all the information you need to improve your website."
   s.authors = ["Simon J"]
   s.email = "2857218+mwnciau@users.noreply.github.com"
+
+  app_files = `git ls-files -z`.split("\x0").reject do |f|
+    !f.match(%r{^(app/assets|app/controllers|app/helpers|app/models|config|lib)/})
+  end
   s.files = [
     "lib/skadi.rb",
     "CHANGELOG.md",
     "LICENSE.md",
     "README.md",
+    *app_files,
   ]
   s.require_paths = ["lib"]
   s.homepage = "https://rubygems.org/gems/skadi"
@@ -35,7 +40,8 @@ Gem::Specification.new do |s|
   MSG
 
   # Rails 7.1 is required for ActionDispatch::Request#route_uri_pattern
-  s.add_dependency "rails", ">=7.1"
+  # Rails 7.2 is required for ActionController::RateLimiting::ClassMethods#rate_limit
+  s.add_dependency "rails", ">= 7.2"
 
   # Gems to enhance testing
   s.add_development_dependency "appraisal", "~> 2.0"

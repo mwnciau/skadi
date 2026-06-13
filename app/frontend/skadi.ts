@@ -1,7 +1,7 @@
 // Define these non-constant variables first so the minifier can group all the consts together
 let demographics: SkadiDemographic[] = [];
 let events: SkadiEvent[] = [];
-let consent: Consent = {};
+let consent: boolean | null = null;
 let largestContentfulPaint: number = -1;
 let requestTimeout: number|null = null;
 let exitPage: string|null = null;
@@ -18,15 +18,13 @@ const largestContentfulPaintId = `largest${contentfulPaint}`;
 
 type SkadiOptions = {
   // The URI for the current page to be appended to view-specific demographic data
-  pageUri: string;
-  // The Rails authenticity token
-  csrf: string;
+  uri: string;
   // The URL to send data to
   endpoint: string;
   // The view's view_token
   view: string;
   // Whether to send visit demographics
-  visit?: boolean;
+  visit?: "1" | null;
 }
 
 type SkadiDemographic = {
@@ -40,13 +38,8 @@ type SkadiEvent = {
   properties: Record<string, unknown>;
 }
 
-type Consent = {
-  id?: boolean;
-  optOut?: boolean;
-}
-
 const options: SkadiOptions = {
-  ..._document.currentScript.dataset,
+  ..._document.currentScript.dataset as SkadiOptions,
 }
 
 const queueRequest = () => {
@@ -60,7 +53,6 @@ const sendRequest = () => {
   }
 
   const result = navigator.sendBeacon(options.endpoint, new Blob([JSON.stringify({
-    authenticity_token: options.csrf,
     view: options.view,
     demographics,
     events,
@@ -72,16 +64,16 @@ const sendRequest = () => {
   if (result) {
     demographics = [];
     events = [];
-    consent = {};
+    consent = null;
 
     // Note: no need to set useExitPage here as it is only set as the page is being unloaded.
   }
 }
 
-const bucketise = (value: number, buckets: number[4]) => {
+const bucketise = (value: number, buckets: [number, number, number, number]): string | null => {
   // Zero or negative values should not be appearing so are likely an edge-case browser behaviour we can discard
   if (value <= 0) {
-    return;
+    return null;
   }
 
   if (value < buckets[0]) {
@@ -97,15 +89,15 @@ const bucketise = (value: number, buckets: number[4]) => {
   return `> ${buckets[3]}ms`;
 };
 
-const addDemographic = (name: string, value: string|boolean, viewDemographic: boolean = false) => {
+const addDemographic = (name: string, value: string | boolean | null, viewDemographic: boolean = false) => {
   if (value === null) {
     return;
   }
 
-  let demographic = {name, value: value.toString()};
+  let demographic: SkadiDemographic = {name, value: value.toString()};
 
   if (viewDemographic) {
-    demographic.uri = options.pageUri;
+    demographic.uri = options.uri;
   }
 
   demographics.push(demographic);
@@ -132,7 +124,7 @@ _window.addEventListener('load', () => {
     );
   }
 
-  if (options.visit) {
+  if (options.visit === "1") {
     addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
     addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
     addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);
@@ -153,7 +145,7 @@ setTimeout(() => {
 
 // Track clicks to detect when the user leaves the page
 _document.addEventListener('click', (event: MouseEvent) => {
-  let link = event.target.closest('a');
+  let link = event.target?.closest('a');
 
   if (link && link.href) {
     let isNewTab = link.target === '_blank' || event.ctrlKey || event.metaKey;
@@ -187,12 +179,12 @@ _window.skadi = {
     addDemographic(name, value, isPageSpecific);
     queueRequest();
   },
-  setCookieConsent: (newValue: boolean) => {
-    consent.id = newValue;
+  cookieConsent: () => {
+    consent = true;
     sendRequest();
   },
-  setTrackingOptOut: (newValue: boolean) => {
-    consent.optOut = newValue;
+  optOut: () => {
+    consent = false;
     sendRequest();
   },
 };

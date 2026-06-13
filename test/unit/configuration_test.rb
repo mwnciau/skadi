@@ -1,54 +1,63 @@
 require_relative "test_case"
 
 module Skadi::Unit
-  class AnonymitySetTest < TestCase
-    def setup
-      @log = StringIO.new
-      Rails.logger = Logger.new(@log)
-
-      Skadi.configuration = Skadi::Configuration.new
-    end
-
+  class ConfigurationTest < TestCase
     test "default configuration is valid" do
-      Skadi.configuration.validate!
-
-      assert_empty @log.string
+      assert_nothing_raised do
+        Skadi.configuration.validate!
+      end
     end
 
-    test "use_anonymisation_sets validates" do
-      assert_values_are_valid(:use_anonymisation_sets, true, false)
+    test "invalid configuration raises error in development" do
+      Skadi.configuration.cookie_domain = ""
 
-      assert_values_are_invalid(:use_anonymisation_sets, nil, "true", "false", 123)
+      mock_rails_env("development") do
+        assert_raises(Skadi::Configuration::Error) do
+          Skadi.configuration.validate!
+        end
+      end
     end
 
-    test "anonymisation_set_duration validates" do
-      assert_values_are_valid(:anonymisation_set_duration, 5.minutes, 1.day, 1.hour, 3.weeks)
+    test "use_anonymity_sets validates" do
+      assert_values_are_valid(:use_anonymity_sets, true, false)
 
-      assert_values_are_invalid(:anonymisation_set_duration, nil, "1 day", 123)
+      assert_values_are_invalid(:use_anonymity_sets, nil, "true", "false", 123)
     end
 
-    test "anonymisation_set_reset_hour validates" do
-      assert_values_are_valid(:anonymisation_set_reset_hour, false, 0, 4, 23)
+    test "anonymity_set_cache_key validates" do
+      assert_values_are_valid(:anonymity_set_cache_key, "key", "cache key")
 
-      assert_values_are_invalid(:anonymisation_set_reset_hour, nil, "2pm", 123)
+      assert_values_are_invalid(:anonymity_set_cache_key, nil, true, false, 123, "")
+    end
+
+    test "anonymity_set_duration validates" do
+      assert_values_are_valid(:anonymity_set_duration, 5.minutes, 1.day, 1.hour, 3.weeks)
+
+      assert_values_are_invalid(:anonymity_set_duration, nil, "1 day", 123, true, false)
+    end
+
+    test "anonymity_set_reset_hour validates" do
+      assert_values_are_valid(:anonymity_set_reset_hour, false, 0, 4, 23)
+
+      assert_values_are_invalid(:anonymity_set_reset_hour, nil, "2pm", 123, true)
     end
 
     test "visit_duration validates" do
       assert_values_are_valid(:visit_duration, 5.minutes, 1.day, 1.hour, 3.weeks)
 
-      assert_values_are_invalid(:visit_duration, nil, "1 day", 123)
+      assert_values_are_invalid(:visit_duration, nil, "1 day", 123, true, false)
     end
 
     test "user_model validates" do
-      assert_values_are_valid(:user_model, nil, Class.new(ActiveRecord::Base))
+      assert_values_are_valid(:user_model, nil, "DummyUser")
 
-      assert_values_are_invalid(:user_model, Class.new, "User", :User)
+      assert_values_are_invalid(:user_model, Class.new, "Class", :DummyUser, true, false)
     end
 
     test "user_method validates" do
       assert_values_are_valid(:user_method, nil, :current_user, :current_user_method)
 
-      assert_values_are_invalid(:user_method, "Current.user", "current_user")
+      assert_values_are_invalid(:user_method, "Current.user", "current_user", true, false)
     end
 
     test "use_query_param_whitelist validates" do
@@ -60,13 +69,13 @@ module Skadi::Unit
     test "query_param_whitelist validates" do
       assert_values_are_valid(:query_param_whitelist, [], [:symbol], [:two, :symbols])
 
-      assert_values_are_invalid(:query_param_whitelist, ["string"], [:symbol, "string"], :symbol, {symbol: true})
+      assert_values_are_invalid(:query_param_whitelist, ["string"], [:symbol, "string"], :symbol, {symbol: true}, true, false)
     end
 
     test "db_connects_to validates" do
       assert_values_are_valid(:db_connects_to, nil, {database: :primary}, {database: :primary, shards: :all}, {shards: :all})
 
-      assert_values_are_invalid(:db_connects_to, {}, {invalid_key: true}, {database: :primary, invalid_key: true})
+      assert_values_are_invalid(:db_connects_to, {}, {invalid_key: true}, {database: :primary, invalid_key: true}, true, false)
     end
 
     test "store_domain_in_views validates" do
@@ -78,33 +87,43 @@ module Skadi::Unit
     test "max_tracking_payload_size validates" do
       assert_values_are_valid(:max_tracking_payload_size, 1000, 5000, 10000)
 
-      assert_values_are_invalid(:max_tracking_payload_size, nil, "1000", 0)
+      assert_values_are_invalid(:max_tracking_payload_size, nil, "1000", 0, true, false)
     end
 
     test "cookie_domain validates" do
       assert_values_are_valid(:cookie_domain, nil, "example.com", ".example.com", "subdomain.example.com")
 
-      assert_values_are_invalid(:cookie_domain, "", 0)
+      assert_values_are_invalid(:cookie_domain, "", 0, true, false)
     end
 
     private def assert_values_are_valid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)
-        Skadi.configuration.validate!
 
-        assert_empty @log.string
+        assert_nothing_raised do
+          Skadi.configuration.validate!
+        end
       end
     end
 
     private def assert_values_are_invalid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)
-        Skadi.configuration.validate!
 
-        assert_match("Skadi.configuration.#{attribute} error!", @log.string, "Expected error message for #{attribute}=#{value.inspect}")
+        error = assert_raises(Skadi::Configuration::Error) do
+          Skadi.configuration.validate!
+        end
 
-        # Reset the log for the next iteration
-        @log.string = ""
+        assert_match("Skadi.configuration.#{attribute} error!", error.message, "Expected error message for #{attribute}=#{value.inspect}")
+      end
+    end
+
+    private def mock_rails_env(env)
+      Rails.env = env
+      begin
+        yield
+      ensure
+        Rails.env = "test"
       end
     end
   end
