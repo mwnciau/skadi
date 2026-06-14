@@ -9,6 +9,7 @@ require_relative "skadi/analytics"
 require_relative "skadi/configuration"
 require_relative "skadi/engine"
 require_relative "skadi/url"
+require_relative "skadi/user_agent"
 
 module Skadi
   VERSION = "0.2.0"
