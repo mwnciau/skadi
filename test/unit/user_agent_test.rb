@@ -4,16 +4,6 @@ module Skadi::Unit
   class UserAgentTest < TestCase
     MOBILE_BROWSERS = %w[Firefox Safari Chrome]
     MOBILE_OSES = %w[iOS Android]
-    BROWSER_MAPPING = {
-      "Baidu" => "baiduboxapp",
-      "Chrome Headless" => "HeadlessChrome",
-      "Huawei Browser" => "HuaweiBrowser",
-      "MIUI Browser" => "MiuiBrowser",
-      "Samsung Internet" => "SamsungBrowser",
-      "Vivo Browser" => "VivoBrowser",
-      "Yandex" => "YaBrowser",
-    }
-    UNSUPPPORTED_BROWSERS = %w[Mozilla]
 
     test "parse desktop user agents" do
       dataset = JSON.load_file(File.join(__dir__, "../fixtures/user_agent/user_agents.json"))
@@ -34,9 +24,6 @@ module Skadi::Unit
 
         if MOBILE_BROWSERS.include?(test_case["browser"]) && MOBILE_OSES.include?(test_case["os"])
           test_case["browser"] = "#{test_case["browser"]} for #{test_case["os"]}"
-        end
-        if BROWSER_MAPPING.key?(test_case["browser"])
-          test_case["browser"] = BROWSER_MAPPING[test_case["browser"]]
         end
 
         browser_match = result[:browser] == test_case["browser"]
@@ -88,6 +75,6 @@ module Skadi::Unit
       puts "browser: #{Skadi::UserAgent.parse_browser(ua).inspect}"
       puts "engine: #{Skadi::UserAgent.parse_engine(ua).inspect}"
       puts "os: #{Skadi::UserAgent.parse_os(ua).inspect}"
-      end
+    end
   end
 end

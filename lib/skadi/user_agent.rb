@@ -14,93 +14,139 @@ module Skadi
     BROWSER_MATCHERS = [
       {
         regex: %r{
-          (?<browser>baiduboxapp|HuaweiBrowser|VivoBrowser)\/(?<version>\d+)
+          (?<browser>
+            baiduboxapp
+            | HuaweiBrowser
+            | VivoBrowser
+          )\/(?<version>\d+)
         }x,
-      },
+      }.freeze,
       {
         regex: /Chrome\/(?<version>\d+).*WebView|; wv.*Chrome\/(?<version>\d+)/,
         browser: "Chrome WebView"
-      },
+      }.freeze,
       {
         regex: %r{
-          (?<browser>Chromium|Electron|HeadlessChrome|Line|Maxthon|MiuiBrowser|Opera\ Mini|PaleMoon|QQBrowser|SamsungBrowser|SeaMonkey|Snapchat|UCBrowser|YaBrowser)\/(?<version>\d+)
+          (?<browser>
+            BingSapphire
+            | Brave
+            | Chromium
+            | Ddg | DuckDuckGo
+            | Ecosia\ ios
+            | Electron
+            | FBAV
+            | HeadlessChrome
+            | Line
+            | Maxthon
+            | MiuiBrowser
+            | OP[RTX]
+            | Opera\ Mini
+            | PaleMoon
+            | QQBrowser
+            | SamsungBrowser
+            | SeaMonkey
+            | Silk
+            | Snapchat
+            | Twitter\ for\ iPhone
+            | UCBrowser
+            | YaBrowser
+          )[\/@](?<version>\d+)
         }x,
-      },
+      }.freeze,
       {
-        regex: /OPR\/(?<version>\d+)|Opera.*Version\/(?<version>\d+)|Opera\/(?<version>\d+)/,
+        regex: /Opera.*Version\/(?<version>\d+)|Opera\/(?<version>\d+)/,
         browser: "Opera"
-      },
+      }.freeze,
       {
         regex: /Android.*Version\/(?<version>\d+)/,
         browser: "Android Browser"
-      },
+      }.freeze,
       {
         regex: /Edg.?(?:OS)?\/(?<version>\d+)/,
         browser: "Edge"
-      },
+      }.freeze,
       {
         regex: /Android.*Chrome\/(?<version>\d+)/,
         browser: "Chrome for Android"
-      },
+      }.freeze,
       {
-        regex: /(?:iOS|iPod|iPad|iPhone).*Chrome\/(?<version>\d+)|CriOS\/(?<version>\d+)/,
+        regex: /(?:iOS|iPod|iPad|iPhone).*(?:CriOS|Chrome)\/(?<version>\d+)/,
         browser: "Chrome for iOS"
-      },
+      }.freeze,
       {
-        regex: /Chrome\/(?<version>\d+)/,
+        regex: /(?:CriOS|Chrome)\/(?<version>\d+)/,
         browser: "Chrome"
-      },
+      }.freeze,
+      {
+        regex: /(?:iOS|iPod|iPad|iPhone).*Firefox\/(?<version>\d+)|FxiOS\/(?<version>\d+)/,
+        browser: "Firefox for iOS"
+      }.freeze,
       {
         regex: /(?:(?:iOS|iPod|iPad|iPhone).+Version|MobileSafari)\/(?<version>\d+)/,
         browser: "Safari for iOS"
-      },
+      }.freeze,
       {
         regex: /GSA\/(?<version>\d+)/,
         browser: "GSA"
-      },
+      }.freeze,
       {
         regex: /musical_ly_(?<version>\d+)/,
         browser: "TikTok"
-      },
+      }.freeze,
       {
         regex: /Version\/(?<version>\d+).*Safari/,
         browser: "Safari"
-      },
+      }.freeze,
       {
         regex: /Safari\//,
         browser: "Safari",
         browser_version: "1",
-      },
+      }.freeze,
       {
         regex: /Android.*Firefox\/(?<version>\d+)/,
         browser: "Firefox for Android"
-      },
-      {
-        regex: /(?:iOS|iPod|iPad|iPhone).*Firefox\/(?<version>\d+)/,
-        browser: "Firefox for iOS"
-      },
+      }.freeze,
       {
         regex: /Firefox\/(?<version>\d+)/,
         browser: "Firefox"
-      },
+      }.freeze,
       {
         regex: /(?<browser>LinkedIn)/,
-      },
+      }.freeze,
       {
         regex: /WebKit\/(?<version>\d+)/,
         browser: "WebKit"
-      },
+      }.freeze,
       {
-        regex: /MSIE (?<version>\d+).*Trident\/(?<engine_version>\d+)/,
+        regex: /MSIE (?<version>\d+).*Trident\/(?<engine_version>\d+)|Trident\/(?<engine_version>\d+).*rv:(?<version>\d+)/,
         browser: "IE",
         engine: "Trident",
-      },
+      }.freeze,
       {
         regex: /Mozilla\/(?<version>\d+).*rv:(?<engine_version>\d+).*?Gecko\/\d+/,
         browser: "Mozilla",
         engine: "Gecko",
-      },
-    ]
+      }.freeze,
+    ].freeze
+
+    # Normalise the name of the browser for browsers that are detected in a larger regex
+    BROWSER_NAME_REMAP = {
+      "baiduboxapp" => "Baidu",
+      "BingSapphire" => "Bing",
+      "HeadlessChrome" => "Chrome Headless",
+      "Ddg" => "DuckDuckGo",
+      "Ecosia ios" => "Ecosia",
+      "FBAV" => "Facebook",
+      "HuaweiBrowser" => "Huawei Browser",
+      "MiuiBrowser" => "MIUI Browser",
+      "OPR" => "Opera",
+      "OPT" => "Opera Touch",
+      "OPX" => "Opera GX",
+      "SamsungBrowser" => "Samsung Internet",
+      "Twitter for iPhone" => "Twitter",
+      "VivoBrowser" => "Vivo Browser",
+      "YaBrowser" => "Yandex",
+    }.freeze
 
     def self.parse_browser(user_agent)
       BROWSER_MATCHERS.each do |matcher|
@@ -110,9 +156,13 @@ module Skadi
           result = matcher.except(:regex)
           named_captures = match.named_captures
           result[:browser] ||= named_captures["browser"] if named_captures["browser"].present?
+          result[:browser] = BROWSER_NAME_REMAP[result[:browser]] || result[:browser] || "Unknown"
+
           result[:browser_version] ||= named_captures["version"] if named_captures["version"].present?
           result[:browser_version] ||= "Unknown"
+
           result[:engine_version] ||= named_captures["engine_version"] if named_captures["engine_version"].present?
+
           result[:os] ||= named_captures["os"] if named_captures["os"].present?
 
           return result
