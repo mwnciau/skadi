@@ -4,9 +4,10 @@ module Skadi::Unit
   class UserAgentTest < TestCase
     MOBILE_BROWSERS = %w[Firefox Safari Chrome]
     MOBILE_OSES = %w[iOS Android]
+    TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
 
     test "parse desktop user agents" do
-      dataset = JSON.load_file(File.join(__dir__, "../fixtures/user_agent/user_agents.json"))
+      dataset = JSON.load_file(TEST_FILE)
 
       positive = 0
       negative = 0
@@ -75,6 +76,40 @@ module Skadi::Unit
       puts "browser: #{Skadi::UserAgent.parse_browser(ua).inspect}"
       puts "engine: #{Skadi::UserAgent.parse_engine(ua).inspect}"
       puts "os: #{Skadi::UserAgent.parse_os(ua).inspect}"
+    end
+
+    test "performance" do
+      skip("Benchmarking libraries are not installed") unless maybe_require("benchmark/ips")
+      maybe_require "device_detector"
+      dataset = JSON.load_file(TEST_FILE)
+
+      Benchmark.ips do |bm|
+        bm.report("skadi") do
+          dataset["userAgents"].each do |test_case|
+            result = skadi_parse_user_agent(test_case["userAgent"])
+            result[:browser]
+            result[:browser_version]
+            result[:os]
+          end
+        end
+
+        bm.report("device_detector") do
+          dataset["userAgents"].each do |test_case|
+            result = DeviceDetector.new(test_case["userAgent"])
+            result.name
+            result.full_version
+            result.os_name
+          end
+        end if defined?(DeviceDetector)
+
+        bm.compare!
+      end
+    end
+
+    private def maybe_require(library)
+      require library
+    rescue LoadError
+      false
     end
   end
 end

@@ -56,4 +56,8 @@ Gem::Specification.new do |s|
   # Database gem for the dummy rails app
   s.add_development_dependency "puma", "~> 7.0"
   s.add_development_dependency "sqlite3", "~> 2.0"
+
+  # Gems to test the user agent parser. Uncomment to run the tests
+  #s.add_development_dependency "benchmark-ips"
+  #s.add_development_dependency "device_detector"
 end
