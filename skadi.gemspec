@@ -58,6 +58,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "sqlite3", "~> 2.0"
 
   # Gems to test the user agent parser. Uncomment to run the tests
-  #s.add_development_dependency "benchmark-ips"
-  #s.add_development_dependency "device_detector"
+  # s.add_development_dependency "benchmark-ips"
+  # s.add_development_dependency "browser"
+  # s.add_development_dependency "device_detector"
 end

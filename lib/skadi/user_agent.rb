@@ -16,9 +16,13 @@ module Skadi
         regex: %r{
           (?<browser>
             baiduboxapp
+            | FBAV
             | HuaweiBrowser
+            | MicroMessenger
+            | musical_ly
+            | OP[RTX]
             | VivoBrowser
-          )\/(?<version>\d+)
+          )[\/_](?<version>\d+)
         }x,
       }.freeze,
       {
@@ -28,18 +32,19 @@ module Skadi
       {
         regex: %r{
           (?<browser>
-            BingSapphire
+            Avast
+            | AVG
+            | BingSapphire
             | Brave
-            | Chromium
             | Ddg | DuckDuckGo
             | Ecosia\ ios
             | Electron
-            | FBAV
             | HeadlessChrome
+            | Instagram
             | Line
             | Maxthon
             | MiuiBrowser
-            | OP[RTX]
+            | Norton
             | Opera\ Mini
             | PaleMoon
             | QQBrowser
@@ -49,17 +54,20 @@ module Skadi
             | Snapchat
             | Twitter\ for\ iPhone
             | UCBrowser
+            | Waterfox
+            | Whale
             | YaBrowser
-          )[\/@](?<version>\d+)
+          )[\/@\ ](?<version>\d+)
         }x,
       }.freeze,
       {
-        regex: /Opera.*Version\/(?<version>\d+)|Opera\/(?<version>\d+)/,
+        regex: /Opera(.*Version\/)?(?<version>\d+)/,
         browser: "Opera"
       }.freeze,
       {
         regex: /Android.*Version\/(?<version>\d+)/,
-        browser: "Android Browser"
+        browser: "Android Browser",
+        os: "Android",
       }.freeze,
       {
         regex: /Edg.?(?:OS)?\/(?<version>\d+)/,
@@ -67,11 +75,18 @@ module Skadi
       }.freeze,
       {
         regex: /Android.*Chrome\/(?<version>\d+)/,
-        browser: "Chrome for Android"
+        browser: "Chrome for Android",
+        os: "Android",
       }.freeze,
       {
         regex: /(?:iOS|iPod|iPad|iPhone).*(?:CriOS|Chrome)\/(?<version>\d+)/,
-        browser: "Chrome for iOS"
+        browser: "Chrome for iOS",
+        os: "iOS",
+      }.freeze,
+      {
+        regex: /Chromium GOST/,
+        browser: "Chromium",
+        browser_version: "GOST",
       }.freeze,
       {
         regex: /(?:CriOS|Chrome)\/(?<version>\d+)/,
@@ -79,23 +94,26 @@ module Skadi
       }.freeze,
       {
         regex: /(?:iOS|iPod|iPad|iPhone).*Firefox\/(?<version>\d+)|FxiOS\/(?<version>\d+)/,
-        browser: "Firefox for iOS"
+        browser: "Firefox for iOS",
+        os: "iOS",
       }.freeze,
       {
-        regex: /(?:(?:iOS|iPod|iPad|iPhone).+Version|MobileSafari)\/(?<version>\d+)/,
-        browser: "Safari for iOS"
+        regex: /(?:iOS|iPod|iPad|iPhone).+Version\/(?<version>\d+)/,
+        browser: "Safari for iOS",
+        os: "iOS",
       }.freeze,
       {
         regex: /GSA\/(?<version>\d+)/,
         browser: "GSA"
       }.freeze,
       {
-        regex: /musical_ly_(?<version>\d+)/,
-        browser: "TikTok"
+        regex: /(?:iOS|iPod|iPad|iPhone).*Safari/,
+        browser: "Safari for iOS",
+        os: "iOS",
       }.freeze,
       {
         regex: /Version\/(?<version>\d+).*Safari/,
-        browser: "Safari"
+        browser: "Safari",
       }.freeze,
       {
         regex: /Safari\//,
@@ -104,7 +122,8 @@ module Skadi
       }.freeze,
       {
         regex: /Android.*Firefox\/(?<version>\d+)/,
-        browser: "Firefox for Android"
+        browser: "Firefox for Android",
+        os: "Android",
       }.freeze,
       {
         regex: /Firefox\/(?<version>\d+)/,
@@ -121,6 +140,7 @@ module Skadi
         regex: /MSIE (?<version>\d+).*Trident\/(?<engine_version>\d+)|Trident\/(?<engine_version>\d+).*rv:(?<version>\d+)/,
         browser: "IE",
         engine: "Trident",
+        os: "Windows",
       }.freeze,
       {
         regex: /Mozilla\/(?<version>\d+).*rv:(?<engine_version>\d+).*?Gecko\/\d+/,
@@ -131,6 +151,8 @@ module Skadi
 
     # Normalise the name of the browser for browsers that are detected in a larger regex
     BROWSER_NAME_REMAP = {
+      "Avast" => "Avast Secure Browser",
+      "AVG" => "AVG Secure Browser",
       "baiduboxapp" => "Baidu",
       "BingSapphire" => "Bing",
       "HeadlessChrome" => "Chrome Headless",
@@ -138,7 +160,10 @@ module Skadi
       "Ecosia ios" => "Ecosia",
       "FBAV" => "Facebook",
       "HuaweiBrowser" => "Huawei Browser",
+      "MicroMessenger" => "WeChat",
       "MiuiBrowser" => "MIUI Browser",
+      "musical_ly" => "TikTok",
+      "Norton" => "Norton Private Browser",
       "OPR" => "Opera",
       "OPT" => "Opera Touch",
       "OPX" => "Opera GX",
@@ -169,26 +194,26 @@ module Skadi
         end
       end
 
-      {browser: "Unknown"}
+      { browser: "Unknown", browser_version: "Unknown" }
     end
 
     ENGINE_MATCHERS = [
       {
-        regex: /AppleWebKit\/537.*Edge\/(?<version>\d+)/,
+        regex: /AppleWebKit\/537\.36.*Edge\/(?<version>1[2-8])\./,
         engine: "EdgeHTML",
       },
       {
-        regex: /AppleWebKit\/537.*Chrome\/(?!27\.)(?<version>\d+)/,
+        regex: /AppleWebKit\/537\.36.*Chrome\/(?<version>\d+)/,
         engine: "Blink",
-      },
+      }.freeze,
       {
         regex: /(?<engine>WebKit|Presto|Trident|Goanna)\/(?<version>\d+)/,
-      },
+      }.freeze,
       {
         regex: /rv:(?<version>\d+).*?Gecko\/\d+/,
         engine: "Gecko",
-      },
-    ]
+      }.freeze,
+    ].freeze
 
     def self.parse_engine(user_agent)
       ENGINE_MATCHERS.each do |matcher|
@@ -204,14 +229,58 @@ module Skadi
         end
       end
 
-      return { engine: "Unknown" }
+      { engine: "Unknown", engine_version: "Unknown" }
     end
 
-    def self.parse_os(user_agent)
+
+    OS_MATCHERS = [
       {
-        os: "Mac OS",
-        os_version: "12.0",
-      }
+        regex: /(?<os>HarmonyOS|Windows)/,
+      }.freeze,
+      {
+        regex: /iPod|iPad|iPhone|CFNetwork/,
+        os: "iOS",
+      }.freeze,
+      {
+        regex: /Android/,
+        os: "Android",
+      }.freeze,
+      {
+        regex: /Mac OS/,
+        os: "macOS",
+      }.freeze,
+      {
+        regex: /(?<os>Linux|Fedora|Ubuntu)/,
+      }.freeze,
+      {
+        regex: /CrOS/,
+        os: "Chrome OS",
+      }.freeze,
+    ].freeze
+
+    def self.parse_os(user_agent)
+      OS_MATCHERS.each do |matcher|
+        match = matcher[:regex].match(user_agent)
+
+        if match
+          return {os: matcher[:os]} if matcher.key?(:os)
+
+          named_captures = match.named_captures
+          return {os: named_captures["os"]} if named_captures["os"].present?
+        end
+      end
+
+      return { os: "Unknown" }
+    end
+
+    BOT_MATCHER = %r{
+      bot
+      | crawl
+      | spider
+    }ix
+
+    def self.bot?(user_agent)
+      false
     end
   end
 end

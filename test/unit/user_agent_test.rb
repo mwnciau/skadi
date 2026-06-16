@@ -4,102 +4,73 @@ module Skadi::Unit
   class UserAgentTest < TestCase
     MOBILE_BROWSERS = %w[Firefox Safari Chrome]
     MOBILE_OSES = %w[iOS Android]
-    TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
+    BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
 
-    test "parse desktop user agents" do
-      dataset = JSON.load_file(TEST_FILE)
+    test "parse accuracy" do
+      dataset = JSON.load_file(BROWSER_TEST_FILE)
 
-      positive = 0
-      negative = 0
-
-      browser_errors = Hash.new { |h, k| h[k] = 0 }
-      engine_errors = Hash.new { |h, k| h[k] = 0 }
-
-      shown = 0
-      errors = []
-
-      dataset["userAgents"].each do |test_case|
+      errors =  dataset["userAgents"].sum do |test_case|
         result = Skadi::UserAgent.parse(test_case["userAgent"])
+        count = test_case["count"]
 
-        browser_match, browser_version_match, engine_match, engine_version_match = nil
-
+        # Reformat the test data to be consistent with how we present the data
         if MOBILE_BROWSERS.include?(test_case["browser"]) && MOBILE_OSES.include?(test_case["os"])
           test_case["browser"] = "#{test_case["browser"]} for #{test_case["os"]}"
         end
 
-        browser_match = result[:browser] == test_case["browser"]
-        browser_version_match = test_case["browserMajorVersion"] == result[:browser_version] || test_case["browser"] == "Unknown"
+        next count unless result[:browser] == test_case["browser"]
+        next count unless test_case["browserMajorVersion"] == result[:browser_version]
 
-        engine_match = test_case["engine"] == result[:engine]
-        engine_version_match = test_case["engineMajorVersion"] == result[:engine_version] || test_case["engine"] == "Unknown"
+        next count unless test_case["engine"] == result[:engine]
+        next count unless test_case["engineMajorVersion"] == result[:engine_version]
 
-        if browser_match && engine_match && browser_version_match && engine_version_match
-          positive += test_case["count"]
-        else
-          negative += test_case["count"]
+        next count unless test_case["os"] == result[:os]
 
-          engine_errors[test_case["engine"]] += test_case["count"] if !engine_match || !engine_version_match
-          browser_errors[test_case["browser"]] += test_case["count"] if !browser_match || !browser_version_match
-
-          next if shown >= 20
-          shown += 1
-
-          errors << "----------------------------------------"
-          errors << "Showing #{browser_errors[test_case["browser"]]} (#{test_case["count"]}) of #{dataset["totalCount"]} errors"
-          errors << "User agent: #{test_case["userAgent"]}"
-          errors << "Browser: '#{result[:browser]}' #{browser_match ? "✅" : "❌"} (#{test_case["browser"]})"
-          errors << "Browser version: '#{result[:browser_version]}' #{browser_version_match ? "✅" : "❌"}  (#{test_case["browserMajorVersion"]})"
-          errors << "Engine: #{result[:engine]} #{engine_match ? "✅" : "❌"} (#{test_case["engine"]})"
-          errors << "Engine version: #{result[:engine_version]} #{engine_version_match ? "✅" : "❌"}  (#{test_case["engineMajorVersion"]})"
-
-          errors << "----------------------------------------"
-          errors << ""
-        end
+        # If everything matches, there are no errors so return 0
+        0
       end
 
-      puts "Positive: #{positive} (#{(100 * positive.to_f / dataset["totalCount"]).round}%)"
-      puts "Negative: #{negative} (#{(100 * negative.to_f / dataset["totalCount"]).round}%)"
-      puts ""
-      puts "Browser errors: #{browser_errors.to_a.sort { |a, b| a[1] <=> b[1] }.reverse.map{|k,v| "#{k} (#{v})" }.join(", ")}"
-      puts "Engine errors: #{engine_errors.to_a.sort { |a, b| a[1] <=> b[1] }.reverse.map{|k,v| "#{k} (#{v})" }.join(", ")}"
-      puts ""
-      errors.each { |e| puts e }
-    end
-
-    test "single ua" do
-      # Should be GSA
-      ua = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) GSA/295.0.590048842 Mobile/15E148 Safari/604.1"
-
-      # Should be Android Browser
-      ua = "Mozilla/5.0 (Linux; Android 4.0.0; SM-T560 Build/KTU84P) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/33.0.0.0 Safari/537.0 GSA/9.0.0.0.arm"
-
-      puts "browser: #{Skadi::UserAgent.parse_browser(ua).inspect}"
-      puts "engine: #{Skadi::UserAgent.parse_engine(ua).inspect}"
-      puts "os: #{Skadi::UserAgent.parse_os(ua).inspect}"
+      # Assert that the error rate is less than 0.5%
+      assert 100.0 * errors / dataset["totalCount"] < 0.5
     end
 
     test "performance" do
       skip("Benchmarking libraries are not installed") unless maybe_require("benchmark/ips")
+
+      maybe_require "browser"
       maybe_require "device_detector"
-      dataset = JSON.load_file(TEST_FILE)
+
+      dataset = JSON.load_file(BROWSER_TEST_FILE)
+      dataset_size = dataset["userAgents"].length
 
       Benchmark.ips do |bm|
+        i = 0
         bm.report("skadi") do
-          dataset["userAgents"].each do |test_case|
-            result = skadi_parse_user_agent(test_case["userAgent"])
-            result[:browser]
-            result[:browser_version]
-            result[:os]
-          end
+          result = Skadi::UserAgent.parse(dataset["userAgents"][i]["userAgent"])
+          result[:browser]
+          result[:browser_version]
+          result[:os]
+
+          i = (i + 1) % dataset_size
         end
 
+        i = 0
+        bm.report("browser") do
+          result = Browser.new(dataset["userAgents"][i]["userAgent"])
+          result.name
+          result.version
+          result.platform.name
+
+          i = (i + 1) % dataset_size
+        end if defined?(Browser)
+
         bm.report("device_detector") do
-          dataset["userAgents"].each do |test_case|
-            result = DeviceDetector.new(test_case["userAgent"])
-            result.name
-            result.full_version
-            result.os_name
-          end
+          result = DeviceDetector.new(dataset["userAgents"][i]["userAgent"])
+          result.name
+          result.full_version
+          result.os_name
+
+          i = (i + 1) % dataset_size
         end if defined?(DeviceDetector)
 
         bm.compare!
