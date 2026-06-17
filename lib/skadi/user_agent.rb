@@ -1,14 +1,66 @@
 module Skadi
   # A minimal user agent parser, designed for speed rather than completeness, aiming to detect the most common browsers and operating systems.
   # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Browser_detection_using_the_user_agent
-  module UserAgent
-    def self.parse(user_agent)
-      result = parse_browser(user_agent)
+  class UserAgent
+    def initialize(user_agent)
+      @user_agent = user_agent
+    end
 
-      result.merge!(parse_engine(user_agent)) unless result.key?(:engine) && result.key?(:engine_version)
-      result.merge!(parse_os(user_agent)) unless result.key?(:os)
+    def browser
+      parse_browser if @browser.nil?
 
-      result
+      @browser
+    end
+
+    def browser_version
+      parse_browser if @browser_version.nil?
+
+      @browser_version
+    end
+
+    def engine
+      parse_engine if @engine.nil?
+
+      @engine
+    end
+
+    def engine_version
+      parse_engine if @engine_version.nil?
+
+      @engine_version
+    end
+
+    def os
+      parse_os if @os.nil?
+
+      @os
+    end
+
+    def bot?
+      return @bot unless @bot.nil?
+
+      # If the user agent doesn't follow the normal browser patterns, we assume it's a bot
+      parse_browser if @browser.nil?
+      if @browser == "Unknown"
+        @bot = true
+
+        return true
+      end
+
+      @bot = self.class.bot_fast?(@user_agent)
+    end
+
+    def human? = !bot?
+
+    def to_h
+      {
+        browser: browser,
+        browser_version: browser_version,
+        engine: engine,
+        engine_version: engine_version,
+        os: os,
+        bot: bot?
+      }
     end
 
     BROWSER_MATCHERS = [
@@ -173,28 +225,25 @@ module Skadi
       "YaBrowser" => "Yandex",
     }.freeze
 
-    def self.parse_browser(user_agent)
+    private def parse_browser
       BROWSER_MATCHERS.each do |matcher|
-        match = matcher[:regex].match(user_agent)
+        match = matcher[:regex].match(@user_agent)
 
         if match
-          result = matcher.except(:regex)
           named_captures = match.named_captures
-          result[:browser] ||= named_captures["browser"] if named_captures["browser"].present?
-          result[:browser] = BROWSER_NAME_REMAP[result[:browser]] || result[:browser] || "Unknown"
 
-          result[:browser_version] ||= named_captures["version"] if named_captures["version"].present?
-          result[:browser_version] ||= "Unknown"
+          @browser = matcher[:browser] || BROWSER_NAME_REMAP[named_captures["browser"]] || named_captures["browser"] || "Unknown"
+          @browser_version = matcher[:browser_version] || named_captures["version"] || "Unknown"
+          @engine = matcher[:engine] if matcher[:engine].present?
+          @engine_version = named_captures["engine_version"]
+          @os = named_captures["os"]
 
-          result[:engine_version] ||= named_captures["engine_version"] if named_captures["engine_version"].present?
-
-          result[:os] ||= named_captures["os"] if named_captures["os"].present?
-
-          return result
+          return
         end
       end
 
-      { browser: "Unknown", browser_version: "Unknown" }
+      @browser = "Unknown"
+      @browser_version = "Unknown"
     end
 
     ENGINE_MATCHERS = [
@@ -215,21 +264,22 @@ module Skadi
       }.freeze,
     ].freeze
 
-    def self.parse_engine(user_agent)
+    private def parse_engine
       ENGINE_MATCHERS.each do |matcher|
-        match = matcher[:regex].match(user_agent)
+        match = matcher[:regex].match(@user_agent)
 
         if match
-          result = matcher.except(:regex)
           named_captures = match.named_captures
-          result[:engine] ||= named_captures["engine"] if named_captures["engine"].present?
-          result[:engine_version] ||= named_captures["version"] if named_captures["version"].present?
 
-          return result
+          @engine = matcher[:engine] || named_captures["engine"] || "Unknown"
+          @engine_version = named_captures["version"] || "Unknown"
+
+          return
         end
       end
 
-      { engine: "Unknown", engine_version: "Unknown" }
+      @engine = "Unknown"
+      @engine_version = "Unknown"
     end
 
 
@@ -258,29 +308,39 @@ module Skadi
       }.freeze,
     ].freeze
 
-    def self.parse_os(user_agent)
+    private def parse_os
       OS_MATCHERS.each do |matcher|
-        match = matcher[:regex].match(user_agent)
+        match = matcher[:regex].match(@user_agent)
 
         if match
-          return {os: matcher[:os]} if matcher.key?(:os)
+          if matcher.key?(:os)
+            @os = matcher[:os]
+            return
+          end
 
-          named_captures = match.named_captures
-          return {os: named_captures["os"]} if named_captures["os"].present?
+          @os = match.named_captures["os"] || "Unknown"
+          return
         end
       end
 
-      return { os: "Unknown" }
+      @os = "Unknown"
     end
 
-    BOT_MATCHER = %r{
-      bot
-      | crawl
-      | spider
-    }ix
+    BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider].freeze
+    BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss dareboost datadogsynthetics datanyze deadlinkchecker devin feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 newrelicsynthetics newsai newsblur newsify nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright printfriendly ptst puppeteer pwabuilderhttpagent readable revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch woorankreview xmco zoterotranslationserver]).freeze
+    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008", "Dlc/", "page-preview-tool", "PS_Daily", "YLT Chrome"].freeze
 
-    def self.bot?(user_agent)
-      false
+    def self.bot_fast?(user_agent)
+      ua = user_agent.downcase
+      return true if BOT_GLOBAL_MATCHERS.any? { |it| ua.include? it }
+
+      ua.tr!("^a-z0-9", " ")
+      ua_keys = ua.split.keep_if { |it| it.length > 3 }
+      return true if ua_keys.any? { |it| BOT_WORD_SET.include? it }
+
+      return true if BOT_FALLBACK_MATCHERS.any? { |it| user_agent.include? it }
+
+      return false
     end
   end
 end
