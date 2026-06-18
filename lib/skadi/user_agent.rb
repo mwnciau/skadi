@@ -47,7 +47,7 @@ module Skadi
         return true
       end
 
-      @bot = self.class.bot_fast?(@user_agent)
+      @bot = self.class.detect_bot(@user_agent)
     end
 
     def human? = !bot?
@@ -63,55 +63,15 @@ module Skadi
       }
     end
 
+    # A list of browsers which have their name in the user agent string, typically followed by a slash
+    VERSIONED_BROWSERS = Set.new(["Avast", "AVG", "baiduboxapp", "BingSapphire", "Brave", "Chromium", "Ddg", "DuckDuckGo", "Ecosia ios", "Electron", "FBAV", "HeadlessChrome", "HeyTapBrowser", "HuaweiBrowser", "Instagram", "KAKAOTALK", "Line", "Maxthon", "MicroMessenger", "MiuiBrowser", "Mobile DuckDuckGo", "MQQBrowser", "musical_ly", "Norton", "Opera Mini", "OPR", "OPT", "OPX", "PaleMoon", "QQBrowser", "QuarkPC", "SamsungBrowser", "SeaMonkey", "Silk", "Snapchat", "TikTokLIVEStudio", "Twitter for iPhone", "UCBrowser", "VivoBrowser", "Waterfox", "Whale", "YaBrowser"])
+
     BROWSER_MATCHERS = [
-      {
-        regex: %r{
-          (?<browser>
-            baiduboxapp
-            | FBAV
-            | HuaweiBrowser
-            | MicroMessenger
-            | musical_ly
-            | OP[RTX]
-            | VivoBrowser
-          )[\/_](?<version>\d+)
-        }x,
-      }.freeze,
       {
         regex: /Chrome\/(?<version>\d+).*WebView|; wv.*Chrome\/(?<version>\d+)/,
         browser: "Chrome WebView"
       }.freeze,
-      {
-        regex: %r{
-          (?<browser>
-            Avast
-            | AVG
-            | BingSapphire
-            | Brave
-            | Ddg | DuckDuckGo
-            | Ecosia\ ios
-            | Electron
-            | HeadlessChrome
-            | Instagram
-            | Line
-            | Maxthon
-            | MiuiBrowser
-            | Norton
-            | Opera\ Mini
-            | PaleMoon
-            | QQBrowser
-            | SamsungBrowser
-            | SeaMonkey
-            | Silk
-            | Snapchat
-            | Twitter\ for\ iPhone
-            | UCBrowser
-            | Waterfox
-            | Whale
-            | YaBrowser
-          )[\/@\ ](?<version>\d+)
-        }x,
-      }.freeze,
+
       {
         regex: /Opera(.*Version\/)?(?<version>\d+)/,
         browser: "Opera"
@@ -189,9 +149,8 @@ module Skadi
         browser: "WebKit"
       }.freeze,
       {
-        regex: /MSIE (?<version>\d+).*Trident\/(?<engine_version>\d+)|Trident\/(?<engine_version>\d+).*rv:(?<version>\d+)/,
+        regex: /MSIE (?<version>\d+)(?:.*(?<engine>Trident)\/(?<engine_version>\d+))?|(?<engine>Trident)\/(?<engine_version>\d+).*rv[: ](?<version>\d+)/,
         browser: "IE",
-        engine: "Trident",
         os: "Windows",
       }.freeze,
       {
@@ -214,6 +173,7 @@ module Skadi
       "HuaweiBrowser" => "Huawei Browser",
       "MicroMessenger" => "WeChat",
       "MiuiBrowser" => "MIUI Browser",
+      "Mobile DuckDuckGo" => "DuckDuckGo",
       "musical_ly" => "TikTok",
       "Norton" => "Norton Private Browser",
       "OPR" => "Opera",
@@ -225,7 +185,17 @@ module Skadi
       "YaBrowser" => "Yandex",
     }.freeze
 
+    SCAN_REGEX = /\b(?!AppleWebKit|Mobile Safari|Safari|Webkit|Mozilla|Chrome|Version)([a-zA-Z_]{3,}+(?:\ [a-zA-Z]{3,}+)*+)[\/@ _](\d++)\b/
     private def parse_browser
+      # Splitting into tokens and then checking againt the set of versioned browsers is about equal in performance to just using a massive regular expression, but this setup scales better with multiple browsers given Set lookups are O(1).
+      @user_agent.scan(SCAN_REGEX) do |browser, version|
+        next unless VERSIONED_BROWSERS.include?(browser)
+
+        @browser = BROWSER_NAME_REMAP[browser] || browser
+        @browser_version = version
+        return
+      end
+
       BROWSER_MATCHERS.each do |matcher|
         match = matcher[:regex].match(@user_agent)
 
@@ -300,7 +270,11 @@ module Skadi
         os: "macOS",
       }.freeze,
       {
-        regex: /(?<os>Linux|Fedora|Ubuntu)/,
+        regex: /(?<os>Fedora|Ubuntu)/,
+      }.freeze,
+      {
+        regex: /Linux/,
+        os: "Linux",
       }.freeze,
       {
         regex: /CrOS/,
@@ -327,10 +301,12 @@ module Skadi
     end
 
     BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider].freeze
+
     BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss dareboost datadogsynthetics datanyze deadlinkchecker devin feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 newrelicsynthetics newsai newsblur newsify nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright printfriendly ptst puppeteer pwabuilderhttpagent readable revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch woorankreview xmco zoterotranslationserver]).freeze
+
     BOT_FALLBACK_MATCHERS = ["AP3A.240617.008", "Dlc/", "page-preview-tool", "PS_Daily", "YLT Chrome"].freeze
 
-    def self.bot_fast?(user_agent)
+    def self.detect_bot(user_agent)
       ua = user_agent.downcase
       return true if BOT_GLOBAL_MATCHERS.any? { |it| ua.include? it }
 
