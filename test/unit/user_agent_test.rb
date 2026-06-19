@@ -2,7 +2,10 @@ require_relative "test_case"
 
 module Skadi::Unit
   class UserAgentTest < TestCase
-    MOBILE_BROWSERS = %w[Firefox Safari Chrome]
+    # Set to true to enable debug output during tests
+    UA_DEBUG = false
+
+    MOBILE_BROWSERS = %w[Firefox Safari Chrome Edge]
     MOBILE_OSES = %w[iOS Android]
     BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
     BOT_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/bot_user_agents.json")
@@ -19,8 +22,7 @@ module Skadi::Unit
           test_case["browser"] = "#{test_case["browser"]} for #{test_case["os"]}"
         end
 
-        next count unless  userAgent.browser == test_case["browser"]
-        next count unless test_case["browserMajorVersion"] ==  userAgent.browser_version
+        show_parse_error(user_agent, test_case) if UA_DEBUG
 
         next count unless user_agent.browser == test_case["browser"]
         next count unless test_case["browserMajorVersion"] ==  user_agent.browser_version
@@ -34,8 +36,28 @@ module Skadi::Unit
         0
       end
 
+      puts "Error rate: #{(100.0 * errors / dataset["totalCount"]).round(2)}% (#{errors})" if UA_DEBUG
+
       # Assert that the error rate is less than 0.5%
       assert 100.0 * errors / dataset["totalCount"] < 0.5
+    end
+
+    private def show_parse_error(user_agent, test_case)
+      return if user_agent.browser == test_case["browser"] && test_case["browserMajorVersion"] ==  user_agent.browser_version && test_case["engine"] ==  user_agent.engine && test_case["engineMajorVersion"] ==  user_agent.engine_version && test_case["os"] ==  user_agent.os
+
+      puts "----------------------------------------"
+      puts "User agent: #{test_case["userAgent"]}"
+
+      puts "Browser detected '#{user_agent.browser}' should be '#{test_case["browser"]}'" unless user_agent.browser == test_case["browser"]
+      puts "Browser version detected '#{user_agent.browser_version}' should be '#{test_case["browserMajorVersion"]}'" unless test_case["browserMajorVersion"] ==  user_agent.browser_version
+
+      puts "Engine detected '#{user_agent.engine}' should be '#{test_case["engine"]}'" unless user_agent.engine == test_case["engine"]
+      puts "Engine version detected '#{user_agent.engine_version}' should be '#{test_case["engineMajorVersion"]}'" unless test_case["engineMajorVersion"] ==  user_agent.engine_version
+
+      puts "OS detected '#{user_agent.os}' should be '#{test_case["os"]}'" unless user_agent.os == test_case["os"]
+
+      puts "----------------------------------------"
+      puts ""
     end
 
     test "bot accuracy on browser dataset" do
@@ -44,17 +66,28 @@ module Skadi::Unit
       false_positives = 0
       false_negatives = 0
 
+      errors = []
+
       dataset["userAgents"].each do |test_case|
-        userAgent = Skadi::UserAgent.new(test_case["userAgent"])
+        user_agent = Skadi::UserAgent.new(test_case["userAgent"])
         count = test_case["count"]
 
-        if userAgent.bot? && !test_case["isBot"]
+        if user_agent.bot? && !test_case["isBot"]
           false_positives += count
+          errors << "False positive: #{test_case["userAgent"]} (#{count})"
         end
 
-        if userAgent.human? && test_case["isBot"]
+        if user_agent.human? && test_case["isBot"]
           false_negatives += count
+          errors << "False negative: #{test_case["userAgent"]} (#{count})"
         end
+      end
+
+      if UA_DEBUG
+        puts "false positives: #{(100.0 * false_positives / dataset["totalCount"]).round(2)}% (#{false_positives})"
+        puts "false negatives: #{(100.0 * false_negatives / dataset["totalCount"]).round(2)}% (#{false_negatives})"
+        puts ""
+        puts errors
       end
 
       # Todo: the source dataset isn't very good at detecting bots and I think we do it better...
@@ -67,13 +100,21 @@ module Skadi::Unit
       dataset = JSON.load_file(BOT_TEST_FILE)
 
       false_negatives = 0
+      errors = []
 
       dataset["userAgents"].each do |test_case|
-        userAgent = Skadi::UserAgent.new(test_case["userAgent"])
+        user_agent = Skadi::UserAgent.new(test_case["userAgent"])
 
-        unless userAgent.bot?
+        unless user_agent.bot?
           false_negatives += test_case["count"]
+          errors << "False negative: #{test_case["userAgent"]} (#{test_case["count"]})"
         end
+      end
+
+      if UA_DEBUG
+        puts "false negatives: #{(100.0 * false_negatives / dataset["totalCount"]).round(2)}% (#{false_negatives})"
+        puts ""
+        puts errors
       end
 
       # Assert that the error rate is less than 0.1%
