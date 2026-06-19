@@ -389,58 +389,45 @@ module Skadi
     end
 
 
-    OS_MATCHERS = [
-      {
-        regex: /(?<os>HarmonyOS|Windows)/,
-      }.freeze,
-      {
-        regex: /iPod|iPad|iPhone|CFNetwork/,
-        os: "iOS",
-      }.freeze,
-      {
-        regex: /Android/,
-        os: "Android",
-      }.freeze,
-      {
-        regex: /Mac OS/,
-        os: "macOS",
-      }.freeze,
-      {
-        regex: /(?<os>Fedora|Ubuntu)/,
-      }.freeze,
-      {
-        regex: /Linux/,
-        os: "Linux",
-      }.freeze,
-      {
-        regex: /CrOS/,
-        os: "Chrome OS",
-      }.freeze,
-    ].freeze
+    OS_TOKENS = {
+      "cfnetwork" => "iOS",
+      "cros" => "Chrome OS",
+      "fedora" => "Fedora",
+      "gentoo" => "Gentoo",
+      "harmonyos" => "HarmonyOS",
+      "ipad" => "iOS",
+      "iphone" => "iOS",
+      "ipod" => "iOS",
+      "mac" => "macOS",
+      "ubuntu" => "Ubuntu",
+      "windows" => "Windows",
+    }
 
     private def parse_os
-      OS_MATCHERS.each do |matcher|
-        match = matcher[:regex].match(@user_agent)
+      linux_fallback = false
+      android_fallback = false
+      user_agent_tokens.each do |token|
+        if OS_TOKENS.key?(token)
+          @os = OS_TOKENS[token]
 
-        if match
-          if matcher.key?(:os)
-            @os = matcher[:os]
-            return
-          end
-
-          @os = match.named_captures["os"] || "Unknown"
           return
         end
+
+        android_fallback ||= token == "android"
+        linux_fallback ||= token == "linux"
       end
 
-      @os = "Unknown"
+      # HarmonyOS UAs can contain Android, and Android UAs can contain "Linux" so we need to do these in a specific order
+      @os ||= "Android" if android_fallback
+      @os ||= "Linux" if linux_fallback
+      @os ||= "Unknown"
     end
 
     BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider].freeze
 
-    BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss dareboost datadogsynthetics datanyze deadlinkchecker devin dlc europarchive feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch geedoshopproductfinder google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 netcraft newrelicsynthetics newsai newsblur newsify newsnow nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright printfriendly ptst puppeteer pwabuilderhttpagent readable retrevo revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch websitepulse woorankreview xmco zoterotranslationserver]).freeze
+    BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss daily dareboost datadogsynthetics datanyze deadlinkchecker devin dlc europarchive feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch geedoshopproductfinder google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 netcraft newrelicsynthetics newsai newsblur newsify newsnow nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright preview printfriendly ptst puppeteer pwabuilderhttpagent readable retrevo revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch websitepulse woorankreview xmco ylt zoterotranslationserver]).freeze
 
-    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008", "page-preview-tool", "PS_Daily", "YLT Chrome"].freeze
+    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008"].freeze
 
     private def detect_bot
       return true if user_agent_tokens.any? { |it| BOT_WORD_SET.include? it }
