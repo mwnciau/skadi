@@ -47,7 +47,7 @@ module Skadi
         return true
       end
 
-      @bot = self.class.detect_bot(@user_agent)
+      @bot = detect_bot
     end
 
     def human? = !bot?
@@ -62,9 +62,6 @@ module Skadi
         bot: bot?
       }
     end
-
-    # A list of browsers which have their name in the user agent string, typically followed by a slash
-    VERSIONED_BROWSERS = Set.new(["Avast", "AVG", "baiduboxapp", "BingSapphire", "Brave", "Chromium", "Ddg", "DuckDuckGo", "Ecosia ios", "Electron", "FBAV", "HeadlessChrome", "HeyTapBrowser", "HuaweiBrowser", "Instagram", "KAKAOTALK", "Line", "Maxthon", "MicroMessenger", "MiuiBrowser", "Mobile DuckDuckGo", "MQQBrowser", "musical_ly", "Norton", "Opera Mini", "OPR", "OPT", "OPX", "PaleMoon", "QQBrowser", "QuarkPC", "SamsungBrowser", "SeaMonkey", "Silk", "Snapchat", "TikTokLIVEStudio", "Twitter for iPhone", "UCBrowser", "VivoBrowser", "Waterfox", "Whale", "YaBrowser"])
 
     BROWSER_MATCHERS = [
       {
@@ -160,40 +157,147 @@ module Skadi
       }.freeze,
     ].freeze
 
-    # Normalise the name of the browser for browsers that are detected in a larger regex
-    BROWSER_NAME_REMAP = {
-      "Avast" => "Avast Secure Browser",
-      "AVG" => "AVG Secure Browser",
-      "baiduboxapp" => "Baidu",
-      "BingSapphire" => "Bing",
-      "HeadlessChrome" => "Chrome Headless",
-      "Ddg" => "DuckDuckGo",
-      "Ecosia ios" => "Ecosia",
-      "FBAV" => "Facebook",
-      "HuaweiBrowser" => "Huawei Browser",
-      "MicroMessenger" => "WeChat",
-      "MiuiBrowser" => "MIUI Browser",
-      "Mobile DuckDuckGo" => "DuckDuckGo",
-      "musical_ly" => "TikTok",
-      "Norton" => "Norton Private Browser",
-      "OPR" => "Opera",
-      "OPT" => "Opera Touch",
-      "OPX" => "Opera GX",
-      "SamsungBrowser" => "Samsung Internet",
-      "Twitter for iPhone" => "Twitter",
-      "VivoBrowser" => "Vivo Browser",
-      "YaBrowser" => "Yandex",
-    }.freeze
+    BROWSER_TOKENS = {
+      "avast" => {
+        regex: /Avast\/(?<version>\d+)/,
+        browser: "Avast Secure Browser",
+      },
+      "avg" => {
+        regex: /AVG\/(?<version>\d+)/,
+        browser: "AVG Secure Browser",
+      },
+      "baiduboxapp" => {
+        regex: /baiduboxapp\/(?<version>\d+)/,
+        browser: "Baidu",
+      },
+      "bingsapphire" => {
+        regex: /BingSapphire\/(?<version>\d+)/,
+        browser: "Bing",
+      },
+      "brave" => "Brave",
+      "chromium" => "Chromium",
+      "ddg" => {
+        regex: /Ddg\/(?<version>\d+)/,
+        browser: "DuckDuckGo",
+      },
+      "duckduckgo" => "DuckDuckGo",
+      "ecosia" => {
+        regex: /Ecosia ios\/(?<version>\d+)/,
+        browser: "Ecosia",
+        os: "iOS",
+      },
+      "electron" => "Electron",
+      "fbav" => {
+        regex: /FBAV\/(?<version>\d+)/,
+        browser: "Facebook",
+      },
+      "headlesschrome" => {
+        regex: /HeadlessChrome\/(?<version>\d+)/,
+        browser: "Chrome Headless",
+      },
+      "heytapbrowser" => {
+        regex: /HeyTapBrowser\/(?<version>\d+)/,
+        browser: "HeyTap",
+      },
+      "huaweibrowser" => {
+        regex: /HuaweiBrowser\/(?<version>\d+)/,
+        browser: "Huawei Browser",
+      },
+      "instagram" => "Instagram",
+      "kakaotalk" => "KAKAOTALK",
+      "line" => "Line",
+      "maxthon" => "Maxthon",
+      "micromessenger" => {
+        regex: /MicroMessenger\/(?<version>\d+)/,
+        browser: "WeChat",
+      },
+      "miuibrowser" => {
+        regex: /MiuiBrowser\/(?<version>\d+)/,
+        browser: "MIUI Browser",
+      },
+      "mobile duckduckgo" => {
+        regex: /Mobile DuckDuckGo\/(?<version>\d+)/,
+        browser: "DuckDuckGo Mobile",
+      },
+      "mqqbrowser" => "MQQBrowser",
+      "musical" => {
+        regex: /musical_ly_(?<version>\d+)/,
+        browser: "TikTok",
+      },
+      "norton" => {
+        regex: /Norton\/(?<version>\d+)/,
+        browser: "Norton Private Browser",
+      },
+      "opera mini" => {
+        regex: /Opera Mini\/(?<version>\d+)/,
+        browser: "Opera Mini",
+      },
+      "opr" => {
+        regex: /OPR\/(?<version>\d+)/,
+        browser: "Opera",
+      },
+      "opt" => {
+        regex: /OPT\/(?<version>\d+)/,
+        browser: "Opera Touch",
+      },
+      "opx" => {
+        regex: /OPX\/(?<version>\d+)/,
+        browser: "Opera GX",
+      },
+      "palemoon" => "PaleMoon",
+      "qqbrowser" => "QQBrowser",
+      "quarkpc" => {
+        regex: /QuarkPC\/(?<version>\d+)/,
+        browser: "Quark",
+      },
+      "samsungbrowser" => {
+        regex: /SamsungBrowser\/(?<version>\d+)/,
+        browser: "Samsung Internet",
+      },
+      "seamonkey" => "SeaMonkey",
+      "silk" => "Silk",
+      "snapchat" => "Snapchat",
+      "tiktoklivestudio" => "TikTokLIVEStudio",
+      "twitter" => {
+        regex: /Twitter for iPhone\/(?<version>\d+)/,
+        browser: "Twitter",
+      },
+      "ucbrowser" => "UCBrowser",
+      "vivobrowser" => {
+        regex: /VivoBrowser\/(?<version>\d+)/,
+        browser: "Vivo Browser",
+      },
+      "waterfox" => "Waterfox",
+      "whale" => "Whale",
+      "yabrowser" => {
+        regex: /YaBrowser\/(?<version>\d+)/,
+        browser: "Yandex",
+      },
+    }
 
-    SCAN_REGEX = /\b(?!AppleWebKit|Mobile Safari|Safari|Webkit|Mozilla|Chrome|Version)([a-zA-Z_]{3,}+(?:\ [a-zA-Z]{3,}+)*+)[\/@ _](\d++)\b/
     private def parse_browser
-      # Splitting into tokens and then checking againt the set of versioned browsers is about equal in performance to just using a massive regular expression, but this setup scales better with multiple browsers given Set lookups are O(1).
-      @user_agent.scan(SCAN_REGEX) do |browser, version|
-        next unless VERSIONED_BROWSERS.include?(browser)
+      user_agent_tokens.each do |token|
+        next unless BROWSER_TOKENS.key?(token)
 
-        @browser = BROWSER_NAME_REMAP[browser] || browser
-        @browser_version = version
-        return
+        matcher = if BROWSER_TOKENS[token].is_a?(String)
+          {
+            regex: /#{BROWSER_TOKENS[token]}\/(?<version>\d+)/,
+            browser: BROWSER_TOKENS[token],
+          }
+        else
+          BROWSER_TOKENS[token]
+        end
+
+        match = matcher[:regex].match(@user_agent)
+        if match
+          named_captures = match.named_captures
+
+          @browser = matcher[:browser]
+          @browser_version = named_captures["version"]
+          @os = matcher["os"] || named_captures["os"]
+
+          return
+        end
       end
 
       BROWSER_MATCHERS.each do |matcher|
@@ -202,11 +306,11 @@ module Skadi
         if match
           named_captures = match.named_captures
 
-          @browser = matcher[:browser] || BROWSER_NAME_REMAP[named_captures["browser"]] || named_captures["browser"] || "Unknown"
+          @browser = matcher[:browser] || named_captures["browser"] || "Unknown"
           @browser_version = matcher[:browser_version] || named_captures["version"] || "Unknown"
-          @engine = matcher[:engine] if matcher[:engine].present?
+          @engine = matcher[:engine] || named_captures["engine"]
           @engine_version = named_captures["engine_version"]
-          @os = named_captures["os"]
+          @os = matcher[:os] || named_captures["os"]
 
           return
         end
@@ -302,21 +406,29 @@ module Skadi
 
     BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider].freeze
 
-    BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss dareboost datadogsynthetics datanyze deadlinkchecker devin feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 newrelicsynthetics newsai newsblur newsify nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright printfriendly ptst puppeteer pwabuilderhttpagent readable revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch woorankreview xmco zoterotranslationserver]).freeze
+    BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss dareboost datadogsynthetics datanyze deadlinkchecker devin dlc europarchive feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch geedoshopproductfinder google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 netcraft newrelicsynthetics newsai newsblur newsify newsnow nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright printfriendly ptst puppeteer pwabuilderhttpagent readable retrevo revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch websitepulse woorankreview xmco zoterotranslationserver]).freeze
 
-    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008", "Dlc/", "page-preview-tool", "PS_Daily", "YLT Chrome"].freeze
+    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008", "page-preview-tool", "PS_Daily", "YLT Chrome"].freeze
 
-    def self.detect_bot(user_agent)
-      ua = user_agent.downcase
+    private def detect_bot
+      return true if user_agent_tokens.any? { |it| BOT_WORD_SET.include? it }
+
+      ua = user_agent_downcase
       return true if BOT_GLOBAL_MATCHERS.any? { |it| ua.include? it }
 
-      ua.tr!("^a-z0-9", " ")
-      ua_keys = ua.split.keep_if { |it| it.length > 3 }
-      return true if ua_keys.any? { |it| BOT_WORD_SET.include? it }
+      return true if BOT_FALLBACK_MATCHERS.any? { |it| @user_agent.include? it }
 
-      return true if BOT_FALLBACK_MATCHERS.any? { |it| user_agent.include? it }
+      false
+    end
 
-      return false
+    private def user_agent_downcase
+      @user_agent_downcase ||= @user_agent.downcase
+    end
+
+    private def user_agent_tokens
+      return @user_agent_tokens unless @user_agent_tokens.nil?
+
+      @user_agent_tokens = user_agent_downcase.tr("^a-z0-9", " ").split.keep_if { |it| it.length >= 3 }
     end
   end
 end
