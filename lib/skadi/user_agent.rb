@@ -121,6 +121,10 @@ module Skadi
     ].freeze
 
     BROWSER_TOKENS = {
+      "alohabrowser" => {
+        regex: /AlohaBrowser\/(?<version>\d+)/,
+        browser: "Aloha",
+      },
       "avast" => {
         regex: /Avast\/(?<version>\d+)/,
         browser: "Avast Secure Browser",
@@ -220,6 +224,10 @@ module Skadi
         browser: "Huawei Browser",
       },
       "instagram" => "Instagram",
+      "iron" => {
+        regex: /Chrome\/(?<version>\d+).*?Iron/,
+        browser: "Iron",
+      },
       "kakaotalk" => {
         regex: /KAKAOTALK[\/ ](?<version>\d+)/,
         browser: "KAKAOTALK",
@@ -252,6 +260,10 @@ module Skadi
       "norton" => {
         regex: /Norton\/(?<version>\d+)/,
         browser: "Norton Private Browser",
+      },
+      "oculusbrowser" => {
+        regex: /OculusBrowser\/(?<version>\d+)/,
+        browser: "Oculus Browser",
       },
       "opera" => {
         regex: /(?<browser>Opera Mini)[\/ ](?<version>\d+)|(?<browser>Opera)(?!.*Mini)(.*Version)?[\/ ](?<version>\d+)/,
@@ -300,6 +312,10 @@ module Skadi
       "whale" => "Whale",
       "yabrowser" => {
         regex: /YaBrowser\/(?<version>\d+)/,
+        browser: "Yandex",
+      },
+      "yasearchbrowser" => {
+        regex: /YaSearchBrowser\/(?<version>\d+)/,
         browser: "Yandex",
       },
     }
