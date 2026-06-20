@@ -10,6 +10,11 @@ module Skadi::Unit
     BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
     BOT_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/bot_user_agents.json")
 
+    # Testing against the [May 2026 Intoli dataset](https://github.com/mwnciau/user_agent_dumps/tree/main/intoli_user_agents),
+    # there are 13 errors (0.08%). Those errors are TikTokLIVEStudio not being correctly identified in the source data,
+    # MQQ browser being identified as QQBrowser in the source data, and a legacy Safari user agent where the version is
+    # "Unknown" insteaf of "1" - this is the only incorrect parsing, and chosen to be ignored for performance and
+    # because of the relative scarcity of the browser.
     test "parse accuracy" do
       dataset = JSON.load_file(BROWSER_TEST_FILE)
 
@@ -60,6 +65,12 @@ module Skadi::Unit
       puts ""
     end
 
+    # Testing against the [May 2026 Intoli dataset](https://github.com/mwnciau/user_agent_dumps/tree/main/intoli_user_agents),
+    # there are no false negatives and 302 (0.0%) false positives for `Code` AI crawler user agents, repesenting an issue with
+    # the source dataset.
+    #
+    # Testing against the bundled dataset, the error rate is much higher (0.8%), but the reported false positive user
+    # agents all look like bots.
     test "bot accuracy on browser dataset" do
       dataset = JSON.load_file(BROWSER_TEST_FILE)
 
@@ -96,6 +107,8 @@ module Skadi::Unit
       assert 100.0 * false_negatives / dataset["totalCount"] < 1
     end
 
+    # Testing against the [crawler user agent](https://github.com/monperrus/crawler-user-agents) dataset, the bot
+    # detector currently has one false negative against a potential real snapchat user agent.
     test "bot accuracy on bot dataset" do
       dataset = JSON.load_file(BOT_TEST_FILE)
 
@@ -121,6 +134,14 @@ module Skadi::Unit
       assert 100.0 * false_negatives / dataset["totalCount"] < 0.1
     end
 
+    # Testing against the [May 2026 Intoli dataset](https://github.com/mwnciau/user_agent_dumps/tree/main/intoli_user_agents)
+    # of real-world user agent tokens, the Skadi parser is 9 times faster than the `browser` gem and over 100 times
+    # faster than the `device_detector` gem. Benchmark output:
+    #
+    # Comparison:
+    #           skadi:   111271.7 i/s
+    #         browser:    12178.7 i/s - 9.14x  slower
+    # device_detector:     1100.3 i/s - 101.13x  slower
     test "performance" do
       skip("Benchmarking libraries are not installed") unless maybe_require("benchmark/ips")
 

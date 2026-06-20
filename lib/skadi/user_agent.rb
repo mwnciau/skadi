@@ -1,6 +1,18 @@
 module Skadi
-  # A minimal user agent parser, designed for speed rather than completeness, aiming to detect the most common browsers and operating systems.
-  # See https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/Browser_detection_using_the_user_agent
+  # A minimal user agent parser, designed for speed rather than completeness, aiming to detect the most common browsers
+  # and operating systems.
+  #
+  # Why implement a custom user agent parsing script over an existing library?
+  #
+  # Firstly, to eliminate the transient dependencies consumers of this gem are exposed to.
+  #
+  # Secondly, existing libraries have relatively poor performance. Unlike other solutions, which use a large number of
+  # regular expressions to detect browsers, this parser tokenises the user agent and uses a lookup table to identify the
+  # majority of browsers with O(1) performance, using regular expressions as fallback. See the `user_agent_test.rb` file
+  # for performance statistics.
+  #
+  # Thirdly, the user agent parsing gems are years out of date. Modern browsers and modern bots are not properly
+  # detected, potentially skewing the analytics data collected.
   class UserAgent
     def initialize(user_agent)
       @user_agent = user_agent
