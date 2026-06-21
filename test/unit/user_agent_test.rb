@@ -10,11 +10,10 @@ module Skadi::Unit
     BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
     BOT_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/bot_user_agents.json")
 
+    # Testing against the bundled dataset there are 13 errors (0.08%) where just one of the errors is an actual error
+    # (the version for a legacy Safari browser is not correctly picked up).
     # Testing against the [May 2026 Intoli dataset](https://github.com/mwnciau/user_agent_dumps/tree/main/intoli_user_agents),
-    # there are 13 errors (0.08%). Those errors are TikTokLIVEStudio not being correctly identified in the source data,
-    # MQQ browser being identified as QQBrowser in the source data, and a legacy Safari user agent where the version is
-    # "Unknown" insteaf of "1" - this is the only incorrect parsing, and chosen to be ignored for performance and
-    # because of the relative scarcity of the browser.
+    # just has that same Safari version error 63 times (0.0%).
     test "parse accuracy" do
       dataset = JSON.load_file(BROWSER_TEST_FILE)
 
@@ -66,7 +65,7 @@ module Skadi::Unit
     end
 
     # Testing against the [May 2026 Intoli dataset](https://github.com/mwnciau/user_agent_dumps/tree/main/intoli_user_agents),
-    # there are no false negatives and 302 (0.0%) false positives for `Code` AI crawler user agents, repesenting an issue with
+    # there are no false negatives and 242 (0.0%) false positives for `Code` AI crawler user agents, repesenting an issue with
     # the source dataset.
     #
     # Testing against the bundled dataset, the error rate is much higher (0.8%), but the reported false positive user

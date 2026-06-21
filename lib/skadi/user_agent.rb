@@ -133,42 +133,34 @@ module Skadi
     ].freeze
 
     BROWSER_TOKENS = {
-      "alohabrowser" => {
-        regex: /AlohaBrowser\/(?<version>\d+)/,
+      "AlohaBrowser" => {
         browser: "Aloha",
       },
-      "avast" => {
-        regex: /Avast\/(?<version>\d+)/,
+      "Avast" => {
         browser: "Avast Secure Browser",
       },
-      "avg" => {
-        regex: /AVG\/(?<version>\d+)/,
+      "AVG" => {
         browser: "AVG Secure Browser",
       },
       "baiduboxapp" => {
-        regex: /baiduboxapp\/(?<version>\d+)/,
         browser: "Baidu",
       },
-      "bingsapphire" => {
-        regex: /BingSapphire\/(?<version>\d+)/,
+      "BingSapphire" => {
         browser: "Bing",
       },
-      "brave" => "Brave",
-      "chromium" => {
+      "Brave" => {},
+      "Chromium" => {
         regex: /Chromium[\/ ](?<version>GOST|\d+)/,
-        browser: "Chromium",
-      }.freeze,
-      "ddg" => {
-        regex: /Ddg\/(?<version>\d+)/,
+      },
+      "Ddg" => {
         browser: "DuckDuckGo",
       },
-      "duckduckgo" => "DuckDuckGo",
-      "ecosia" => {
+      "DuckDuckGo" => {},
+      "Ecosia" => {
         regex: /Ecosia ios@(?<version>\d+)/,
-        browser: "Ecosia",
         os: "iOS",
       },
-      "edg" => [
+      "Edg" => [
         {
           regex: /(?:iOS|iPod|iPad|iPhone).*Edg\/(?<version>\d+)/,
           browser: "Edge for iOS",
@@ -184,23 +176,20 @@ module Skadi
           browser: "Edge",
         },
       ],
-      "edga" => {
-        regex: /EdgA\/(?<version>\d+)/,
+      "EdgA" => {
         browser: "Edge for Android",
         os: "Android",
       },
-      "edge" => "Edge",
-      "edgios" => {
-        regex: /EdgiOS\/(?<version>\d+)/,
+      "Edge" => {},
+      "EdgiOS" => {
         browser: "Edge for iOS",
         os: "iOS",
       },
-      "electron" => "Electron",
-      "fbav" => {
-        regex: /FBAV\/(?<version>\d+)/,
+      "Electron" => {},
+      "FBAV" => {
         browser: "Facebook",
       },
-      "firefox" => [
+      "Firefox" => [
         {
           regex: /(?<browser>PaleMoon|Waterfox)\/(?<version>\d+)/,
         }.freeze,
@@ -219,48 +208,42 @@ module Skadi
           browser: "Firefox"
         }.freeze,
       ],
-      "fxios" => {
-        regex: /FxiOS\/(?<version>\d+)/,
+      "FxiOS" => {
         browser: "Firefox for iOS",
       },
-      "headlesschrome" => {
-        regex: /HeadlessChrome\/(?<version>\d+)/,
+      "HeadlessChrome" => {
         browser: "Chrome Headless",
       },
-      "heytapbrowser" => {
-        regex: /HeyTapBrowser\/(?<version>\d+)/,
+      "HeyTapBrowser" => {
         browser: "HeyTap",
       },
-      "huaweibrowser" => {
-        regex: /HuaweiBrowser\/(?<version>\d+)/,
+      "HuaweiBrowser" => {
         browser: "Huawei Browser",
       },
-      "instagram" => "Instagram",
-      "iron" => {
+      "Instagram" => {
+        regex: /Instagram[\/ ](?<version>\d+)/,
+      },
+      "Iron" => {
         regex: /Chrome\/(?<version>\d+).*?Iron/,
-        browser: "Iron",
       },
-      "kakaotalk" => {
+      "KAKAOTALK" => {
         regex: /KAKAOTALK[\/ ](?<version>\d+)/,
-        browser: "KAKAOTALK",
       },
-      "konqueror" => "Konqueror",
-      "line" => "Line",
-      "linkedinapp" => {
+      "Konqueror" => {},
+      "Line" => {},
+      "LinkedInApp" => {
         regex: /\[LinkedInApp\]\/(?<version>\d+)/,
         browser: "LinkedIn",
       },
-      "maxthon" => "Maxthon",
-      "micromessenger" => {
-        regex: /MicroMessenger\/(?<version>\d+)/,
+      "Maxthon" => {},
+      "MicroMessenger" => {
         browser: "WeChat",
       },
-      "miuibrowser" => {
-        regex: /MiuiBrowser\/(?<version>\d+)/,
+      "MiuiBrowser" => {
         browser: "MIUI Browser",
       },
-      "mqqbrowser" => "MQQBrowser",
-      "msie" => {
+      "MQQBrowser" => {},
+      "MSIE" => {
         regex: /MSIE (?<version>\d+)(?:.*(?<engine>Trident)\/(?<engine_version>\d+))?|(?<engine>Trident)\/(?<engine_version>\d+).*rv[: ](?<version>\d+)/,
         browser: "IE",
         os: "Windows",
@@ -269,83 +252,73 @@ module Skadi
         regex: /musical_ly_(?<version>\d+)/,
         browser: "TikTok",
       },
-      "norton" => {
-        regex: /Norton\/(?<version>\d+)/,
+      "Norton" => {
         browser: "Norton Private Browser",
       },
-      "oculusbrowser" => {
-        regex: /OculusBrowser\/(?<version>\d+)/,
+      "OculusBrowser" => {
         browser: "Oculus Browser",
       },
-      "opera" => {
+      "Opera" => {
         regex: /(?<browser>Opera Mini)[\/ ](?<version>\d+)|(?<browser>Opera)(?!.*Mini)(.*Version)?[\/ ](?<version>\d+)/,
       },
-      "opr" => {
-        regex: /OPR\/(?<version>\d+)/,
+      "OPR" => {
         browser: "Opera",
       },
-      "opt" => {
-        regex: /OPT\/(?<version>\d+)/,
+      "OPT" => {
         browser: "Opera Touch",
       },
-      "opx" => {
-        regex: /OPX\/(?<version>\d+)/,
+      "OPX" => {
         browser: "Opera GX",
       },
-      "palemoon" => "PaleMoon",
-      "qqbrowser" => "QQBrowser",
-      "quarkpc" => {
-        regex: /QuarkPC\/(?<version>\d+)/,
+      "PaleMoon" => {},
+      "QQBrowser" => {},
+      "QuarkPC" => {
         browser: "Quark",
       },
-      "samsungbrowser" => {
-        regex: /SamsungBrowser\/(?<version>\d+)/,
+      "SamsungBrowser" => {
         browser: "Samsung Internet",
       },
-      "seamonkey" => "SeaMonkey",
-      "silk" => "Silk",
-      "snapchat" => "Snapchat",
-      "tiktoklivestudio" => "TikTokLIVEStudio",
-      "trident" => {
+      "SeaMonkey" => {},
+      "Silk" => {},
+      "Snapchat" => {},
+      "TikTokLIVEStudio" => {},
+      "Trident" => {
         regex: /MSIE (?<version>\d+).*Trident\/(?<engine_version>\d+)|Trident\/(?<engine_version>\d+).*rv[: ](?<version>\d+)/,
         browser: "IE",
         engine: "Trident",
         os: "Windows",
       }.freeze,
-      "twitter" => {
+      "Twitter" => {
         regex: /Twitter for iPhone\/(?<version>\d+)/,
-        browser: "Twitter",
       },
-      "ucbrowser" => "UCBrowser",
-      "vivobrowser" => {
-        regex: /VivoBrowser\/(?<version>\d+)/,
+      "UCBrowser" => {},
+      "VivoBrowser" => {
         browser: "Vivo Browser",
       },
-      "whale" => "Whale",
-      "yabrowser" => {
-        regex: /YaBrowser\/(?<version>\d+)/,
+      "Whale" => {},
+      "YaBrowser" => {
         browser: "Yandex",
       },
-      "yasearchbrowser" => {
-        regex: /YaSearchBrowser\/(?<version>\d+)/,
+      "YaSearchBrowser" => {
         browser: "Yandex",
       },
-    }
+    }.each_pair do |key, options|
+      next unless options.is_a?(Hash)
+
+      options[:regex] ||= /#{key}\/(?<version>\d+)/
+      options[:browser] ||= key
+    end
 
     private def parse_browser
+      # First we check if any of the UA tokens exist as keys to our browser token list (fast!)
       user_agent_tokens.each do |token|
         next unless BROWSER_TOKENS.key?(token)
 
-        matchers = BROWSER_TOKENS[token]
-        matchers = if matchers.is_a?(String)
-          [{
-            regex: /#{matchers}[\/ ](?<version>\d+)/,
-            browser: matchers,
-          }]
-        elsif !matchers.is_a?(Array)
-          [matchers]
+        # We then use the matcher to extract the version from the full user agent
+        matchers = if !BROWSER_TOKENS[token].is_a?(Array)
+          [BROWSER_TOKENS[token]]
         else
-          matchers
+          BROWSER_TOKENS[token]
         end
 
         matchers.each do |matcher|
@@ -353,10 +326,12 @@ module Skadi
         end
       end
 
+      # Then, if we don't get a match, we run the full list of fallback matchers against the user agent (slow!)
       BROWSER_MATCHERS.each do |matcher|
         return if run_matcher(matcher)
       end
 
+      # Finally, falling back to unknown values for the browser variables
       @browser = "Unknown"
       @browser_version = "Unknown"
     end
@@ -399,13 +374,14 @@ module Skadi
     ].freeze
 
     private def parse_engine
+      # Since there are only 4 engine matchers, there is little performance to be gained by using the token approach to parsing
       ENGINE_MATCHERS.each do |matcher|
         match = matcher[:regex].match(@user_agent)
 
         if match
           named_captures = match.named_captures
 
-          @engine = matcher[:engine] || named_captures["engine"] || "Unknown"
+          @engine = named_captures["engine"] || matcher[:engine] || "Unknown"
           @engine_version = named_captures["version"] || "Unknown"
 
           return
@@ -418,17 +394,17 @@ module Skadi
 
 
     OS_TOKENS = {
-      "cfnetwork" => "iOS",
-      "cros" => "Chrome OS",
-      "fedora" => "Fedora",
-      "gentoo" => "Gentoo",
-      "harmonyos" => "HarmonyOS",
-      "ipad" => "iOS",
-      "iphone" => "iOS",
-      "ipod" => "iOS",
-      "mac" => "macOS",
-      "ubuntu" => "Ubuntu",
-      "windows" => "Windows",
+      "CFNetwork" => "iOS",
+      "CrOS" => "Chrome OS",
+      "Fedora" => "Fedora",
+      "Gentoo" => "Gentoo",
+      "HarmonyOS" => "HarmonyOS",
+      "iPad" => "iOS",
+      "iPhone" => "iOS",
+      "iPod" => "iOS",
+      "Mac" => "macOS",
+      "Ubuntu" => "Ubuntu",
+      "Windows" => "Windows",
     }
 
     private def parse_os
@@ -441,8 +417,8 @@ module Skadi
           return
         end
 
-        android_fallback ||= token == "android"
-        linux_fallback ||= token == "linux"
+        android_fallback ||= token == "Android"
+        linux_fallback ||= token == "Linux"
       end
 
       # HarmonyOS UAs can contain Android, and Android UAs can contain "Linux" so we need to do these in a specific order
@@ -453,29 +429,24 @@ module Skadi
 
     BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider].freeze
 
-    BOT_WORD_SET = Set.new(%w[adbeat agent appinsights archivebox archiver archiving bingpreview brandverity butterfly charlotte checkly cloudflare claude code collapsify contentkingapp cookiehubverify criticalcss daily dareboost datadogsynthetics datanyze deadlinkchecker devin dlc europarchive feedburner feeder feedly flipboardproxy fluid foregenix geedoproductsearch geedoshopproductfinder google googleagent googleimageproxy gotsitemonitor gtmetrix hardenize headlesschrome hotjar img2dataset infegy inspector lighthouse linktiger mail mailservertest2023 manus marketgoo marketingminer metaiab miniature mirrorweb monitor monitorss nbertaupete95 netcraft newrelicsynthetics newsai newsblur newsify newsnow nitro opencode opengraph optimizer oupwis perplexity pingdomtms playwright preview printfriendly ptst puppeteer pwabuilderhttpagent readable retrevo revvimgort rigor scope3 scraping securityheaders selenium seositecheckup slider splash silktide sindup sitebulb siteimprove specificfeeds sqwatcher sucuri testlocally thousandeyes trae turingos ubermetrics uptimedoctor watchtowr webresearch websitepulse woorankreview xmco ylt zoterotranslationserver]).freeze
+    BOT_WORD_SET = Set.new(%w[AGENT Agent AppInsights ArchiveBox Archiver Archiving BingPreview BrandVerity Butterfly Charlotte Checkly Claude CloudFlare Cloudflare Code Collapsify CookieHubVerify Criticalcss Daily DareBoost DatadogSynthetics Datanyze Devin Dlc FeedBurner Feeder Feedly FlipboardProxy Fluid Foregenix GTmetrix GeedoProductSearch GeedoShopProductFinder Google GoogleAgent GoogleImageProxy GotSiteMonitor Hardenize HeadlessChrome Hotjar Inspector Lighthouse LinkTiger Mail Manus MarketGoo MarketingMiner MetaIAB Miniature MonitoRSS Monitor Netcraft NewRelicSynthetics NewsBlur NewsNow Newsify Nitro OpenGraph Optimizer PTST PWABuilderHttpAgent Perplexity PingdomTMS Playwright Preview PrintFriendly Puppeteer Readable RevvimGort Rigor SQWatcher Scope3 SecurityHeaders Selenium SeoSiteCheckup Silktide Sindup Siteimprove Specificfeeds Sucuri TestLocally ThousandEyes Trae YLT ZoteroTranslationServer adbeat agent archiver archiving brandverity butterfly claude cloudflare code contentkingapp deadlinkchecker devin europarchive feeder feedly google img2dataset infegy mail mailservertest2023 marketingminer mirrorweb monitor nbertaupete95 netcraft newsai newsblur newsify opencode opengraph oupwis perplexity preview retrevo scope3 scraping seositecheckup sitebulb slider splash sqwatcher turingos ubermetrics uptimedoctor watchTowr webresearch websitepulse woorankreview xmco]).freeze
 
     BOT_FALLBACK_MATCHERS = ["AP3A.240617.008"].freeze
 
     private def detect_bot
       return true if user_agent_tokens.any? { |it| BOT_WORD_SET.include? it }
 
-      ua = user_agent_downcase
-      return true if BOT_GLOBAL_MATCHERS.any? { |it| ua.include? it }
+      user_agent_downcase = @user_agent.downcase
+      return true if BOT_GLOBAL_MATCHERS.any? { |it| user_agent_downcase.include? it }
 
       return true if BOT_FALLBACK_MATCHERS.any? { |it| @user_agent.include? it }
 
       false
     end
 
-    private def user_agent_downcase
-      @user_agent_downcase ||= @user_agent.downcase
-    end
-
+    # Splits the string into alphanumeric sequences of length 3 or more
     private def user_agent_tokens
-      return @user_agent_tokens unless @user_agent_tokens.nil?
-
-      @user_agent_tokens = user_agent_downcase.tr("^a-z0-9", " ").split.keep_if { |it| it.length >= 3 }
+      @user_agent_tokens ||= @user_agent.tr("^a-zA-Z0-9", " ").split.keep_if { |it| it.length >= 3 }
     end
   end
 end
