@@ -107,7 +107,7 @@ module Skadi
     end
 
     private def handle_demographics(demographics)
-      demographics_to_insert = []
+      demographics_to_update = []
 
       demographics.each do |demographic|
         next unless demographic.is_a?(Hash)
@@ -115,25 +115,16 @@ module Skadi
         next unless demographic["value"].is_a?(String) && demographic["value"].present?
         next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
-        demographics_to_insert << {
-          name: demographic["name"].strip[0, 255],
-          value: demographic["value"].strip[0, 255],
-          # SQL specifies NULL values are not equal, so we need to default the URI to an empty string
-          # to ensure the unique index works correctly
-          uri: demographic["uri"]&.strip&.[](0, 255) || "",
-          recorded_on: Time.current,
-          count: 1,
+        demographics_to_update << {
+          name: demographic["name"],
+          value: demographic["value"],
+          uri: demographic["uri"],
         }
       end
 
-      return if demographics_to_insert.empty?
+      return if demographics_to_update.empty?
 
-      Skadi::Demographic.upsert_all(
-        demographics_to_insert,
-        unique_by: [:uri, :name, :value, :recorded_on],
-        on_duplicate: Arel.sql("count = skadi_demographics.count + 1"),
-        returning: false,
-      )
+      Skadi::Demographic.upsert(*demographics_to_update)
     end
 
     def set_cookie(name, value, age = 1.year)

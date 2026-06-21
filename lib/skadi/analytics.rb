@@ -6,7 +6,7 @@ module Skadi
     UUID_REGEX = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
 
     included do
-      before_action :track_visit, :track_view
+      before_action :track_visit, :track_view, :track_user_agent, unless: -> { !Skadi.configuration.track_bots && skadi_user_agent.bot? }
 
       after_action :skadi_persist
 
@@ -96,6 +96,19 @@ module Skadi
       @skadi_view.referrer = Skadi::Url.redact_and_normalise_url(request.referrer)
     end
 
+    def track_user_agent
+      # Only track the user agent data when we are recording a new visit so we don't duplicate the data
+      return if do_not_track? || !@skadi_visit || @skadi_visit.persisted?
+
+      user_agent = skadi_user_agent
+
+      skadi_demographic "Browser", user_agent.browser
+      skadi_demographic "Browser version", "#{user_agent.browser} #{user_agent.browser_version}"
+      skadi_demographic "Browser engine", user_agent.engine
+      skadi_demographic "Browser engine version", "#{user_agent.engine} #{user_agent.engine_version}"
+      skadi_demographic "Operating system", user_agent.os
+    end
+
     # Saves the visit and view models to the database, if they have been created and tracking is enabled
     def skadi_persist
       return if do_not_track?
@@ -105,6 +118,33 @@ module Skadi
         @skadi_view.visit = @skadi_visit
         @skadi_view.save
       end
+
+      if @skadi_demographics && @skadi_demographics.length > 0
+        Skadi::Demographic.upsert(*@skadi_demographics)
+      end
+
+      if @skadi_events && @skadi_events.length > 0
+        Skadi::Event.upsert_all(@skadi_events)
+      end
+    end
+
+    def skadi_user_agent
+      @skadi_user_agent ||= Skadi::UserAgent.new(request.user_agent || "")
+    end
+
+    def skadi_demographic(name, value, view_specific = false)
+      demographic = {name:, value:}
+      demographic[:uri] = request.route_uri_pattern if view_specific
+
+      @skadi_demographics ||= []
+      @skadi_demographics << demographic
+    end
+
+    def skadi_event(name, is_sensitive: false, **properties)
+      event = {name:, properties:, is_sensitive:}
+
+      @skadi_events ||= []
+      @skadi_events << event
     end
   end
 end

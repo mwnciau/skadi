@@ -17,7 +17,7 @@ module Skadi::Unit
     test "parse accuracy" do
       dataset = JSON.load_file(BROWSER_TEST_FILE)
 
-      errors =  dataset["userAgents"].sum do |test_case|
+      errors = dataset["userAgents"].sum do |test_case|
         user_agent = Skadi::UserAgent.new(test_case["userAgent"])
         count = test_case["count"]
 
@@ -29,12 +29,12 @@ module Skadi::Unit
         show_parse_error(user_agent, test_case) if UA_DEBUG
 
         next count unless user_agent.browser == test_case["browser"]
-        next count unless test_case["browserMajorVersion"] ==  user_agent.browser_version
+        next count unless test_case["browserMajorVersion"] == user_agent.browser_version
 
-        next count unless test_case["engine"] ==  user_agent.engine
-        next count unless test_case["engineMajorVersion"] ==  user_agent.engine_version
+        next count unless test_case["engine"] == user_agent.engine
+        next count unless test_case["engineMajorVersion"] == user_agent.engine_version
 
-        next count unless test_case["os"] ==  user_agent.os
+        next count unless test_case["os"] == user_agent.os
 
         # If everything matches, there are no errors so return 0
         0
@@ -47,16 +47,16 @@ module Skadi::Unit
     end
 
     private def show_parse_error(user_agent, test_case)
-      return if user_agent.browser == test_case["browser"] && test_case["browserMajorVersion"] ==  user_agent.browser_version && test_case["engine"] ==  user_agent.engine && test_case["engineMajorVersion"] ==  user_agent.engine_version && test_case["os"] ==  user_agent.os
+      return if user_agent.browser == test_case["browser"] && test_case["browserMajorVersion"] == user_agent.browser_version && test_case["engine"] == user_agent.engine && test_case["engineMajorVersion"] == user_agent.engine_version && test_case["os"] == user_agent.os
 
       puts "----------------------------------------"
       puts "User agent: #{test_case["userAgent"]}"
 
       puts "Browser detected '#{user_agent.browser}' should be '#{test_case["browser"]}'" unless user_agent.browser == test_case["browser"]
-      puts "Browser version detected '#{user_agent.browser_version}' should be '#{test_case["browserMajorVersion"]}'" unless test_case["browserMajorVersion"] ==  user_agent.browser_version
+      puts "Browser version detected '#{user_agent.browser_version}' should be '#{test_case["browserMajorVersion"]}'" unless test_case["browserMajorVersion"] == user_agent.browser_version
 
       puts "Engine detected '#{user_agent.engine}' should be '#{test_case["engine"]}'" unless user_agent.engine == test_case["engine"]
-      puts "Engine version detected '#{user_agent.engine_version}' should be '#{test_case["engineMajorVersion"]}'" unless test_case["engineMajorVersion"] ==  user_agent.engine_version
+      puts "Engine version detected '#{user_agent.engine_version}' should be '#{test_case["engineMajorVersion"]}'" unless test_case["engineMajorVersion"] == user_agent.engine_version
 
       puts "OS detected '#{user_agent.os}' should be '#{test_case["os"]}'" unless user_agent.os == test_case["os"]
 
@@ -163,25 +163,29 @@ module Skadi::Unit
         end
 
         i = 0
-        bm.report("browser") do
-          result = Browser.new(dataset["userAgents"][i]["userAgent"])
-          result.name
-          result.version
-          result.platform.name
-          result.bot?
+        if defined?(Browser)
+          bm.report("browser") do
+            result = Browser.new(dataset["userAgents"][i]["userAgent"])
+            result.name
+            result.version
+            result.platform.name
+            result.bot?
 
-          i = (i + 1) % dataset_size
-        end if defined?(Browser)
+            i = (i + 1) % dataset_size
+          end
+        end
 
-        bm.report("device_detector") do
-          result = DeviceDetector.new(dataset["userAgents"][i]["userAgent"])
-          result.name
-          result.full_version
-          result.os_name
-          result.bot?
+        if defined?(DeviceDetector)
+          bm.report("device_detector") do
+            result = DeviceDetector.new(dataset["userAgents"][i]["userAgent"])
+            result.name
+            result.full_version
+            result.os_name
+            result.bot?
 
-          i = (i + 1) % dataset_size
-        end if defined?(DeviceDetector)
+            i = (i + 1) % dataset_size
+          end
+        end
 
         bm.compare!
       end

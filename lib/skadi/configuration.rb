@@ -102,6 +102,11 @@ module Skadi
     attr_accessor :cookie_domain
     validates(:cookie_domain, "string or nil", default: nil) { |it| it.nil? || (it.present? && it.is_a?(String)) }
 
+    # Whether to track visits by suspected bots, detected via the browser user agent. Defaults to `Rails.env.local?` (true
+    # for development and testing environments, and false for production/other environments).
+    attr_accessor :track_bots
+    validates(:track_bots, "boolean", default: Rails.env.local?) { |it| it == true || it == false }
+
     def validate!
       validators.each do |attribute, validator_config|
         validator = validator_config[:validator]
