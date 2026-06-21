@@ -25,7 +25,7 @@ module Skadi
         self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
         content_tag(
           "script",
-          self.skadi_script_src,
+          skadi_script_src,
           tag_attributes,
         )
       else

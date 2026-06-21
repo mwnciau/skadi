@@ -71,14 +71,14 @@ module Skadi
         engine: engine,
         engine_version: engine_version,
         os: os,
-        bot: bot?
+        bot: bot?,
       }
     end
 
     BROWSER_MATCHERS = [
       {
         regex: /Chrome\/(?<version>\d+).*WebView|; wv.*Chrome\/(?<version>\d+)/,
-        browser: "Chrome WebView"
+        browser: "Chrome WebView",
       }.freeze,
       {
         regex: /Android.*Version\/(?<version>\d+)/,
@@ -97,7 +97,7 @@ module Skadi
       }.freeze,
       {
         regex: /(?:CriOS|Chrome)\/(?<version>\d+)/,
-        browser: "Chrome"
+        browser: "Chrome",
       }.freeze,
       {
         regex: /(?:iOS|iPod|iPad|iPhone).+Version\/(?<version>\d+)/,
@@ -106,7 +106,7 @@ module Skadi
       }.freeze,
       {
         regex: /GSA\/(?<version>\d+)/,
-        browser: "GSA"
+        browser: "GSA",
       }.freeze,
       {
         regex: /(?:iOS|iPod|iPad|iPhone).*Safari/,
@@ -123,7 +123,7 @@ module Skadi
       }.freeze,
       {
         regex: /WebKit\/(?<version>\d+)/,
-        browser: "WebKit"
+        browser: "WebKit",
       }.freeze,
       {
         regex: /Mozilla\/(?<version>\d+).*rv:(?<engine_version>\d+).*?Gecko\/\d+/,
@@ -205,7 +205,7 @@ module Skadi
         }.freeze,
         {
           regex: /Firefox\/(?<version>\d+)/,
-          browser: "Firefox"
+          browser: "Firefox",
         }.freeze,
       ],
       "FxiOS" => {
@@ -259,7 +259,7 @@ module Skadi
         browser: "Oculus Browser",
       },
       "Opera" => {
-        regex: /(?<browser>Opera Mini)[\/ ](?<version>\d+)|(?<browser>Opera)(?!.*Mini)(.*Version)?[\/ ](?<version>\d+)/,
+        regex: /(?<browser>Opera Mini)[\/ ](?<version>\d+)|(?<browser>Opera)(?!.*Mini)(?:.*Version)?[\/ ](?<version>\d+)/,
       },
       "OPR" => {
         browser: "Opera",
@@ -322,13 +322,13 @@ module Skadi
         end
 
         matchers.each do |matcher|
-          return if run_matcher(matcher)
+          return if run_matcher(matcher) # rubocop:disable Lint/NonLocalExitFromIterator
         end
       end
 
       # Then, if we don't get a match, we run the full list of fallback matchers against the user agent (slow!)
       BROWSER_MATCHERS.each do |matcher|
-        return if run_matcher(matcher)
+        return if run_matcher(matcher) # rubocop:disable Lint/NonLocalExitFromIterator
       end
 
       # Finally, falling back to unknown values for the browser variables
@@ -384,14 +384,13 @@ module Skadi
           @engine = named_captures["engine"] || matcher[:engine] || "Unknown"
           @engine_version = named_captures["version"] || "Unknown"
 
-          return
+          return # rubocop:disable Lint/NonLocalExitFromIterator
         end
       end
 
       @engine = "Unknown"
       @engine_version = "Unknown"
     end
-
 
     OS_TOKENS = {
       "CFNetwork" => "iOS",
@@ -414,7 +413,7 @@ module Skadi
         if OS_TOKENS.key?(token)
           @os = OS_TOKENS[token]
 
-          return
+          return # rubocop:disable Lint/NonLocalExitFromIterator
         end
 
         android_fallback ||= token == "Android"
