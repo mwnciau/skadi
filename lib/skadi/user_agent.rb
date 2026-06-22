@@ -77,60 +77,60 @@ module Skadi
 
     BROWSER_MATCHERS = [
       {
-        regex: /Chrome\/(?<version>\d+).*WebView|; wv.*Chrome\/(?<version>\d+)/,
+        regex: /Chrome\/(?<version>\d++).*WebView|; wv.*Chrome\/(?<version>\d++)/,
         browser: "Chrome WebView",
-      }.freeze,
+      },
       {
-        regex: /Android.*Version\/(?<version>\d+)/,
+        regex: /Android.*Version\/(?<version>\d++)/,
         browser: "Android Browser",
         os: "Android",
-      }.freeze,
+      },
       {
-        regex: /Android.*Chrome\/(?<version>\d+)/,
+        regex: /Android.*Chrome\/(?<version>\d++)/,
         browser: "Chrome for Android",
         os: "Android",
-      }.freeze,
+      },
       {
-        regex: /(?:iOS|iPod|iPad|iPhone).*(?:CriOS|Chrome)\/(?<version>\d+)/,
+        regex: /(?:iOS|iPod|iPad|iPhone).+(?:CriOS|Chrome)\/(?<version>\d++)/,
         browser: "Chrome for iOS",
         os: "iOS",
-      }.freeze,
+      },
       {
-        regex: /(?:CriOS|Chrome)\/(?<version>\d+)/,
+        regex: /(?:CriOS|Chrome)\/(?<version>\d++)/,
         browser: "Chrome",
-      }.freeze,
+      },
       {
-        regex: /(?:iOS|iPod|iPad|iPhone).+Version\/(?<version>\d+)/,
+        regex: /(?:iOS|iPod|iPad|iPhone).+Version\/(?<version>\d++)/,
         browser: "Safari for iOS",
         os: "iOS",
-      }.freeze,
+      },
       {
-        regex: /GSA\/(?<version>\d+)/,
+        regex: /GSA\/(?<version>\d++)/,
         browser: "GSA",
-      }.freeze,
+      },
       {
         regex: /(?:iOS|iPod|iPad|iPhone).*Safari/,
         browser: "Safari for iOS",
         os: "iOS",
-      }.freeze,
+      },
       {
-        regex: /Version\/(?<version>\d+).*Safari/,
+        regex: /Version\/(?<version>\d++).*Safari/,
         browser: "Safari",
-      }.freeze,
+      },
       {
         regex: /Safari\//,
         browser: "Safari",
-      }.freeze,
+      },
       {
-        regex: /WebKit\/(?<version>\d+)/,
+        regex: /WebKit\/(?<version>\d++)/,
         browser: "WebKit",
-      }.freeze,
+      },
       {
-        regex: /Mozilla\/(?<version>\d+).*rv:(?<engine_version>\d+).*?Gecko\/\d+/,
+        regex: /Mozilla\/(?<version>\d++).*rv:(?<engine_version>\d++).*?Gecko\//,
         browser: "Mozilla",
         engine: "Gecko",
-      }.freeze,
-    ].freeze
+      },
+    ]
 
     BROWSER_TOKENS = {
       "AlohaBrowser" => {
@@ -150,29 +150,29 @@ module Skadi
       },
       "Brave" => {},
       "Chromium" => {
-        regex: /Chromium[\/ ](?<version>GOST|\d+)/,
+        regex: /Chromium[\/ ](?<version>GOST|\d++)/,
       },
       "Ddg" => {
         browser: "DuckDuckGo",
       },
       "DuckDuckGo" => {},
       "Ecosia" => {
-        regex: /Ecosia ios@(?<version>\d+)/,
+        regex: /Ecosia ios@(?<version>\d++)/,
         os: "iOS",
       },
       "Edg" => [
         {
-          regex: /(?:iOS|iPod|iPad|iPhone).*Edg\/(?<version>\d+)/,
+          regex: /(?:iOS|iPod|iPad|iPhone).*Edg\/(?<version>\d++)/,
           browser: "Edge for iOS",
           os: "iOS",
         },
         {
-          regex: /Android.*Edg\/(?<version>\d+)/,
+          regex: /Android.*Edg\/(?<version>\d++)/,
           browser: "Edge for Android",
           os: "Android",
         },
         {
-          regex: /Edg\/(?<version>\d+)/,
+          regex: /Edg\/(?<version>\d++)/,
           browser: "Edge",
         },
       ],
@@ -191,22 +191,22 @@ module Skadi
       },
       "Firefox" => [
         {
-          regex: /(?<browser>PaleMoon|Waterfox)\/(?<version>\d+)/,
-        }.freeze,
+          regex: /(?<browser>PaleMoon|Waterfox)\/(?<version>\d++)/,
+        },
         {
-          regex: /(?:iOS|iPod|iPad|iPhone).*Firefox\/(?<version>\d+)/,
+          regex: /(?:iOS|iPod|iPad|iPhone).*Firefox\/(?<version>\d++)/,
           browser: "Firefox for iOS",
           os: "iOS",
-        }.freeze,
+        },
         {
-          regex: /Android.*Firefox\/(?<version>\d+)/,
+          regex: /Android.*Firefox\/(?<version>\d++)/,
           browser: "Firefox for Android",
           os: "Android",
-        }.freeze,
+        },
         {
-          regex: /Firefox\/(?<version>\d+)/,
+          regex: /Firefox\/(?<version>\d++)/,
           browser: "Firefox",
-        }.freeze,
+        },
       ],
       "FxiOS" => {
         browser: "Firefox for iOS",
@@ -221,18 +221,18 @@ module Skadi
         browser: "Huawei Browser",
       },
       "Instagram" => {
-        regex: /Instagram[\/ ](?<version>\d+)/,
+        regex: /Instagram[\/ ](?<version>\d++)/,
       },
       "Iron" => {
-        regex: /Chrome\/(?<version>\d+).*?Iron/,
+        regex: /Chrome\/(?<version>\d++).*?Iron/,
       },
       "KAKAOTALK" => {
-        regex: /KAKAOTALK[\/ ](?<version>\d+)/,
+        regex: /KAKAOTALK[\/ ](?<version>\d++)/,
       },
       "Konqueror" => {},
       "Line" => {},
       "LinkedInApp" => {
-        regex: /\[LinkedInApp\]\/(?<version>\d+)/,
+        regex: /\[LinkedInApp\]\/(?<version>\d++)/,
         browser: "LinkedIn",
       },
       "Maxthon" => {},
@@ -244,12 +244,12 @@ module Skadi
       },
       "MQQBrowser" => {},
       "MSIE" => {
-        regex: /MSIE (?<version>\d+)(?:.*(?<engine>Trident)\/(?<engine_version>\d+))?|(?<engine>Trident)\/(?<engine_version>\d+).*rv[: ](?<version>\d+)/,
+        regex: /MSIE (?<version>\d++)(?>.*(?<engine>Trident)\/(?<engine_version>\d++))?|(?<engine>Trident)\/(?<engine_version>\d++).*rv[: ](?<version>\d++)/,
         browser: "IE",
         os: "Windows",
-      }.freeze,
+      },
       "musical" => {
-        regex: /musical_ly_(?<version>\d+)/,
+        regex: /musical_ly_(?<version>\d++)/,
         browser: "TikTok",
       },
       "Norton" => {
@@ -258,9 +258,16 @@ module Skadi
       "OculusBrowser" => {
         browser: "Oculus Browser",
       },
-      "Opera" => {
-        regex: /(?<browser>Opera Mini)[\/ ](?<version>\d+)|(?<browser>Opera)(?!.*Mini)(?:.*Version)?[\/ ](?<version>\d+)/,
-      },
+      "Opera" => [
+        {
+          regex: /Opera Mini[\/ ](?<version>\d++)/,
+          browser: "Opera Mini",
+        },
+        {
+          regex: /Opera(?>.*Version)?[\/ ](?<version>\d++)/,
+          browser: "Opera",
+        },
+      ],
       "OPR" => {
         browser: "Opera",
       },
@@ -283,13 +290,13 @@ module Skadi
       "Snapchat" => {},
       "TikTokLIVEStudio" => {},
       "Trident" => {
-        regex: /MSIE (?<version>\d+).*Trident\/(?<engine_version>\d+)|Trident\/(?<engine_version>\d+).*rv[: ](?<version>\d+)/,
+        regex: /MSIE (?<version>\d++).*Trident\/(?<engine_version>\d++)|Trident\/(?<engine_version>\d++).*rv[: ](?<version>\d++)/,
         browser: "IE",
         engine: "Trident",
         os: "Windows",
-      }.freeze,
+      },
       "Twitter" => {
-        regex: /Twitter for iPhone\/(?<version>\d+)/,
+        regex: /Twitter for iPhone\/(?<version>\d++)/,
       },
       "UCBrowser" => {},
       "VivoBrowser" => {
@@ -302,11 +309,17 @@ module Skadi
       "YaSearchBrowser" => {
         browser: "Yandex",
       },
-    }.each_pair do |key, options|
+    }
+
+    # Normalise the BROWSER_TOKENS hash with defaults, and ensure they are all arrays
+    BROWSER_TOKENS.each_pair do |key, options|
       next unless options.is_a?(Hash)
 
-      options[:regex] ||= /#{key}\/(?<version>\d+)/
+      options[:regex] ||= /#{key}\/(?<version>\d++)/
       options[:browser] ||= key
+
+      # Normalise into an array so we don't have to check the type during runtime
+      BROWSER_TOKENS[key] = [options]
     end
 
     private def parse_browser
@@ -315,13 +328,7 @@ module Skadi
         next unless BROWSER_TOKENS.key?(token)
 
         # We then use the matcher to extract the version from the full user agent
-        matchers = if !BROWSER_TOKENS[token].is_a?(Array)
-          [BROWSER_TOKENS[token]]
-        else
-          BROWSER_TOKENS[token]
-        end
-
-        matchers.each do |matcher|
+        BROWSER_TOKENS[token].each do |matcher|
           return if run_matcher(matcher) # rubocop:disable Lint/NonLocalExitFromIterator
         end
       end
@@ -361,17 +368,17 @@ module Skadi
         engine: "EdgeHTML",
       },
       {
-        regex: /AppleWebKit\/537\.36.*Chrome\/(?<version>\d+)/,
+        regex: /AppleWebKit\/537\.36.*Chrome\/(?<version>\d++)/,
         engine: "Blink",
-      }.freeze,
+      },
       {
-        regex: /(?<engine>WebKit|Presto|Trident|Goanna)\/(?<version>\d+)/,
-      }.freeze,
+        regex: /(?<engine>WebKit|Presto|Trident|Goanna)\/(?<version>\d++)/,
+      },
       {
-        regex: /rv:(?<version>\d+).*?Gecko\/\d+/,
+        regex: /rv:(?<version>\d++).*?Gecko\/\d++/,
         engine: "Gecko",
-      }.freeze,
-    ].freeze
+      },
+    ]
 
     private def parse_engine
       # Since there are only 4 engine matchers, there is little performance to be gained by using the token approach to parsing
@@ -426,11 +433,11 @@ module Skadi
       @os ||= "Unknown"
     end
 
-    BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider].freeze
+    BOT_GLOBAL_MATCHERS = %w[bot crawl scan spider]
 
-    BOT_WORD_SET = Set.new(%w[AGENT Agent AppInsights ArchiveBox Archiver Archiving BingPreview BrandVerity Butterfly Charlotte Checkly Claude CloudFlare Cloudflare Code Collapsify CookieHubVerify Criticalcss Daily DareBoost DatadogSynthetics Datanyze Devin Dlc FeedBurner Feeder Feedly FlipboardProxy Fluid Foregenix GTmetrix GeedoProductSearch GeedoShopProductFinder Google GoogleAgent GoogleImageProxy GotSiteMonitor Hardenize HeadlessChrome Hotjar Inspector Lighthouse LinkTiger Mail Manus MarketGoo MarketingMiner MetaIAB Miniature MonitoRSS Monitor Netcraft NewRelicSynthetics NewsBlur NewsNow Newsify Nitro OpenGraph Optimizer PTST PWABuilderHttpAgent Perplexity PingdomTMS Playwright Preview PrintFriendly Puppeteer Readable RevvimGort Rigor SQWatcher Scope3 SecurityHeaders Selenium SeoSiteCheckup Silktide Sindup Siteimprove Specificfeeds Sucuri TestLocally ThousandEyes Trae YLT ZoteroTranslationServer adbeat agent archiver archiving brandverity butterfly claude cloudflare code contentkingapp deadlinkchecker devin europarchive feeder feedly google img2dataset infegy mail mailservertest2023 marketingminer mirrorweb monitor nbertaupete95 netcraft newsai newsblur newsify opencode opengraph oupwis perplexity preview retrevo scope3 scraping seositecheckup sitebulb slider splash sqwatcher turingos ubermetrics uptimedoctor watchTowr webresearch websitepulse woorankreview xmco]).freeze
+    BOT_WORD_SET = Set.new(%w[AGENT Agent AppInsights ArchiveBox Archiver Archiving BingPreview BrandVerity Butterfly Charlotte Checkly Claude CloudFlare Cloudflare Code Collapsify CookieHubVerify Criticalcss Daily DareBoost DatadogSynthetics Datanyze Devin Dlc FeedBurner Feeder Feedly FlipboardProxy Fluid Foregenix GTmetrix GeedoProductSearch GeedoShopProductFinder Google GoogleAgent GoogleImageProxy GotSiteMonitor Hardenize HeadlessChrome Hotjar Inspector Lighthouse LinkTiger Mail Manus MarketGoo MarketingMiner MetaIAB Miniature MonitoRSS Monitor Netcraft NewRelicSynthetics NewsBlur NewsNow Newsify Nitro OpenGraph Optimizer PTST PWABuilderHttpAgent Perplexity PingdomTMS Playwright Preview PrintFriendly Puppeteer Readable RevvimGort Rigor SQWatcher Scope3 SecurityHeaders Selenium SeoSiteCheckup Silktide Sindup Siteimprove Specificfeeds Sucuri TestLocally ThousandEyes Trae YLT ZoteroTranslationServer adbeat agent archiver archiving brandverity butterfly claude cloudflare code contentkingapp deadlinkchecker devin europarchive feeder feedly google img2dataset infegy mail mailservertest2023 marketingminer mirrorweb monitor nbertaupete95 netcraft newsai newsblur newsify opencode opengraph oupwis perplexity preview retrevo scope3 scraping seositecheckup sitebulb slider splash sqwatcher turingos ubermetrics uptimedoctor watchTowr webresearch websitepulse woorankreview xmco])
 
-    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008"].freeze
+    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008"]
 
     private def detect_bot
       return true if user_agent_tokens.any? { |it| BOT_WORD_SET.include? it }
