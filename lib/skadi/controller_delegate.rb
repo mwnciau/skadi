@@ -57,11 +57,21 @@ module Skadi
       end
 
       if @demographics.any?
-        Demographic.upsert(*@demographics)
+        Demographic.create_or_increment_all(*@demographics)
       end
 
       if @events && @events.length > 0
-        Event.upsert_all(@events)
+        @events.each do |event|
+          # Attach events to the current visit and view, only if it is not marked as sensitive
+          unless event[:sensitive]
+            event[:view_id] = @view.id
+            event[:visit_id] = @visit&.id
+          end
+
+          event.delete(:sensitive)
+        end
+
+        Event.insert_all(@events)
       end
     end
 
@@ -83,8 +93,8 @@ module Skadi
       @demographics << demographic
     end
 
-    def event(name, is_sensitive: false, **properties)
-      event = {name:, properties:, is_sensitive:}
+    def event(name, sensitive: false, **properties)
+      event = {name:, properties:, sensitive:}
 
       @events << event
     end

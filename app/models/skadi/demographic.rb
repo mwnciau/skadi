@@ -7,7 +7,7 @@ module Skadi
 
     validates :recorded_on, presence: true
 
-    def self.upsert(*demographics)
+    def self.create_or_increment_all(*demographics)
       demographics_to_update = demographics.map do |demographic|
         {
           name: demographic[:name].strip[0, 255],
