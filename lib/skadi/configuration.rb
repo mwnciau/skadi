@@ -107,6 +107,9 @@ module Skadi
     attr_accessor :track_bots
     validates(:track_bots, "boolean", default: Rails.env.local?) { |it| it == true || it == false }
 
+    # Helper method to return the inverse of :track_bots
+    def do_not_track_bots? = !@track_bots
+
     def validate!
       validators.each do |attribute, validator_config|
         validator = validator_config[:validator]

@@ -59,16 +59,16 @@ module Skadi
       if consent == true
         tracking_token = @view.visit&.tracking_token || ::SecureRandom.uuid_v7
 
-        set_cookie("skadi_id", tracking_token)
-        clear_cookie "skadi_tracking_opt_out"
+        cookie_manager.tracking_token = tracking_token
+        cookie_manager.tracking_opt_out = false
 
         # Update the existing visit with the tracking token if we've generated a new one
         if @view.visit
           @view.visit.tracking_token = tracking_token
         end
       elsif consent == false
-        set_cookie "skadi_tracking_opt_out", "1"
-        clear_cookie "skadi_id"
+        cookie_manager.tracking_opt_out = true
+        cookie_manager.tracking_token = nil
 
         if @view.visit&.tracking_token
           # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
@@ -89,6 +89,8 @@ module Skadi
         end
       end
     end
+
+    private def cookie_manager = @_skadi_cookies ||= Skadi::CookieManager.new(request)
 
     private def handle_events(events)
       events_to_insert = []
@@ -125,21 +127,6 @@ module Skadi
       return if demographics_to_update.empty?
 
       Skadi::Demographic.upsert(*demographics_to_update)
-    end
-
-    def set_cookie(name, value, age = 1.year)
-      cookies[name] = {
-        value:,
-        domain: Skadi.configuration.cookie_domain,
-        httponly: true,
-        secure: Rails.env.production? || request.ssl?,
-        same_site: :lax,
-        expires: age.from_now,
-      }
-    end
-
-    def clear_cookie(name)
-      cookies.delete(name, domain: Skadi.configuration.cookie_domain)
     end
 
     def limit_payload_size!

@@ -3,6 +3,8 @@ module Skadi
     has_many :views, class_name: "Skadi::View", inverse_of: :visit
     has_many :events, class_name: "Skadi::Event", inverse_of: :visit
 
+    def token = visit_token
+
     def self.find_active_visit_for(tracking_token, user)
       return nil if tracking_token.nil? && user.nil?
 
@@ -31,24 +33,22 @@ module Skadi
     # @param request [ActionDispatch::Request]
     # @return [Skadi::Visit]
     def self.build_from(tracking_token, user, request)
-      visit = new
+      new(
+        visit_token: SecureRandom.uuid_v7,
+        tracking_token: tracking_token,
+        user_id: user&.id,
 
-      visit.visit_token = SecureRandom.uuid_v7
-      visit.tracking_token = tracking_token
-      visit.user_id = user&.id
+        referrer: Skadi::Url.redact_and_normalise_url(request.referrer),
+        landing_page: Skadi::Url.view_path_from_request(request),
 
-      visit.referrer = Skadi::Url.redact_and_normalise_url(request.referrer)
-      visit.landing_page = Skadi::Url.view_path_from_request(request)
+        utm_source: request.query_parameters["utm_source"],
+        utm_medium: request.query_parameters["utm_medium"],
+        utm_term: request.query_parameters["utm_term"],
+        utm_content: request.query_parameters["utm_content"],
+        utm_campaign: request.query_parameters["utm_campaign"],
 
-      visit.utm_source = request.query_parameters["utm_source"]
-      visit.utm_medium = request.query_parameters["utm_medium"]
-      visit.utm_term = request.query_parameters["utm_term"]
-      visit.utm_content = request.query_parameters["utm_content"]
-      visit.utm_campaign = request.query_parameters["utm_campaign"]
-
-      visit.verified = false
-
-      visit
+        verified: false,
+      )
     end
   end
 end

@@ -6,7 +6,7 @@ module Skadi::Integration
       setup do
         view = create :view
 
-        @view_token = view.view_token
+        @view_token = view.token
       end
 
       test "tracks demographics" do
