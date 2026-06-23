@@ -9,15 +9,17 @@ module Skadi::Integration
   end
 
   class DummySkadi
-    attr_accessor :visit, :view, :new_visit
+    attr_accessor :visit, :view, :new_visit, :do_not_track
 
     def initialize(visit, view)
       @visit = visit
       @view = view
       @new_visit = false
+      @do_not_track = false
     end
 
     def new_visit? = @new_visit
+    def do_not_track? = @do_not_track
   end
 
   class ApplicationHelperTest < TestCase
@@ -78,6 +80,17 @@ module Skadi::Integration
       assert_raises Skadi::ApplicationHelper::InvalidSkadiTagType do
         skadi_tag(:invalid)
       end
+    end
+
+    test "do no track" do
+      @dummy.skadi.visit = nil
+      @dummy.skadi.view = nil
+      @dummy.skadi.new_visit = false
+      @dummy.skadi.do_not_track = true
+
+      result = skadi_tag(:route)
+
+      assert_nil result
     end
   end
 end
