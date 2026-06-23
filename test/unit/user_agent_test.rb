@@ -37,7 +37,7 @@ module Skadi::Unit
 
     test "Chrome on Windows" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36",
       )
 
       assert_equal "Chrome", user_agent.browser
@@ -50,7 +50,7 @@ module Skadi::Unit
 
     test "Firefox on Windows" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:152.0) Gecko/20100101 Firefox/152.0"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:152.0) Gecko/20100101 Firefox/152.0",
       )
 
       assert_equal "Firefox", user_agent.browser
@@ -63,7 +63,7 @@ module Skadi::Unit
 
     test "Safari on macOS" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15",
       )
 
       assert_equal "Safari", user_agent.browser
@@ -76,7 +76,7 @@ module Skadi::Unit
 
     test "Edge on Windows" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.4022.80"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.4022.80",
       )
 
       assert_equal "Edge", user_agent.browser
@@ -89,7 +89,7 @@ module Skadi::Unit
 
     test "Chrome for Android" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.116 Mobile Safari/537.36"
+        "Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.116 Mobile Safari/537.36",
       )
 
       assert_equal "Chrome for Android", user_agent.browser
@@ -102,7 +102,7 @@ module Skadi::Unit
 
     test "Safari for iOS" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1",
       )
 
       assert_equal "Safari for iOS", user_agent.browser
@@ -115,7 +115,7 @@ module Skadi::Unit
 
     test "to_h returns parsed fields" do
       user_agent = Skadi::UserAgent.new(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       )
 
       assert_equal(

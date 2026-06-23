@@ -6,7 +6,7 @@ module Skadi
 
     def skadi_tag(type = :inline)
       return if skadi.do_not_track?
-      
+
       tag_attributes = {
         data: {
           uri: request.route_uri_pattern,

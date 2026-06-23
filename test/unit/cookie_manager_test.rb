@@ -5,20 +5,20 @@ module Skadi::Unit
     TRACKING_TOKEN = "8cec5a7a-7bf7-403f-b15e-b2e45944182c"
 
     test "tracking_token returns the cookie value when it is a valid UUID" do
-      manager = build_manager("skadi_id": TRACKING_TOKEN)
+      manager = build_manager(skadi_id: TRACKING_TOKEN)
 
       assert_equal TRACKING_TOKEN, manager.tracking_token
     end
 
     test "tracking_token rejects non-TRACKING_TOKEN values" do
-      manager = build_manager("skadi_id": "not-a-uuid")
+      manager = build_manager(skadi_id: "not-a-uuid")
 
       assert_nil manager.tracking_token
     end
 
     test "tracking_token rejects almost-UUID values" do
       # One character too short, otherwise valid hex
-      manager = build_manager("skadi_id": "8cec5a7a-7bf7-403f-b15e-b2e4594418")
+      manager = build_manager(skadi_id: "8cec5a7a-7bf7-403f-b15e-b2e4594418")
 
       assert_nil manager.tracking_token
     end
@@ -39,7 +39,7 @@ module Skadi::Unit
     end
 
     test "tracking_token= with nil deletes the cookie" do
-      request = build_request({"skadi_id": TRACKING_TOKEN})
+      request = build_request({skadi_id: TRACKING_TOKEN})
       manager = Skadi::CookieManager.new(request)
 
       manager.tracking_token = nil
@@ -48,7 +48,7 @@ module Skadi::Unit
     end
 
     test "tracking_opt_out is true when cookie is '1'" do
-      manager = build_manager("skadi_tracking_opt_out": "1")
+      manager = build_manager(skadi_tracking_opt_out: "1")
 
       assert manager.tracking_opt_out == true
     end
@@ -69,7 +69,7 @@ module Skadi::Unit
     end
 
     test "tracking_opt_out= false deletes the cookie" do
-      request = build_request({"skadi_tracking_opt_out": "1"})
+      request = build_request({skadi_tracking_opt_out: "1"})
       manager = Skadi::CookieManager.new(request)
 
       manager.tracking_opt_out = false
@@ -78,7 +78,7 @@ module Skadi::Unit
     end
 
     test "renew! re-writes existing cookies" do
-      request = build_request({"skadi_id": TRACKING_TOKEN, "skadi_tracking_opt_out": "1"})
+      request = build_request({skadi_id: TRACKING_TOKEN, skadi_tracking_opt_out: "1"})
       manager = Skadi::CookieManager.new(request)
 
       manager.renew!

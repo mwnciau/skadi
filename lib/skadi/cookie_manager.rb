@@ -4,7 +4,6 @@ module Skadi
     TRACKING_TOKEN_KEY = "skadi_id"
     UUID_REGEX = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
 
-
     # @return [ActionDispatch::Cookies::CookieJar]
     attr_reader :cookies, :request
 
@@ -21,7 +20,11 @@ module Skadi
     def tracking_opt_out = cookies[OPT_OUT_KEY] == "1"
 
     def tracking_opt_out=(new_value)
-      return delete_cookie(OPT_OUT_KEY) if !new_value
+      if !new_value
+        delete_cookie(OPT_OUT_KEY)
+
+        return
+      end
 
       set_cookie OPT_OUT_KEY, "1"
     end
@@ -34,7 +37,11 @@ module Skadi
     end
 
     def tracking_token=(new_value)
-      return delete_cookie(TRACKING_TOKEN_KEY) if new_value.nil?
+      if new_value.nil?
+        delete_cookie(TRACKING_TOKEN_KEY)
+
+        return
+      end
 
       set_cookie TRACKING_TOKEN_KEY, new_value
     end
