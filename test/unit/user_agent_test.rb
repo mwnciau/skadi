@@ -10,6 +10,18 @@ module Skadi::Unit
     BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
     BOT_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/bot_user_agents.json")
 
+    test "empty string" do
+      user_agent = Skadi::UserAgent.new("")
+
+      assert_equal "Unknown", user_agent.browser
+      assert_equal "Unknown", user_agent.browser_version
+      assert_equal "Unknown", user_agent.engine
+      assert_equal "Unknown", user_agent.engine_version
+      assert_equal "Unknown", user_agent.os
+      assert user_agent.bot?
+      refute user_agent.human?
+    end
+
     # Testing against the bundled dataset there are 13 errors (0.08%) where just one of the errors is an actual error
     # (the version for a legacy Safari browser is not correctly picked up).
     # Testing against the [May 2026 Intoli dataset](https://github.com/mwnciau/user_agent_dumps/tree/main/intoli_user_agents),
