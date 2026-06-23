@@ -110,9 +110,8 @@ module Skadi::Unit
     end
 
     test "redact_and_upsert handles mixed sensitivity in reverse order" do
-      # Guards against an `insert_all` regression where the first row's keys are taken as the
-      # canonical set. If sensitive is queued first and the keys aren't normalised, non-sensitive
-      # events lose `view_id`/`visit_id`.
+      # `insert_all` requires all entries to have the same set of keys. Now, this raises an error,
+      # but in previous versions of Rails this silently failed to insert all the data.
       Skadi::Event.redact_and_insert(
         [
           {name: "password_reset", properties: {}, sensitive: true},
