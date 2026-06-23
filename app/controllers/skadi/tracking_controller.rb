@@ -28,14 +28,16 @@ module Skadi
       end
 
       @view.verified = true
-      @view.save
+      @view.visit.verified = true if @view.visit
 
-      if @view.visit
-        @view.visit.verified = true
-        @view.visit.save
-      end
+      skadi._persist
 
       head :no_content
+    end
+
+    private def skadi
+      # Disable bot protection, since that will have been done when the visit/view was created
+      @_skadi ||= Skadi::ControllerDelegate.new(self, bot_protection: false)
     end
 
     private def set_params
@@ -53,44 +55,19 @@ module Skadi
       return head :not_found unless @view
 
       return head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
+
+      # Update the view and visit on the Skadi controller delegate
+      skadi.instance_variable_set(:@view, @view)
+      skadi.instance_variable_set(:@visit, @view.visit)
     end
 
     private def handle_consent(consent)
       if consent == true
-        tracking_token = @view.visit&.tracking_token || ::SecureRandom.uuid_v7
-
-        cookie_manager.tracking_token = tracking_token
-        cookie_manager.tracking_opt_out = false
-
-        # Update the existing visit with the tracking token if we've generated a new one
-        if @view.visit
-          @view.visit.tracking_token = tracking_token
-        end
+        skadi.consent!
       elsif consent == false
-        cookie_manager.tracking_opt_out = true
-        cookie_manager.tracking_token = nil
-
-        if @view.visit&.tracking_token
-          # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
-          # Note: this needs a DB update because there may be other visits outside the visit limit
-          Skadi::Visit.where(tracking_token: @view.visit.tracking_token).update_all(tracking_token: nil)
-
-          # Update the local copy so it doesn't get re-set
-          @view.visit.tracking_token = nil
-        end
-
-        if @view.visit&.user&.id
-          # If an existing user, delete any rows using it so existing data is anonymised instantly
-          # Note: this needs a DB update because there may be other visits outside the visit limit
-          Skadi::Visit.where(user_id: @view.visit.user.id).update_all(user_id: nil)
-
-          # Update the local copy so it doesn't get re-set
-          @view.visit.user = nil
-        end
+        skadi.opt_out!
       end
     end
-
-    private def cookie_manager = @_skadi_cookies ||= Skadi::CookieManager.new(request)
 
     private def handle_events(events)
       events_to_insert = []
@@ -100,12 +77,8 @@ module Skadi
         next unless event["name"].is_a?(String) && event["name"].present?
         next unless event["properties"].is_a?(Hash)
 
-        events_to_insert << {visit: @view.visit, name: event["name"].strip[0, 255], properties: event["properties"]}
+        skadi.event(event["name"], event["properties"])
       end
-
-      return if events_to_insert.empty?
-
-      @view.events.create(events_to_insert)
     end
 
     private def handle_demographics(demographics)
@@ -117,16 +90,8 @@ module Skadi
         next unless demographic["value"].is_a?(String) && demographic["value"].present?
         next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
-        demographics_to_update << {
-          name: demographic["name"],
-          value: demographic["value"],
-          uri: demographic["uri"],
-        }
+        skadi.demographic(demographic["name"], demographic["value"], action_specific: true, uri: demographic["uri"] || "")
       end
-
-      return if demographics_to_update.empty?
-
-      Skadi::Demographic.create_or_increment_all(demographics_to_update)
     end
 
     def limit_payload_size!

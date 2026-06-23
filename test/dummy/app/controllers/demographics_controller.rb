@@ -7,7 +7,7 @@ class DemographicsController < ApplicationController
 
   def multiple
     skadi.demographic("demographic", "simple")
-    skadi.demographic("demographic", "view", true)
+    skadi.demographic("demographic", "view", action_specific: true)
 
     head :ok
   end

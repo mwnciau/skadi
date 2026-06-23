@@ -117,8 +117,8 @@ module Skadi::Integration
         post skadi.tracking_endpoint_path, params: {view: view.token, consent: nil}, as: :json
 
         assert_response :no_content
-        refute response.cookies.has_key?("skadi_tracking_opt_out")
-        refute response.cookies.has_key?("skadi_id")
+        assert_equal "1", response.cookies["skadi_tracking_opt_out"]
+        assert_equal TRACKING_TOKEN, response.cookies["skadi_id"]
       end
 
       test "cookies are not changed with invalid consent" do
@@ -136,8 +136,8 @@ module Skadi::Integration
           post skadi.tracking_endpoint_path, params: {view: view.token, **invalid_params}, as: :json
 
           assert_response :no_content
-          refute response.cookies.has_key?("skadi_tracking_opt_out")
-          refute response.cookies.has_key?("skadi_id")
+          assert_equal "1", response.cookies["skadi_tracking_opt_out"]
+          assert_equal TRACKING_TOKEN, response.cookies["skadi_id"]
         end
       end
     end

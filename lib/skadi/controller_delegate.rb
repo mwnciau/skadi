@@ -23,13 +23,13 @@ module Skadi
     private def cookie_manager = @_skadi_cookies ||= Skadi::CookieManager.new(controller.request)
 
     # @param [ActionController::Base] controller
-    def initialize(controller)
+    def initialize(controller, bot_protection: true)
       @controller = controller
 
       @events = []
       @demographics = []
 
-      @do_not_track = Skadi.configuration.do_not_track_bots? && user_agent.bot?
+      @do_not_track = bot_protection && Skadi.configuration.do_not_track_bots? && user_agent.bot?
       @new_visit = false
     end
 
@@ -79,6 +79,41 @@ module Skadi
       @do_not_track = true
     end
 
+    def consent!
+      tracking_token = @visit&.tracking_token || ::SecureRandom.uuid_v7
+
+      cookie_manager.tracking_token = tracking_token
+      cookie_manager.tracking_opt_out = false
+
+      # Update the existing visit with the tracking token if we've generated a new one
+      if @visit
+        @visit.tracking_token = tracking_token
+      end
+    end
+
+    def opt_out!
+      cookie_manager.tracking_opt_out = true
+      cookie_manager.tracking_token = nil
+
+      if @visit&.tracking_token
+        # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
+        # Note: this needs a DB update because there may be other visits outside the visit limit
+        Skadi::Visit.where(tracking_token: @visit.tracking_token).update_all(tracking_token: nil)
+
+        # Update the local copy so it doesn't get re-set
+        @visit.tracking_token = nil
+      end
+
+      if @visit&.user&.id
+        # If an existing user, delete any rows using it so existing data is anonymised instantly
+        # Note: this needs a DB update because there may be other visits outside the visit limit
+        Skadi::Visit.where(user_id: @visit.user.id).update_all(user_id: nil)
+
+        # Update the local copy so it doesn't get re-set
+        @visit.user = nil
+      end
+    end
+
     # Create or increment a demographic with a given name or value. If the action_specific parameter
     # is set to true, the demographic is linked specifically to the current action. Demographics are
     # not linked to any other individual data. E.g:
@@ -92,11 +127,11 @@ module Skadi
     # @param [String] name
     # @param [String] value
     # @param [TrueClass, FalseClass] action_specific
-    def demographic(name, value, action_specific: false)
+    def demographic(name, value, action_specific: false, uri: nil)
       raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as first parameter, got #{name.class.name}" unless name.is_a?(String)
       raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as second parameter, got #{value.class.name}" unless value.is_a?(String)
 
-      demographic = {name:, value:, uri: action_specific ? request.route_uri_pattern : nil}
+      demographic = {name:, value:, uri: action_specific ? (uri || request.route_uri_pattern) : nil}
 
       @demographics << demographic
     end
