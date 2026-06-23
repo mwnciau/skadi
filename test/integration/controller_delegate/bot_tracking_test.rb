@@ -7,13 +7,13 @@ module Skadi::Integration
         Skadi.configuration.track_bots = true
         cookies[:skadi_id] = TRACKING_TOKEN
 
-        get tracked_action_path
+        get simple_event_path
 
         assert_response :ok
 
         assert_equal 1, Skadi::Visit.count
         assert_equal 1, Skadi::View.count
-        assert_equal 0, Skadi::Event.count
+        assert_equal 1, Skadi::Event.count
 
         # Browser demographics are logged
         assert_equal 5, Skadi::Demographic.count
