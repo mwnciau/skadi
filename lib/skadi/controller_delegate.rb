@@ -62,8 +62,11 @@ module Skadi
 
       if @events && @events.length > 0
         @events.each do |event|
-          # Attach events to the current visit and view, only if it is not marked as sensitive
-          unless event[:sensitive]
+          if event[:sensitive]
+            # Sensitive events should have their created date redacted so they cannot be linked to views/visits based on timings
+            event[:created_at] = Time.current.beginning_of_day
+          else
+            # Attach events to the current visit and view, only if it is not marked as sensitive
             event[:view_id] = @view.id
             event[:visit_id] = @visit&.id
           end
@@ -93,7 +96,7 @@ module Skadi
       @demographics << demographic
     end
 
-    def event(name, sensitive: false, **properties)
+    def event(name, properties = {}, sensitive: false)
       event = {name:, properties:, sensitive:}
 
       @events << event
