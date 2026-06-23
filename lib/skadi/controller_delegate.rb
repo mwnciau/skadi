@@ -110,7 +110,7 @@ module Skadi
     # @param [TrueClass, FalseClass] sensitive
     def event(name, properties = {}, sensitive: false)
       raise ArgumentError.new "Skadi::ControllerDelegate.event expects String as first parameter, got #{name.class.name}" unless name.is_a?(String)
-      raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects Hash as second parameter, got #{properties.class.name}" unless properties.is_a?(Hash)
+      raise ArgumentError.new "Skadi::ControllerDelegate.event expects Hash as second parameter, got #{properties.class.name}" unless properties.is_a?(Hash)
 
       event = {name:, properties:, sensitive:}
 
