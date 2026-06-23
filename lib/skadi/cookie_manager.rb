@@ -12,9 +12,9 @@ module Skadi
       @cookies = request.cookie_jar
     end
 
-    def renew!
+    def renew!(tracking_token)
       set_cookie OPT_OUT_KEY, "1" if cookies.has_key? OPT_OUT_KEY
-      set_cookie TRACKING_TOKEN_KEY, cookies[TRACKING_TOKEN_KEY] if cookies.has_key? TRACKING_TOKEN_KEY
+      set_cookie TRACKING_TOKEN_KEY, tracking_token if cookies.has_key? TRACKING_TOKEN_KEY
     end
 
     def tracking_opt_out = cookies[OPT_OUT_KEY] == "1"
