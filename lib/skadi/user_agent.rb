@@ -15,7 +15,7 @@ module Skadi
   # detected, potentially skewing the analytics data collected.
   class UserAgent
     def initialize(user_agent)
-      @user_agent = user_agent
+      @user_agent = (user_agent || "")[0, 2048]
     end
 
     def browser

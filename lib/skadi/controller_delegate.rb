@@ -56,30 +56,12 @@ module Skadi
         @view.save
       end
 
-      if @demographics.any?
-        Demographic.create_or_increment_all(*@demographics)
+      if @events.any?
+        Skadi::Event.redact_and_upsert(@events, visit: @visit, view: @view)
       end
 
-      if @events && @events.length > 0
-        @events.each do |event|
-          # Note: both paths must have the same set of keys, which is a requirement for upsert_all
-          if event[:sensitive]
-            event[:view_id] = nil
-            event[:visit_id] = nil
-
-            # Sensitive events should have their created date redacted so they cannot be linked to views/visits based on timings
-            event[:created_at] = Time.current.beginning_of_day
-          else
-            # Attach events to the current visit and view, only if it is not marked as sensitive
-            event[:view_id] = @view.id
-            event[:visit_id] = @visit&.id
-            event[:created_at] = Time.current
-          end
-
-          event.delete(:sensitive)
-        end
-
-        Event.insert_all(@events)
+      if @demographics.any?
+        Demographic.create_or_increment_all(@demographics)
       end
     rescue ActiveRecord::ActiveRecordError => e
       Rails.logger.error("Skadi: failed to persist analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@view.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")

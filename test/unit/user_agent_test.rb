@@ -1,4 +1,5 @@
 require_relative "test_case"
+require "timeout"
 
 module Skadi::Unit
   class UserAgentTest < TestCase
@@ -20,6 +21,122 @@ module Skadi::Unit
       assert_equal "Unknown", user_agent.os
       assert user_agent.bot?
       refute user_agent.human?
+    end
+
+    test "nil" do
+      user_agent = Skadi::UserAgent.new(nil)
+
+      assert_equal "Unknown", user_agent.browser
+      assert_equal "Unknown", user_agent.browser_version
+      assert_equal "Unknown", user_agent.engine
+      assert_equal "Unknown", user_agent.engine_version
+      assert_equal "Unknown", user_agent.os
+      assert user_agent.bot?
+      refute user_agent.human?
+    end
+
+    test "Chrome on Windows" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
+      )
+
+      assert_equal "Chrome", user_agent.browser
+      assert_equal "149", user_agent.browser_version
+      assert_equal "Blink", user_agent.engine
+      assert_equal "149", user_agent.engine_version
+      assert_equal "Windows", user_agent.os
+      refute user_agent.bot?
+    end
+
+    test "Firefox on Windows" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:152.0) Gecko/20100101 Firefox/152.0"
+      )
+
+      assert_equal "Firefox", user_agent.browser
+      assert_equal "152", user_agent.browser_version
+      assert_equal "Gecko", user_agent.engine
+      assert_equal "152", user_agent.engine_version
+      assert_equal "Windows", user_agent.os
+      refute user_agent.bot?
+    end
+
+    test "Safari on macOS" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_7_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Safari/605.1.15"
+      )
+
+      assert_equal "Safari", user_agent.browser
+      assert_equal "26", user_agent.browser_version
+      assert_equal "WebKit", user_agent.engine
+      assert_equal "605", user_agent.engine_version
+      assert_equal "macOS", user_agent.os
+      refute user_agent.bot?
+    end
+
+    test "Edge on Windows" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36 Edg/149.0.4022.80"
+      )
+
+      assert_equal "Edge", user_agent.browser
+      assert_equal "149", user_agent.browser_version
+      assert_equal "Blink", user_agent.engine
+      assert_equal "149", user_agent.engine_version
+      assert_equal "Windows", user_agent.os
+      refute user_agent.bot?
+    end
+
+    test "Chrome for Android" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (Linux; Android 17) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.7827.116 Mobile Safari/537.36"
+      )
+
+      assert_equal "Chrome for Android", user_agent.browser
+      assert_equal "149", user_agent.browser_version
+      assert_equal "Blink", user_agent.engine
+      assert_equal "149", user_agent.engine_version
+      assert_equal "Android", user_agent.os
+      refute user_agent.bot?
+    end
+
+    test "Safari for iOS" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7_8 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1"
+      )
+
+      assert_equal "Safari for iOS", user_agent.browser
+      assert_equal "26", user_agent.browser_version
+      assert_equal "WebKit", user_agent.engine
+      assert_equal "605", user_agent.engine_version
+      assert_equal "iOS", user_agent.os
+      refute user_agent.bot?
+    end
+
+    test "to_h returns parsed fields" do
+      user_agent = Skadi::UserAgent.new(
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+      )
+
+      assert_equal(
+        {
+          browser: "Chrome",
+          browser_version: "120",
+          engine: "Blink",
+          engine_version: "120",
+          os: "Windows",
+          bot: false,
+        },
+        user_agent.to_h,
+      )
+    end
+
+    test "long user agent are truncated" do
+      valid = "a" * 2042 + " AVG/1"
+      too_long = "a" * 2048 + " AVG/1"
+
+      assert_equal "AVG Secure Browser", Skadi::UserAgent.new(valid).browser
+      assert_equal "Unknown", Skadi::UserAgent.new(too_long).browser
     end
 
     # Testing against the bundled dataset there are 13 errors (0.08%) where just one of the errors is an actual error

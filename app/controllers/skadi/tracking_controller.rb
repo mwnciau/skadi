@@ -126,7 +126,7 @@ module Skadi
 
       return if demographics_to_update.empty?
 
-      Skadi::Demographic.create_or_increment_all(*demographics_to_update)
+      Skadi::Demographic.create_or_increment_all(demographics_to_update)
     end
 
     def limit_payload_size!
