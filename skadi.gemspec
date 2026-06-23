@@ -48,6 +48,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "factory_bot_rails", "~> 6.0"
   # Pinned to 5 because older versions of rails raise an error for minitest 6
   s.add_development_dependency "minitest", "~> 5.0"
+  s.add_development_dependency "mocha", "~> 3.0"
 
   # Gems to enforce coding-standards
   s.add_development_dependency "rubocop", "~> 1.0"
