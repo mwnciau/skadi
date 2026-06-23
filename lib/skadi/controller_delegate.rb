@@ -1,6 +1,5 @@
 module Skadi
   class ControllerDelegate
-
     # The controller that instantiated us
     # @return [ActionController::Base]
     attr_reader :controller
@@ -42,8 +41,6 @@ module Skadi
       build_visit
       build_view
       queue_user_agent_demographics
-
-      cookie_manager.renew!
     end
 
     # Internal. Saves the visit, view and any events or demographics after the controller action.
@@ -63,6 +60,8 @@ module Skadi
       if @demographics.any?
         Demographic.create_or_increment_all(@demographics)
       end
+
+      cookie_manager.renew!
     rescue ActiveRecord::ActiveRecordError => e
       Rails.logger.error("Skadi: failed to persist analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@view.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")
 
