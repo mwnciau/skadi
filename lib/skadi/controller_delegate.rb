@@ -81,6 +81,10 @@ module Skadi
 
         Event.insert_all(@events)
       end
+    rescue ActiveRecord::ActiveRecordError => e
+      Rails.logger.error("Skadi: failed to persist analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@visit.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")
+
+      raise if Rails.env.local?
     end
 
     # Whether Skadi tracking has been disabled for the current request
