@@ -80,13 +80,39 @@ module Skadi
       @do_not_track = true
     end
 
-    def demographic(name, value, view_specific = false)
-      demographic = {name:, value:, uri: view_specific ? request.route_uri_pattern : nil}
+    # Create or increment a demographic with a given name or value. If the action_specific parameter
+    # is set to true, the demographic is linked specifically to the current action. Demographics are
+    # not linked to any other individual data. E.g:
+    #
+    #   skadi.demographic("browser", "Chrome")
+    #   skadi.demographic("branch", "A", action_specific: true)
+    #
+    # If the name/value/action combination doesn't exist for the current date, a new row is added to
+    # the database with count set to 1. If it does, the existing record's count is incremented.
+    #
+    # @param [String] name
+    # @param [String] value
+    # @param [TrueClass, FalseClass] action_specific
+    def demographic(name, value, action_specific: false)
+      raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as first parameter, got #{name.class.name}" unless name.is_a?(String)
+      raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as second parameter, got #{value.class.name}" unless value.is_a?(String)
+
+      demographic = {name:, value:, uri: action_specific ? request.route_uri_pattern : nil}
 
       @demographics << demographic
     end
 
+    # Create an event with the given name and properties. By default, events are linked to the
+    # current visit and view, but if the sensitive parameter is set to true, the event is not linked
+    # to the visit and view, and the time of the event is set to the start of the current day.
+    #
+    # @param [String] name
+    # @param [Hash] properties
+    # @param [TrueClass, FalseClass] sensitive
     def event(name, properties = {}, sensitive: false)
+      raise ArgumentError.new "Skadi::ControllerDelegate.event expects String as first parameter, got #{name.class.name}" unless name.is_a?(String)
+      raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects Hash as second parameter, got #{properties.class.name}" unless properties.is_a?(Hash)
+
       event = {name:, properties:, sensitive:}
 
       @events << event
