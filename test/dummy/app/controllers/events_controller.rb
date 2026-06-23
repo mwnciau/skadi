@@ -23,4 +23,11 @@ class EventsController < ApplicationController
 
     head :ok
   end
+
+  def mixed_sensitivity
+    skadi.event("simple_event")
+    skadi.event("sensitive_event", { sensitive_data: "sensitive" }, sensitive: true)
+
+    head :ok
+  end
 end

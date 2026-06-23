@@ -63,6 +63,31 @@ module Skadi::Integration
         assert_equal({"number" => 1}, event_1.properties)
         assert_equal({"number" => 2}, event_2.properties)
       end
+
+      test "mixed sensitivity event" do
+        cookies["skadi_id"] = TRACKING_TOKEN
+
+        get mixed_sensitivity_events_path
+
+        assert_response :ok
+
+        assert_equal 2, Skadi::Event.count
+        simple_event = Skadi::Event.first!
+        sensitive_event = Skadi::Event.last!
+
+        assert_equal "simple_event", simple_event.name
+        assert_equal({}, simple_event.properties)
+
+        assert_equal "sensitive_event", sensitive_event.name
+        assert_equal({"sensitive_data" => "sensitive"}, sensitive_event.properties)
+
+        # Ensure the event has not been linked to a visit or view
+        assert_nil sensitive_event.visit
+        assert_nil sensitive_event.view
+
+        # Ensure the event time has been redacted
+        assert_equal Time.current.beginning_of_day, sensitive_event.created_at
+      end
     end
   end
 end

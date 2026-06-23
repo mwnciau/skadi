@@ -50,6 +50,28 @@ module Skadi::Integration
         assert_equal Date.current, demographic.recorded_on
         assert_equal "/demographics/view(.:format)", demographic.uri
       end
+
+      test "mixed specificity" do
+        get mixed_specificity_demographics_path
+
+        assert_response :ok
+
+        assert_equal 2, Skadi::Demographic.count
+        general_demographic = Skadi::Demographic.first!
+        view_demographic = Skadi::Demographic.last!
+
+        assert_equal "demographic", general_demographic.name
+        assert_equal "simple", general_demographic.value
+        assert_equal 1, general_demographic.count
+        assert_equal Date.current, general_demographic.recorded_on
+        assert_equal "", general_demographic.uri
+
+        assert_equal "demographic", view_demographic.name
+        assert_equal "view", view_demographic.value
+        assert_equal 1, view_demographic.count
+        assert_equal Date.current, view_demographic.recorded_on
+        assert_equal "/demographics/mixed_specificity(.:format)", view_demographic.uri
+      end
     end
   end
 end

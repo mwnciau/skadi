@@ -19,12 +19,14 @@ Rails.application.routes.draw do
     get "with_properties", to: "events#with_properties", as: :with_properties_event
     get "sensitive", to: "events#sensitive", as: :sensitive_event
     get "multiple", to: "events#multiple", as: :multiple_events
+    get "mixed_sensitivity", to: "events#mixed_sensitivity", as: :mixed_sensitivity_events
   end
 
   scope :demographics do
     get "simple", to: "demographics#simple", as: :simple_demographic
     get "multiple", to: "demographics#multiple", as: :multiple_demographics
     get "view", to: "demographics#view", as: :view_demographic
+    get "mixed_specificity", to: "demographics#mixed_specificity", as: :mixed_specificity_demographics
   end
 
   get "test", to: "tracked#test_action", as: :test

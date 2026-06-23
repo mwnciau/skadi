@@ -18,4 +18,11 @@ class DemographicsController < ApplicationController
 
     head :ok
   end
+
+  def mixed_specificity
+    skadi.demographic("demographic", "simple")
+    skadi.demographic("demographic", "view", true)
+
+    head :ok
+  end
 end
