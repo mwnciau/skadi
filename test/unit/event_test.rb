@@ -11,7 +11,7 @@ module Skadi::Unit
     end
 
     test "redact_and_upsert creates a row linked to the visit and view" do
-      Skadi::Event.redact_and_upsert(
+      Skadi::Event.redact_and_insert(
         [{name: "click", properties: {target: "button"}}],
         visit: @visit,
         view: @view,
@@ -28,7 +28,7 @@ module Skadi::Unit
     end
 
     test "redact_and_upsert with a nil visit still records the event against the view" do
-      Skadi::Event.redact_and_upsert(
+      Skadi::Event.redact_and_insert(
         [{name: "click", properties: {}}],
         visit: nil,
         view: @view,
@@ -40,7 +40,7 @@ module Skadi::Unit
     end
 
     test "redact_and_upsert redacts sensitive events" do
-      Skadi::Event.redact_and_upsert(
+      Skadi::Event.redact_and_insert(
         [{name: "password_reset", properties: {}, sensitive: true}],
         visit: @visit,
         view: @view,
@@ -56,7 +56,7 @@ module Skadi::Unit
       # If `:sensitive` leaks through to insert_all, ActiveRecord raises UnknownAttributeError
       # because there's no `sensitive` column.
       assert_nothing_raised do
-        Skadi::Event.redact_and_upsert(
+        Skadi::Event.redact_and_insert(
           [{name: "click", properties: {}, sensitive: false}],
           visit: @visit,
           view: @view,
@@ -67,7 +67,7 @@ module Skadi::Unit
     end
 
     test "redact_and_upsert inserts multiple events in a single call" do
-      Skadi::Event.redact_and_upsert(
+      Skadi::Event.redact_and_insert(
         [
           {name: "click", properties: {n: 1}},
           {name: "scroll", properties: {n: 2}},
@@ -87,7 +87,7 @@ module Skadi::Unit
     end
 
     test "redact_and_upsert handles mixed sensitivity in one call" do
-      Skadi::Event.redact_and_upsert(
+      Skadi::Event.redact_and_insert(
         [
           {name: "click", properties: {}},
           {name: "password_reset", properties: {}, sensitive: true},
@@ -113,7 +113,7 @@ module Skadi::Unit
       # Guards against an `insert_all` regression where the first row's keys are taken as the
       # canonical set. If sensitive is queued first and the keys aren't normalised, non-sensitive
       # events lose `view_id`/`visit_id`.
-      Skadi::Event.redact_and_upsert(
+      Skadi::Event.redact_and_insert(
         [
           {name: "password_reset", properties: {}, sensitive: true},
           {name: "click", properties: {}},

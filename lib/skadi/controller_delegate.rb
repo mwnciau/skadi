@@ -54,7 +54,7 @@ module Skadi
       end
 
       if @events.any?
-        Skadi::Event.redact_and_upsert(@events, visit: @visit, view: @view)
+        Skadi::Event.redact_and_insert(@events, visit: @visit, view: @view)
       end
 
       if @demographics.any?

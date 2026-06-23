@@ -6,7 +6,7 @@ module Skadi
     validates :name, presence: true
 
     # Redacts events that are marked as sensitive
-    def self.redact_and_upsert(events, view:, visit:)
+    def self.redact_and_insert(events, view:, visit:)
       events.each do |event|
         # Note: both paths must have the same set of keys, which is a requirement for upsert_all
         if event[:sensitive]
