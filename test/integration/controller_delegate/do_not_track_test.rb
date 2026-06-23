@@ -1,7 +1,7 @@
 require "integration/test_case"
 
 module Skadi::Integration
-  module Analytics
+  module ControllerDelegate
     class DoNotTrackTest < TestCase
       test "action level do_not_track! stops tracking" do
         get untracked_action_path

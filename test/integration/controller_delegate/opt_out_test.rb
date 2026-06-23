@@ -1,7 +1,7 @@
 require "integration/test_case"
 
 module Skadi::Integration
-  module Analytics
+  module ControllerDelegate
     class OptOutTest < TestCase
       TEST_IP = "127.0.0.1"
       TEST_USER_AGENT = "Test User Agent"
