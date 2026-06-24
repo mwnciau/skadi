@@ -10,7 +10,26 @@ module Skadi::Unit
       @view = create(:view, visit: @visit)
     end
 
-    test "redact_and_upsert creates a row linked to the visit and view" do
+    test "redact_and_insert strips whitespace from name" do
+      Skadi::Event.redact_and_insert([{
+        name: "  Log in  ",
+        properties: {},
+      }], view: @view, visit: @visit)
+
+      event = Skadi::Event.first!
+      assert_equal "Log in", event.name
+    end
+
+    test "redact_and_insert truncates name to 255 characters" do
+      long = "a" * 300
+
+      Skadi::Event.redact_and_insert([{name: long, properties: {}}], view: @view, visit: @visit)
+
+      event = Skadi::Event.first!
+      assert_equal 255, event.name.length
+    end
+
+    test "redact_and_insert creates a row linked to the visit and view" do
       Skadi::Event.redact_and_insert(
         [{name: "click", properties: {target: "button"}}],
         visit: @visit,
@@ -27,7 +46,7 @@ module Skadi::Unit
       assert_in_delta Time.current.to_f, event.created_at.to_f, 5
     end
 
-    test "redact_and_upsert with a nil visit still records the event against the view" do
+    test "redact_and_insert with a nil visit still records the event against the view" do
       Skadi::Event.redact_and_insert(
         [{name: "click", properties: {}}],
         visit: nil,
@@ -39,7 +58,7 @@ module Skadi::Unit
       assert_equal @view.id, event.view_id
     end
 
-    test "redact_and_upsert redacts sensitive events" do
+    test "redact_and_insert redacts sensitive events" do
       Skadi::Event.redact_and_insert(
         [{name: "password_reset", properties: {}, sensitive: true}],
         visit: @visit,
@@ -52,7 +71,7 @@ module Skadi::Unit
       assert_equal Time.current.beginning_of_day, event.created_at
     end
 
-    test "redact_and_upsert strips the :sensitive key from the persisted row when set to false" do
+    test "redact_and_insert strips the :sensitive key from the persisted row when set to false" do
       # If `:sensitive` leaks through to insert_all, ActiveRecord raises UnknownAttributeError
       # because there's no `sensitive` column.
       assert_nothing_raised do
@@ -66,7 +85,7 @@ module Skadi::Unit
       assert_equal 1, Skadi::Event.count
     end
 
-    test "redact_and_upsert inserts multiple events in a single call" do
+    test "redact_and_insert inserts multiple events in a single call" do
       Skadi::Event.redact_and_insert(
         [
           {name: "click", properties: {n: 1}},
@@ -86,7 +105,7 @@ module Skadi::Unit
       assert_equal({"n" => 2}, event_2.properties)
     end
 
-    test "redact_and_upsert handles mixed sensitivity in one call" do
+    test "redact_and_insert handles mixed sensitivity in one call" do
       Skadi::Event.redact_and_insert(
         [
           {name: "click", properties: {}},
@@ -109,7 +128,7 @@ module Skadi::Unit
       assert_equal Time.current.beginning_of_day, sensitive.created_at
     end
 
-    test "redact_and_upsert handles mixed sensitivity in reverse order" do
+    test "redact_and_insert handles mixed sensitivity in reverse order" do
       # `insert_all` requires all entries to have the same set of keys. Now, this raises an error,
       # but in previous versions of Rails this silently failed to insert all the data.
       Skadi::Event.redact_and_insert(

@@ -22,6 +22,8 @@ module Skadi
           event[:created_at] = Time.current
         end
 
+        event[:name] = event[:name].strip[0, 255]
+
         event.delete(:sensitive)
       end
 
