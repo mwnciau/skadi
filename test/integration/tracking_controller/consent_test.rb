@@ -27,7 +27,7 @@ module Skadi::Integration
         assert_equal response.cookies["skadi_id"], visit.reload.tracking_token
       end
 
-      test "consent updates existing visits" do
+      test "consent does not update existing visits" do
         visit = create :visit, tracking_token: TRACKING_TOKEN
         view = create :view, visit: visit
 
@@ -39,7 +39,7 @@ module Skadi::Integration
 
         assert_response :no_content
         refute_equal TRACKING_TOKEN, response.cookies["skadi_id"]
-        assert_equal response.cookies["skadi_id"], old_visit.reload.tracking_token
+        refute_equal response.cookies["skadi_id"], old_visit.reload.tracking_token
       end
 
       test "consent sets tracking cookie without visit" do

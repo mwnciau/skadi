@@ -104,11 +104,6 @@ module Skadi
       if @visit
         @visit.tracking_token = tracking_token
       end
-
-      # Update previous visits with the same anonymity set with the new tracking token
-      if anonymity_set
-        Skadi::Visit.where(tracking_token: anonymity_set).update_all(tracking_token: tracking_token)
-      end
     end
 
     def opt_out!
