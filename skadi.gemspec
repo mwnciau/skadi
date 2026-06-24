@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "skadi"
-  s.version = "0.2.0"
+  s.version = "0.3.0"
   s.summary = "First-party, privacy-by-default analytics for Rails."
   s.description = "Skadi adds flexible and lightweight first-party analytics to your Rails app. Track page views and events, perform A/B testing and more, giving you all the information you need to improve your website."
   s.authors = ["Simon J"]
