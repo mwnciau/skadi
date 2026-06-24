@@ -78,8 +78,6 @@ module Skadi::Integration
       end
 
       test "opt out clears tracking cookie" do
-        view = create :view
-
         cookies["skadi_id"] = TRACKING_TOKEN
 
         post opt_out_path

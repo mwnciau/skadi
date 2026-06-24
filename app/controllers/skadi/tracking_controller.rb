@@ -70,8 +70,6 @@ module Skadi
     end
 
     private def handle_events(events)
-      events_to_insert = []
-
       events.each do |event|
         next unless event.is_a?(Hash)
         next unless event["name"].is_a?(String) && event["name"].present?
@@ -82,8 +80,6 @@ module Skadi
     end
 
     private def handle_demographics(demographics)
-      demographics_to_update = []
-
       demographics.each do |demographic|
         next unless demographic.is_a?(Hash)
         next unless demographic["name"].is_a?(String) && demographic["name"].present?
