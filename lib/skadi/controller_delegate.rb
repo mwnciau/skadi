@@ -41,7 +41,7 @@ module Skadi
       build_visit
       build_view
       queue_user_agent_demographics
-    rescue StandardError => e
+    rescue => e
       # Analytics must not interfere with the host app's request on failure
       Rails.logger.error("Skadi: failed to prepare analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@view.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")
 
@@ -74,7 +74,7 @@ module Skadi
       end
 
       cookie_manager.renew!
-    rescue StandardError => e
+    rescue => e
       # Analytics must not interfere with the host app's request on failure
       Rails.logger.error("Skadi: failed to persist analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@view.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")
 
@@ -94,7 +94,6 @@ module Skadi
     end
 
     def consent!
-      anonymity_set = @visit&.tracking_token
       tracking_token = ::SecureRandom.uuid_v7
 
       cookie_manager.tracking_token = tracking_token
