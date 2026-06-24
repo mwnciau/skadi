@@ -41,6 +41,12 @@ module Skadi
       build_visit
       build_view
       queue_user_agent_demographics
+    rescue StandardError => e
+      # Analytics must not interfere with the host app's request on failure
+      Rails.logger.error("Skadi: failed to prepare analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@view.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")
+
+      # Ensure errors are visible in test and development
+      raise if Rails.env.local?
     end
 
     # Internal. Manually set the view and visit for the current request.
@@ -68,9 +74,11 @@ module Skadi
       end
 
       cookie_manager.renew!
-    rescue ActiveRecord::ActiveRecordError => e
+    rescue StandardError => e
+      # Analytics must not interfere with the host app's request on failure
       Rails.logger.error("Skadi: failed to persist analytics for #{controller.controller_name}##{controller.action_name} (visit: #{@visit.try(:id).inspect}, view: #{@view.try(:id).inspect}, events: #{@events.count}, demographics: #{@demographics.count}): #{e.class}, #{e.message}; Line: #{e.backtrace&.first}")
 
+      # Ensure errors are visible in test and development
       raise if Rails.env.local?
     end
 

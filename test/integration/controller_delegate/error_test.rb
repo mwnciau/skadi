@@ -3,11 +3,41 @@ require "integration/test_case"
 module Skadi::Integration
   module ControllerDelegate
     class ErrorTest < TestCase
-      test "errors are raised and logged in test env" do
+      test "_prepare errors are raised and logged in test env" do
+        Skadi::ControllerDelegate.any_instance.stubs(:build_visit).raises(
+          StandardError, "simulatederror"
+        )
+        Rails.logger.expects(:error).with(regexp_matches(/prepare.*StandardError.*simulatederror/))
+
+        assert_raises StandardError do
+          get tracked_action_path
+        end
+
+        assert_equal 0, Skadi::View.count
+      end
+
+      test "_prepare errors are rescued and logged in production" do
+        Rails.env = "production"
+
+        Skadi::ControllerDelegate.any_instance.stubs(:build_visit).raises(
+          ActiveRecord::StatementInvalid, "simulated DB error"
+        )
+        Rails.logger.expects(:error).with(regexp_matches(/prepare.*StatementInvalid.*simulated/))
+
+        get tracked_action_path
+
+        assert_response :ok
+        assert_equal 0, Skadi::Visit.count
+        assert_equal 0, Skadi::View.count
+      ensure
+        Rails.env = "test"
+      end
+
+      test "_persist errors are raised and logged in test env" do
         Skadi::View.any_instance.stubs(:save).raises(
           ActiveRecord::StatementInvalid, "simulated DB error"
         )
-        Rails.logger.expects(:error).with(regexp_matches(/StatementInvalid.*simulated/))
+        Rails.logger.expects(:error).with(regexp_matches(/persist.*StatementInvalid.*simulated/))
 
         assert_raises ActiveRecord::StatementInvalid do
           get tracked_action_path
@@ -16,13 +46,13 @@ module Skadi::Integration
         assert_equal 0, Skadi::View.count
       end
 
-      test "errors are rescued and logged in production" do
+      test "_persist errors are rescued and logged in production" do
         Rails.env = "production"
 
         Skadi::View.any_instance.stubs(:save).raises(
-          ActiveRecord::StatementInvalid, "simulated DB error"
+          StandardErrpr, "simulatederror"
         )
-        Rails.logger.expects(:error).with(regexp_matches(/StatementInvalid.*simulated/))
+        Rails.logger.expects(:error).with(regexp_matches(/persist.*StandardErrpr.*simulatederror/))
 
         get tracked_action_path
 
