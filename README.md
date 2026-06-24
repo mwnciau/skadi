@@ -102,3 +102,10 @@ Many privacy laws also require that users be given the option to opt-out of anon
 > add configuration details
 
 
+
+
+## Todo
+
+* Document how to redact the current view path if it contains PII, e.g. paths like `/password-reset/<private token>`
+* Document sequential events can still be re-derived based on `id`
+* Document cache storage/TTL requirements or supply a job to clear the cache

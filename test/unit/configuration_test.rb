@@ -96,6 +96,12 @@ module Skadi::Unit
       assert_values_are_invalid(:cookie_domain, "", 0, true, false)
     end
 
+    test "track_bots validates" do
+      assert_values_are_valid(:track_bots, true, false)
+
+      assert_values_are_invalid(:track_bots, nil, "true", "false", 123)
+    end
+
     private def assert_values_are_valid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)

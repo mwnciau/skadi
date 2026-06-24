@@ -1,7 +1,7 @@
 require "integration/test_case"
 
 module Skadi::Integration
-  module Analytics
+  module ControllerDelegate
     class QueryParametersTest < TestCase
       test "view query parameters are filtered" do
         get tracked_action_path, params: {not_whitelisted: "value"}

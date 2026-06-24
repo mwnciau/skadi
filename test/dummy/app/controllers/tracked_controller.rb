@@ -17,6 +17,15 @@ class TrackedController < ApplicationController
     head :ok
   end
 
+  # An action that queues an event and a demographic, then calls do_not_track!
+  def queue_then_untrack
+    skadi.event("queued_event")
+    skadi.demographic("queued", "demographic")
+    skadi.do_not_track!
+
+    head :ok
+  end
+
   def test_action
   end
 end

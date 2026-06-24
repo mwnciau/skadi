@@ -7,7 +7,7 @@ module Skadi::Integration
         visit = create :visit
         view = create :view, visit: visit
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token}, as: :json
 
         assert_response :no_content
         assert visit.reload.verified?
@@ -17,7 +17,7 @@ module Skadi::Integration
       test "verifies view without visit" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token}, as: :json
 
         assert_response :no_content
         assert view.reload.verified?
@@ -57,13 +57,13 @@ module Skadi::Integration
         view = create :view, created_at: Time.current.change(hour: 9, min: 0, sec: 0)
 
         travel_to Time.current.change(hour: 10, min: 59, sec: 59) do
-          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+          post skadi.tracking_endpoint_path, params: {view: view.token}, as: :json
 
           assert_response :no_content
         end
 
         travel_to Time.current.change(hour: 11, min: 0, sec: 0) do
-          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+          post skadi.tracking_endpoint_path, params: {view: view.token}, as: :json
 
           assert_response :gone
         end
@@ -74,13 +74,13 @@ module Skadi::Integration
         view = create :view, created_at: Time.current.change(hour: 9, min: 0, sec: 0)
 
         travel_to Time.current.change(hour: 12, min: 59, sec: 59) do
-          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+          post skadi.tracking_endpoint_path, params: {view: view.token}, as: :json
 
           assert_response :no_content
         end
 
         travel_to Time.current.change(hour: 13, min: 0, sec: 0) do
-          post skadi.tracking_endpoint_path, params: {view: view.view_token}, as: :json
+          post skadi.tracking_endpoint_path, params: {view: view.token}, as: :json
 
           assert_response :gone
         end
@@ -100,7 +100,7 @@ module Skadi::Integration
 
         61.times do |it|
           post skadi.tracking_endpoint_path, params: {
-            view: view.view_token,
+            view: view.token,
             events: [{name: "test#{it}", properties: {}}],
           }, as: :json
         end
@@ -117,14 +117,14 @@ module Skadi::Integration
 
         61.times do |it|
           post skadi.tracking_endpoint_path, params: {
-            view: view.view_token,
+            view: view.token,
             events: [{name: "test#{it}", properties: {}}],
           }, as: :json
         end
 
         travel 61.seconds do
           post skadi.tracking_endpoint_path, params: {
-            view: view.view_token,
+            view: view.token,
             events: [{name: "test61", properties: {}}],
           }, as: :json
         end

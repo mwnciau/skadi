@@ -1,7 +1,7 @@
 require "integration/test_case"
 
 module Skadi::Integration
-  module Analytics
+  module ControllerDelegate
     class VisitTrackingTest < TestCase
       test "referrer is tracked" do
         get_tracked_action referrer: "https://example.com/referrer"

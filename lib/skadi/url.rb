@@ -35,9 +35,9 @@ module Skadi
     # @param url [String]
     # @return [String, nil]
     def self.redact_and_normalise_url(url)
-      return nil unless url.present?
+      return nil unless url.is_a?(String) && url.present?
 
-      uri = URI.parse(url)
+      uri = URI.parse(url[0, Skadi.configuration.max_url_length])
       return nil if uri.opaque
 
       query_params = Rack::Utils.parse_nested_query(uri.query) if uri.query.present?
@@ -58,9 +58,9 @@ module Skadi
 
       result << (param_string.present? ? "?#{param_string}" : "")
 
-      result
-    rescue URI::InvalidURIError
-      nil
+      return result
+    rescue URI::InvalidURIError, Rack::QueryParser::ParameterTypeError, Rack::QueryParser::QueryLimitError
+      return nil
     end
   end
 end

@@ -27,3 +27,7 @@ Naming/MethodName:
 # Todo: add AllowNamedParameter if standard ever gets updated
 Style/ItAssignment:
   Enabled: false
+
+# Allow for explcit returns at the end of methods where they're not needed
+Style/RedundantReturn:
+  Enabled: false

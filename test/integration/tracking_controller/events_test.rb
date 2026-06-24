@@ -7,7 +7,7 @@ module Skadi::Integration
         visit = create :visit
         view = create :view, visit: visit
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.token, events: [
           {name: "my event", properties: {}},
           {name: "my event with properties", properties: {key: "value"}},
         ]}, as: :json
@@ -31,7 +31,7 @@ module Skadi::Integration
       test "tracks events without visit" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.token, events: [
           {name: "my event", properties: {}},
         ]}, as: :json
 
@@ -49,7 +49,7 @@ module Skadi::Integration
       test "ignores invalid events" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.token, events: [
           {},
           {properties: {}},
           {name: "", properties: {}},
@@ -72,7 +72,7 @@ module Skadi::Integration
       test "all events invalid" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: [
+        post skadi.tracking_endpoint_path, params: {view: view.token, events: [
           {properties: {}},
         ]}, as: :json
 
@@ -83,7 +83,7 @@ module Skadi::Integration
       test "non-array passed to events" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, events: "not an array"}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token, events: "not an array"}, as: :json
 
         assert_response :no_content
         assert_equal 0, Skadi::Event.count

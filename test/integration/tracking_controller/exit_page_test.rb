@@ -6,7 +6,7 @@ module Skadi::Integration
       test "tracks exit page" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: "https://example.com"}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token, exit_page: "https://example.com"}, as: :json
 
         assert_response :no_content
         assert_equal "example.com/", view.reload.exit_page
@@ -15,7 +15,7 @@ module Skadi::Integration
       test "tracks relative exit page" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: "/internal-page"}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token, exit_page: "/internal-page"}, as: :json
 
         assert_response :no_content
         assert_equal "/internal-page", view.reload.exit_page
@@ -24,7 +24,7 @@ module Skadi::Integration
       test "does not track invalid exit page" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: 4}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token, exit_page: 4}, as: :json
 
         assert_response :no_content
         assert_nil view.reload.exit_page
@@ -33,7 +33,7 @@ module Skadi::Integration
       test "does not overwrite exit page" do
         view = create :view, visit: nil, exit_page: "https://example.com"
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: nil}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token, exit_page: nil}, as: :json
 
         assert_response :no_content
         assert_equal "https://example.com", view.reload.exit_page
@@ -42,7 +42,7 @@ module Skadi::Integration
       test "exit page is redacted" do
         view = create :view, visit: nil
 
-        post skadi.tracking_endpoint_path, params: {view: view.view_token, exit_page: "https://example.com?sensitive_data=1234"}, as: :json
+        post skadi.tracking_endpoint_path, params: {view: view.token, exit_page: "https://example.com?sensitive_data=1234"}, as: :json
 
         assert_response :no_content
         assert_equal "example.com/", view.reload.exit_page

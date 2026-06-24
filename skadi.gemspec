@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name = "skadi"
-  s.version = "0.2.0"
+  s.version = "0.3.0"
   s.summary = "First-party, privacy-by-default analytics for Rails."
   s.description = "Skadi adds flexible and lightweight first-party analytics to your Rails app. Track page views and events, perform A/B testing and more, giving you all the information you need to improve your website."
   s.authors = ["Simon J"]
@@ -48,6 +48,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "factory_bot_rails", "~> 6.0"
   # Pinned to 5 because older versions of rails raise an error for minitest 6
   s.add_development_dependency "minitest", "~> 5.0"
+  s.add_development_dependency "mocha", "~> 3.0"
 
   # Gems to enforce coding-standards
   s.add_development_dependency "rubocop", "~> 1.0"
@@ -56,4 +57,9 @@ Gem::Specification.new do |s|
   # Database gem for the dummy rails app
   s.add_development_dependency "puma", "~> 7.0"
   s.add_development_dependency "sqlite3", "~> 2.0"
+
+  # Gems to test the user agent parser. Uncomment to run the tests
+  # s.add_development_dependency "benchmark-ips"
+  # s.add_development_dependency "browser"
+  # s.add_development_dependency "device_detector"
 end

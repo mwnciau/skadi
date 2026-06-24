@@ -28,14 +28,16 @@ module Skadi
       end
 
       @view.verified = true
-      @view.save
+      @view.visit.verified = true if @view.visit
 
-      if @view.visit
-        @view.visit.verified = true
-        @view.visit.save
-      end
+      skadi._persist
 
       head :no_content
+    end
+
+    private def skadi
+      # Disable bot protection, since that will have been done when the visit/view was created
+      @_skadi ||= Skadi::ControllerDelegate.new(self, bot_protection: false)
     end
 
     private def set_params
@@ -52,103 +54,39 @@ module Skadi
 
       return head :not_found unless @view
 
-      head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
+      return head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
+
+      # We're not using _prepare to generate the view/visit, so we have to set them manually
+      skadi._attach(view: @view, visit: @view.visit)
     end
 
     private def handle_consent(consent)
       if consent == true
-        tracking_token = @view.visit&.tracking_token || ::SecureRandom.uuid_v7
-
-        set_cookie("skadi_id", tracking_token)
-        clear_cookie "skadi_tracking_opt_out"
-
-        # Update the existing visit with the tracking token if we've generated a new one
-        if @view.visit
-          @view.visit.tracking_token = tracking_token
-        end
+        skadi.consent!
       elsif consent == false
-        set_cookie "skadi_tracking_opt_out", "1"
-        clear_cookie "skadi_id"
-
-        if @view.visit&.tracking_token
-          # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
-          # Note: this needs a DB update because there may be other visits outside the visit limit
-          Skadi::Visit.where(tracking_token: @view.visit.tracking_token).update_all(tracking_token: nil)
-
-          # Update the local copy so it doesn't get re-set
-          @view.visit.tracking_token = nil
-        end
-
-        if @view.visit&.user&.id
-          # If an existing user, delete any rows using it so existing data is anonymised instantly
-          # Note: this needs a DB update because there may be other visits outside the visit limit
-          Skadi::Visit.where(user_id: @view.visit.user.id).update_all(user_id: nil)
-
-          # Update the local copy so it doesn't get re-set
-          @view.visit.user = nil
-        end
+        skadi.opt_out!
       end
     end
 
     private def handle_events(events)
-      events_to_insert = []
-
       events.each do |event|
         next unless event.is_a?(Hash)
         next unless event["name"].is_a?(String) && event["name"].present?
         next unless event["properties"].is_a?(Hash)
 
-        events_to_insert << {visit: @view.visit, name: event["name"].strip[0, 255], properties: event["properties"]}
+        skadi.event(event["name"], event["properties"])
       end
-
-      return if events_to_insert.empty?
-
-      @view.events.create(events_to_insert)
     end
 
     private def handle_demographics(demographics)
-      demographics_to_insert = []
-
       demographics.each do |demographic|
         next unless demographic.is_a?(Hash)
         next unless demographic["name"].is_a?(String) && demographic["name"].present?
         next unless demographic["value"].is_a?(String) && demographic["value"].present?
         next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
-        demographics_to_insert << {
-          name: demographic["name"].strip[0, 255],
-          value: demographic["value"].strip[0, 255],
-          # SQL specifies NULL values are not equal, so we need to default the URI to an empty string
-          # to ensure the unique index works correctly
-          uri: demographic["uri"]&.strip&.[](0, 255) || "",
-          recorded_on: Time.current,
-          count: 1,
-        }
+        skadi.demographic(demographic["name"], demographic["value"], action_specific: true, uri: demographic["uri"] || "")
       end
-
-      return if demographics_to_insert.empty?
-
-      Skadi::Demographic.upsert_all(
-        demographics_to_insert,
-        unique_by: [:uri, :name, :value, :recorded_on],
-        on_duplicate: Arel.sql("count = skadi_demographics.count + 1"),
-        returning: false,
-      )
-    end
-
-    def set_cookie(name, value, age = 1.year)
-      cookies[name] = {
-        value:,
-        domain: Skadi.configuration.cookie_domain,
-        httponly: true,
-        secure: Rails.env.production? || request.ssl?,
-        same_site: :lax,
-        expires: age.from_now,
-      }
-    end
-
-    def clear_cookie(name)
-      cookies.delete(name, domain: Skadi.configuration.cookie_domain)
     end
 
     def limit_payload_size!

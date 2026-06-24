@@ -5,20 +5,32 @@ module Skadi::Integration
     include Skadi::ApplicationHelper
     include ::ActionView::Helpers::TagHelper
 
-    attr_accessor :request, :skadi_view, :skadi_visit, :content_security_policy_nonce
+    attr_accessor :request, :skadi, :content_security_policy_nonce
+  end
 
-    def skadi
-      Skadi::Engine.routes.url_helpers
+  class DummySkadi
+    attr_accessor :visit, :view, :new_visit, :do_not_track
+
+    def initialize(visit, view)
+      @visit = visit
+      @view = view
+      @new_visit = false
+      @do_not_track = false
     end
+
+    def new_visit? = @new_visit
+    def do_not_track? = @do_not_track
   end
 
   class ApplicationHelperTest < TestCase
     def setup
       @dummy = DummyView.new
 
+      @visit = create(:visit)
+      @view = create(:view, visit: @visit)
+
       @dummy.request = ActionDispatch::Request.new("HTTP_HOST" => "example.com")
-      @dummy.skadi_visit = @visit = create(:visit)
-      @dummy.skadi_view = @view = create(:view, visit: @dummy.skadi_visit)
+      @dummy.skadi = DummySkadi.new(@visit, @view)
       @dummy.content_security_policy_nonce = "12345-this-is-a-nonce"
     end
 
@@ -33,7 +45,7 @@ module Skadi::Integration
 
       assert_equal "script", tag_name
       assert_equal "/skadi/", tag_attributes["data-endpoint"]
-      assert_equal @view.view_token, tag_attributes["data-view"]
+      assert_equal @view.token, tag_attributes["data-view"]
       assert_equal "12345-this-is-a-nonce", tag_attributes["nonce"]
 
       tag
@@ -68,6 +80,17 @@ module Skadi::Integration
       assert_raises Skadi::ApplicationHelper::InvalidSkadiTagType do
         skadi_tag(:invalid)
       end
+    end
+
+    test "do no track" do
+      @dummy.skadi.visit = nil
+      @dummy.skadi.view = nil
+      @dummy.skadi.new_visit = false
+      @dummy.skadi.do_not_track = true
+
+      result = skadi_tag(:route)
+
+      assert_nil result
     end
   end
 end

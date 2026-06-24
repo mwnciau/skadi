@@ -77,6 +77,11 @@ module Skadi
     attr_accessor :query_param_whitelist
     validates(:query_param_whitelist, "Array<Symbol>", default: []) { |it| it.is_a?(Array) && it.all? { |key| key.is_a?(Symbol) } }
 
+    # Maximum length of the referrer and exit page URLs. Defaults to 2048.
+    # @return [Integer]
+    attr_accessor :max_url_length
+    validates(:max_url_length, "Integer", default: 2048) { |it| it.is_a?(Integer) && it >= 0 }
+
     # The database connection to use for Skadi models
     # @see ActiveRecord::ConnectionHandling.connects_to
     # @return [Hash, nil]
@@ -101,6 +106,14 @@ module Skadi
     # @return [String, nil]
     attr_accessor :cookie_domain
     validates(:cookie_domain, "string or nil", default: nil) { |it| it.nil? || (it.present? && it.is_a?(String)) }
+
+    # Whether to track visits by suspected bots, detected via the browser user agent. Defaults to `Rails.env.local?` (true
+    # for development and testing environments, and false for production/other environments).
+    attr_accessor :track_bots
+    validates(:track_bots, "boolean", default: Rails.env.local?) { |it| it == true || it == false }
+
+    # Helper method to return the inverse of :track_bots
+    def do_not_track_bots? = !@track_bots
 
     def validate!
       validators.each do |attribute, validator_config|

@@ -7,11 +7,14 @@ require "action_dispatch/http/request"
 require_relative "skadi/anonymity_set"
 require_relative "skadi/analytics"
 require_relative "skadi/configuration"
+require_relative "skadi/controller_delegate"
+require_relative "skadi/cookie_manager"
 require_relative "skadi/engine"
 require_relative "skadi/url"
+require_relative "skadi/user_agent"
 
 module Skadi
-  VERSION = "0.2.0"
+  VERSION = "0.3.0"
 
   # @return [Skadi::Configuration] The Skadi configuration
   mattr_accessor :configuration, default: Configuration.new

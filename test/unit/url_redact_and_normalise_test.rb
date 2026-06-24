@@ -57,11 +57,33 @@ module Skadi::Unit
         "",
         nil,
         "   ",
+        # Raises a Rack::QueryParser::ParameterTypeError
+        "http://example.com/?a=1&a[b]=2",
       ]
 
       invalid_urls.each do |url|
         assert_nil Skadi::Url.redact_and_normalise_url(url)
       end
+    end
+
+    test "redact_and_normalise_url truncates URLs to configured length" do
+      Skadi.configuration.max_url_length = 2048
+      url_2048 = Skadi::Url.redact_and_normalise_url("example.com/" + "a" * 2048)
+
+      Skadi.configuration.max_url_length = 4096
+      url_4096 = Skadi::Url.redact_and_normalise_url("example.com/" + "a" * 4096)
+
+      assert_equal 2048, url_2048.length
+      assert_equal 4096, url_4096.length
+    end
+
+    test "redact_and_normalise_url truncation doesn't break url parsing" do
+      Skadi.configuration.max_url_length = 17
+
+      # Truncates to "example.com/?abc["
+      url = Skadi::Url.redact_and_normalise_url("example.com/?abc[]=123")
+
+      assert_equal "example.com", url
     end
 
     test "redact_and_normalise_url only keeps whitelisted params" do
