@@ -14,13 +14,14 @@ module Skadi
 
     def renew!
       set_cookie OPT_OUT_KEY, "1" if cookies.has_key? OPT_OUT_KEY
+
       if cookies.has_key? TRACKING_TOKEN_KEY
-        if tracking_token
-          set_cookie TRACKING_TOKEN_KEY, tracking_token
+        token = tracking_token
+        if token
+          set_cookie TRACKING_TOKEN_KEY, token
         else
-          # If the key is set, but tracking_token is nil, then the cookie is an invalid format and we re-set it's value
-          # to a valid one. The presence of the cookie implies consent, which we want to keep.
-          set_cookie TRACKING_TOKEN_KEY, ::SecureRandom.uuid_v7
+          # If the key is set, but the token is nil, then the cookie is malformed and we delete it
+          delete_cookie TRACKING_TOKEN_KEY
         end
       end
     end

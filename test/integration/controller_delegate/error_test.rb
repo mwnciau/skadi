@@ -50,7 +50,7 @@ module Skadi::Integration
         Rails.env = "production"
 
         Skadi::View.any_instance.stubs(:save).raises(
-          StandardErrpr, "simulatederror"
+          ::StandardError, "simulatederror"
         )
         Rails.logger.expects(:error).with(regexp_matches(/persist.*StandardErrpr.*simulatederror/))
 
