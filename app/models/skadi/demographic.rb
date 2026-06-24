@@ -8,7 +8,7 @@ module Skadi
     validates :recorded_on, presence: true
 
     def self.create_or_increment_all(demographics)
-      demographics_to_update = demographics.map do |demographic|
+      demographics_to_upsert = demographics.map do |demographic|
         {
           name: demographic[:name].strip[0, 255],
           value: demographic[:value].strip[0, 255],
@@ -21,7 +21,7 @@ module Skadi
       end
 
       Skadi::Demographic.upsert_all(
-        demographics_to_update,
+        demographics_to_upsert,
         unique_by: [:uri, :name, :value, :recorded_on],
         on_duplicate: Arel.sql("count = skadi_demographics.count + 1"),
         returning: false,
