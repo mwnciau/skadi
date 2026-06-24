@@ -4,14 +4,11 @@ require "timeout"
 module Skadi::Unit
   class UserAgentTest < TestCase
     # Set to true to enable debug output during tests
-    UA_DEBUG = true
+    UA_DEBUG = false
 
     MOBILE_BROWSERS = %w[Firefox Safari Chrome Edge]
     MOBILE_OSES = %w[iOS Android]
-    # BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
-    # BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents_parsed_april_2026.json")
-    BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents_may_2026.json")
-    # BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents_historic.json")
+    BROWSER_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/user_agents.json")
     BOT_TEST_FILE = File.join(__dir__, "../fixtures/user_agent/bot_user_agents.json")
 
     test "empty string" do
