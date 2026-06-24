@@ -77,6 +77,11 @@ module Skadi
     attr_accessor :query_param_whitelist
     validates(:query_param_whitelist, "Array<Symbol>", default: []) { |it| it.is_a?(Array) && it.all? { |key| key.is_a?(Symbol) } }
 
+    # Maximum length of the referrer and exit page URLs. Defaults to 2048.
+    # @return [Integer]
+    attr_accessor :max_url_length
+    validates(:max_url_length, "Integer", default: 2048) { |it| it.is_a?(Integer) && it >= 0 }
+
     # The database connection to use for Skadi models
     # @see ActiveRecord::ConnectionHandling.connects_to
     # @return [Hash, nil]
