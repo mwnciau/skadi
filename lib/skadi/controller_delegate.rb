@@ -43,6 +43,12 @@ module Skadi
       queue_user_agent_demographics
     end
 
+    # Internal. Manually set the view and visit for the current request.
+    def _attach(view: nil, visit: nil)
+      @visit = visit
+      @view = view
+    end
+
     # Internal. Saves the visit, view and any events or demographics after the controller action.
     def _persist
       return if do_not_track?

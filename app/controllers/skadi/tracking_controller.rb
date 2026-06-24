@@ -56,9 +56,8 @@ module Skadi
 
       return head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
 
-      # Update the view and visit on the Skadi controller delegate
-      skadi.instance_variable_set(:@view, @view)
-      skadi.instance_variable_set(:@visit, @view.visit)
+      # We're not using _prepare to generate the view/visit, so we have to set them manually
+      skadi._attach(view: @view, visit: @view.visit)
     end
 
     private def handle_consent(consent)
