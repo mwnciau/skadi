@@ -110,6 +110,20 @@ new PerformanceObserver((entryList) => {
   largestContentfulPaint = lastEntry.startTime;
 }).observe({ type: largestContentfulPaintId, buffered: true });
 
+new PerformanceObserver((entryList, observer) => {
+  let paintTiming = entryList.getEntriesByName(firstContentfulPaintId)[0];
+
+  if (paintTiming) {
+    addDemographic(
+      firstContentfulPaintId,
+      bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]),
+      true
+    );
+    observer.disconnect();
+    queueRequest();
+  }
+}).observe({ type: "paint", buffered: true });
+
 const mediaMatches = (query: string): boolean => {
   return _window.matchMedia(query).matches;
 }
@@ -129,9 +143,8 @@ _window.addEventListener('load', () => {
     addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
     addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);
     addDemographic("input-device", mediaMatches('(pointer: fine)') ? "mouse" : "touch");
+    queueRequest();
   }
-
-  queueRequest();
 })
 
 setTimeout(() => {
