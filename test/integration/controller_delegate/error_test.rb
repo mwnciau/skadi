@@ -52,7 +52,7 @@ module Skadi::Integration
         Skadi::View.any_instance.stubs(:save).raises(
           ::StandardError, "simulatederror"
         )
-        Rails.logger.expects(:error).with(regexp_matches(/persist.*StandardErrpr.*simulatederror/))
+        Rails.logger.expects(:error).with(regexp_matches(/persist.*StandardError.*simulatederror/))
 
         get tracked_action_path
 
