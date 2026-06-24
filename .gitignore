@@ -4,3 +4,7 @@ tmp
 test/tmp
 
 node_modules
+
+Gemfile.lock
+
+gemfiles

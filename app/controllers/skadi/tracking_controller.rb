@@ -1,21 +1,23 @@
 module Skadi
   class TrackingController < ActionController::API
+    include ActionController::Cookies
+
     # Disables the automatic wrapping of JSON parameters into a "tracking" hash
     wrap_parameters false
 
     prepend_before_action :limit_payload_size!
+
+    rate_limit to: 60, within: 1.minute, with: -> { head :too_many_requests }
 
     before_action :set_params
     before_action :set_view
 
     def track
       if @params["exit_page"].present? && @params["exit_page"].is_a?(String)
-        @view.exit_page = @params["exit_page"]
+        @view.exit_page = Skadi::Url.redact_and_normalise_url(@params["exit_page"])
       end
 
-      if @params["consent"].is_a? Hash
-        handle_consent @params["consent"]
-      end
+      handle_consent @params["consent"]
 
       if @params["events"].present? && @params["events"].is_a?(Array)
         handle_events @params["events"]
@@ -26,114 +28,65 @@ module Skadi
       end
 
       @view.verified = true
-      @view.save
+      @view.visit.verified = true if @view.visit
 
-      if @view.visit
-        @view.visit.verified = true
-        @view.visit.save
-        @view.changed?
-      end
+      skadi._persist
 
       head :no_content
     end
 
-    private
+    private def skadi
+      # Disable bot protection, since that will have been done when the visit/view was created
+      @_skadi ||= Skadi::ControllerDelegate.new(self, bot_protection: false)
+    end
 
-    def set_params
+    private def set_params
       @params = request.request_parameters
     end
 
-    def set_view
-      unless @params["view"]
+    private def set_view
+      # Check that the view token is a valid UUID
+      unless @params["view"].is_a?(String) && @params["view"].length == 36
         return head :bad_request
       end
 
       @view = Skadi::View.includes(:visit).find_by(view_token: @params["view"])
 
-      head :not_found unless @view
+      return head :not_found unless @view
+
+      return head :gone unless @view.created_at > Time.current - Skadi.configuration.visit_duration
+
+      # We're not using _prepare to generate the view/visit, so we have to set them manually
+      skadi._attach(view: @view, visit: @view.visit)
     end
 
     private def handle_consent(consent)
-      if consent["opt_out"]
-        set_cookie "skadi_tracking_opt_out", "1"
-
-        # If an existing visit exists, update it with a random tracking token to anonymise the user immediately
-        if @view.visit
-          @view.visit.tracking_token = ::SecureRandom.uuid_v7
-        end
-      elsif consent["opt_out"] == false
-        clear_cookie "skadi_tracking_opt_out"
-      end
-
-      if consent["id"]
-        set_cookie("skadi_id", @view.visit&.tracking_token || ::SecureRandom.uuid_v7)
-      elsif consent["id"] == false
-        clear_cookie "skadi_id"
+      if consent == true
+        skadi.consent!
+      elsif consent == false
+        skadi.opt_out!
       end
     end
 
     private def handle_events(events)
-      events_to_insert = []
-
       events.each do |event|
         next unless event.is_a?(Hash)
         next unless event["name"].is_a?(String) && event["name"].present?
         next unless event["properties"].is_a?(Hash)
 
-        events_to_insert << {visit: @view.visit, name: event["name"], properties: event["properties"]}
+        skadi.event(event["name"], event["properties"])
       end
-
-      @view.events.create(events_to_insert)
     end
 
     private def handle_demographics(demographics)
-      demographics_to_insert = []
-
       demographics.each do |demographic|
         next unless demographic.is_a?(Hash)
         next unless demographic["name"].is_a?(String) && demographic["name"].present?
         next unless demographic["value"].is_a?(String) && demographic["value"].present?
         next unless demographic["uri"].nil? || demographic["uri"].is_a?(String)
 
-        demographics_to_insert << {
-          name: demographic["name"],
-          value: demographic["value"],
-          # SQL specifies NULL values are not equal, so we need to default the URI to an empty string
-          # to ensure the unique index works correctly
-          uri: demographic["uri"] || "",
-          recorded_on: Time.now,
-          count: 1,
-        }
+        skadi.demographic(demographic["name"], demographic["value"], action_specific: true, uri: demographic["uri"] || "")
       end
-
-      Skadi::Demographic.upsert_all(
-        demographics_to_insert,
-        unique_by: [:uri, :name, :value, :recorded_on],
-        on_duplicate: Arel.sql("count = skadi_demographics.count + 1"),
-        returning: false,
-      )
-    end
-
-    def set_opt_out_cookie
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "skadi_tracking_opt_out=1; Path=/#{@cookie_domain}; HttpOnly; SameSite=Lax; Max-Age=31536000"
-    end
-
-    def set_tracking_cookie(tracking_token)
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "skadi_id=#{tracking_token}; Path=/#{@cookie_domain}; HttpOnly; SameSite=Lax; Max-Age=31536000"
-    end
-
-    def set_cookie(name, value, age = 31536000)
-      @cookie_domain ||= Skadi.configuration.cookie_domain ? "; Domain=#{Skadi.configuration.cookie_domain}" : ""
-
-      response.add_header "Set-Cookie", "#{name}=#{value}; Path=/#{@cookie_domain}; HttpOnly; Secure; SameSite=Lax; Max-Age=#{age}"
-    end
-
-    def clear_cookie(name)
-      set_cookie(name, "", 0)
     end
 
     def limit_payload_size!
