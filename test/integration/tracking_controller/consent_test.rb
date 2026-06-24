@@ -12,7 +12,34 @@ module Skadi::Integration
         post skadi.tracking_endpoint_path, params: {view: view.token, consent: true}, as: :json
 
         assert_response :no_content
-        assert_equal TRACKING_TOKEN, response.cookies["skadi_id"]
+        assert_match UUID_REGEX, response.cookies["skadi_id"]
+      end
+
+      test "consent uses different tracking token to anonymity set" do
+        # Create a new visit with a tracking token (representing an anonymity set)
+        visit = create :visit, tracking_token: TRACKING_TOKEN
+        view = create :view, visit: visit
+
+        post skadi.tracking_endpoint_path, params: {view: view.token, consent: true}, as: :json
+
+        assert_response :no_content
+        refute_equal TRACKING_TOKEN, response.cookies["skadi_id"]
+        assert_equal response.cookies["skadi_id"], visit.reload.tracking_token
+      end
+
+      test "consent updates existing visits" do
+        visit = create :visit, tracking_token: TRACKING_TOKEN
+        view = create :view, visit: visit
+
+        # A visit not linked to the view but with the same anonymity set (i.e. an existing visit)
+        # Note: this is uncommon with default settings - it would require two visits in the same day
+        old_visit = create :visit, tracking_token: TRACKING_TOKEN
+
+        post skadi.tracking_endpoint_path, params: {view: view.token, consent: true}, as: :json
+
+        assert_response :no_content
+        refute_equal TRACKING_TOKEN, response.cookies["skadi_id"]
+        assert_equal response.cookies["skadi_id"], old_visit.reload.tracking_token
       end
 
       test "consent sets tracking cookie without visit" do

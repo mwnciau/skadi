@@ -86,7 +86,8 @@ module Skadi
     end
 
     def consent!
-      tracking_token = @visit&.tracking_token || ::SecureRandom.uuid_v7
+      anonymity_set = @visit&.tracking_token
+      tracking_token = ::SecureRandom.uuid_v7
 
       cookie_manager.tracking_token = tracking_token
       cookie_manager.tracking_opt_out = false
@@ -94,6 +95,11 @@ module Skadi
       # Update the existing visit with the tracking token if we've generated a new one
       if @visit
         @visit.tracking_token = tracking_token
+      end
+
+      # Update previous visits with the same anonymity set with the new tracking token
+      if anonymity_set
+        Skadi::Visit.where(tracking_token: anonymity_set).update_all(tracking_token: tracking_token)
       end
     end
 
