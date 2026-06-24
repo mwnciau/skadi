@@ -98,6 +98,15 @@ module Skadi::Unit
       assert_nil request.cookie_jar["skadi_tracking_opt_out"]
     end
 
+    test "renew! does not renew invalid cookie" do
+      request = build_request({skadi_id: "invalid tracking token"})
+      manager = Skadi::CookieManager.new(request)
+
+      manager.renew!
+
+      assert_nil request.cookie_jar["skadi_id"]
+    end
+
     test "cookies set in production are secure" do
       Rails.env = "production"
       request = build_request
