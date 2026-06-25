@@ -1,5 +1,6 @@
 <script lang="ts">
   import Tabs from "./Tabs.svelte";
+  import Chart from "./Chart.svelte";
 
   let selectedTab = $state<string>('Dashboard 1');
   let tabs = $state<string[]>(["Dashboard 1"]);
@@ -12,5 +13,5 @@
 
 <Tabs selectedTab={selectedTab} tabs={tabs} selectTab={tab => selectedTab = tab} newTab={newTab} />
 <main class="w-full max-w-256 mx-auto">
-  skadoobiedop
+  <Chart />
 </main>

@@ -121,10 +121,10 @@ module Skadi
       if @visit&.user&.id
         # If an existing user, delete any rows using it so existing data is anonymised instantly
         # Note: this needs a DB update because there may be other visits outside the visit limit
-        Skadi::Visit.where(user_id: @visit.user.id).update_all(user_id: nil)
+        Skadi::Visit.where(user_id: @visit.user_id).update_all(user_id: nil)
 
         # Update the local copy so it doesn't get re-set
-        @visit.user = nil
+        @visit.user_id = nil
       end
     end
 
@@ -184,7 +184,7 @@ module Skadi
         @visit = Visit.find_active_visit_for(tracking_token, user)
 
         # Update the user if the user has logged in since the last view
-        @visit.user = user if @visit && @visit.user.nil?
+        @visit.user_id = user.id if @visit && @visit.user_id.nil?
 
         return if @visit
       end

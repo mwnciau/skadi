@@ -1,4 +1,6 @@
-@import "tailwindcss" source("../views/skadi/dashboard");
+@import "tailwindcss" source(none);
+@source "../views/skadi/dashboard";
+@source "./";
 
 @theme {
   /* Ice https://tints.dev/palette/v1:aWNlfEEzRUNGM3wyMDB8cHw2fDExOXwxMHwxMDB8YQ */

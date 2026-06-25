@@ -36,7 +36,7 @@ module Skadi::Integration
         get_tracked_action(referrer: "https://example.com/")
 
         visit = Skadi::Visit.first!
-        assert_nil visit.user
+        assert_nil visit.user_id
       end
     end
   end

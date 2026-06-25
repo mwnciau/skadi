@@ -6,8 +6,8 @@
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= stylesheet_link_tag "#{skadi.dashboard_css_path}?#{Skadi::VERSION}", media: "all" %>
-    <%= javascript_include_tag "#{skadi.dashboard_js_path}?#{Skadi::VERSION}" %>
+    <%= stylesheet_link_tag "#{Skadi::Engine.routes.url_helpers.dashboard_css_path}?#{Skadi::VERSION}", media: "all" %>
+    <%= javascript_include_tag "#{Skadi::Engine.routes.url_helpers.dashboard_js_path}?#{Skadi::VERSION}" %>
   </head>
 
   <body class="flex flex-col gap-4 min-h-screen">

@@ -7,7 +7,7 @@
   } = $props();
 </script>
 
-<header class="mt-2 px-4">
+<header class="mt-4 px-4">
   <nav>
     {#each tabs as tab}
       <button type="button" class="{tab === selectedTab ? 'selected' : ''}" onclick={() => selectTab(tab)}>{tab}</button>

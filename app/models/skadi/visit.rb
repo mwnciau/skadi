@@ -23,7 +23,7 @@ module Skadi
       visit = visit_query&.order(created_at: :desc)&.limit(1)&.first
 
       # If the user has changed since the last visit, create a new visit
-      return nil if visit&.user && user&.persisted? && visit.user != user
+      return nil if visit&.user_id && user&.persisted? && visit.user_id != user.id
 
       visit
     end
