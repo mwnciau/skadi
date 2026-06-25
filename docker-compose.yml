@@ -1,16 +1,19 @@
 services:
   ruby:
+    command: ruby test/dummy/bin/dev
+    ports: ["3000:3000"]
     image: ruby:4.0.4
     working_dir: /var/source
-    user: ${CURRENT_UID}:${CURRENT_GID}
+    user: ${CURRENT_UID:-1000}:${CURRENT_GID:-1000}
     volumes:
       - .:/var/source
       - ruby-gems:/usr/local/bundle
 
   node:
+    command: npm run build:watch
     image: node:26
     working_dir: /var/source
-    user: ${CURRENT_UID}:${CURRENT_GID}
+    user: ${CURRENT_UID:-1000}:${CURRENT_GID:-1000}
     volumes:
       - .:/var/source
 
