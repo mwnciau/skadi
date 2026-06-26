@@ -1,11 +1,11 @@
 import "./dashboard.css";
 
 import { mount } from "svelte"
-import Dashboard from "./dashboard/Dashboard.svelte"
+import App from "./dashboard/App.svelte"
 
 window.addEventListener('load', () => {
   mount(
-    Dashboard,
+    App,
     {
       target: document.getElementById("skadi-dashboard"),
     },

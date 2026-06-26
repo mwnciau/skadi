@@ -13,5 +13,5 @@
 
 <Tabs selectedTab={selectedTab} tabs={tabs} selectTab={tab => selectedTab = tab} newTab={newTab} />
 <main class="w-full max-w-256 mx-auto">
-  <Chart />
+  <Chart chartConfig={{id: "test-chart"}} />
 </main>

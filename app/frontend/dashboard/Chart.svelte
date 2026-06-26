@@ -1,25 +1,40 @@
 <script lang="ts">
   import { Chart } from "chart.js/auto";
+  import type { ChartConfig } from "../types";
+
+  let { chartConfig }: { chartConfig: ChartConfig } = $props();
 
   let canvas = $state<HTMLCanvasElement>();
 
-  const labels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
-  const data = [65, 59, 80, 81, 56, 55, 70];
+  let chart = null;
+  let labels = [];
+  let data = [];
 
-  $effect(() => {
+  fetch(`/skadi/data/${chartConfig.id}`)
+    .then((response) => response.json())
+    .then((items) => {
+      for (const item of items) {
+        labels.push(item.date);
+        data.push(item.count);
+      }
+
+      initChart();
+    });
+
+  const initChart = () => {
     if (!canvas) return;
 
-    const chart = new Chart(canvas, {
+    chart = new Chart(canvas, {
       type: "line",
       data: {
         labels,
         datasets: [
           {
-            label: "Sales",
+            label: "Visit count",
             data,
             borderColor: "#4f46e5",
             backgroundColor: "rgba(79, 70, 229, 0.1)",
-            tension: 0.3,
+            tension: 0.5,
             fill: true,
           },
         ],
@@ -29,15 +44,19 @@
         maintainAspectRatio: false,
         plugins: {
           legend: { position: "top" },
-          title: { display: true, text: "Monthly Sales" },
+          title: { display: true, text: "Total visits" },
         },
         scales: {
           y: { beginAtZero: true },
         },
       },
     });
+  }
 
-    return () => chart.destroy();
+  $effect(() => {
+
+
+    return () => chart?.destroy();
   });
 </script>
 
