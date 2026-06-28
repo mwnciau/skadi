@@ -1,16 +1,16 @@
 <script lang="ts">
-  let { newTab, selectedTab, selectTab, tabs }: {
+  let { dashboards, newTab, selectedTab, selectTab }: {
+    dashboards: DashboardConfig[],
     newTab: () => void,
     selectedTab: string,
-    selectTab: (tab: string) => void,
-    tabs: string[],
+    selectTab: (id: string) => void,
   } = $props();
 </script>
 
 <header class="mt-4 px-4">
   <nav>
-    {#each tabs as tab}
-      <button type="button" class="{tab === selectedTab ? 'selected' : ''}" onclick={() => selectTab(tab)}>{tab}</button>
+    {#each dashboards as dashboard}
+      <button type="button" class="{dashboard.id === selectedTab ? "selected" : ""}" onclick={() => selectTab(dashboard.id)}>{dashboard.name}</button>
     {/each}
     <button type="button" class="font-bold" onclick={() => newTab()}>＋</button>
   </nav>

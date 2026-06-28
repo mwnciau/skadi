@@ -2,16 +2,30 @@
   import Tabs from "./Tabs.svelte";
   import Chart from "./Chart.svelte";
 
-  let selectedTab = $state<string>('Dashboard 1');
-  let tabs = $state<string[]>(["Dashboard 1"]);
+  let dashboards = $state(JSON.parse(document.querySelector("[data-dashboard-config]").dataset.dashboardConfig));
+
+  let selectedTab = $state<string>(dashboards[0].id);
+  let selectedDashboard = $derived(dashboards.find(d => d.id === selectedTab));
 
   const newTab = () => {
-    tabs.push(`Dashboard ${tabs.length + 1}`);
-    selectedTab = tabs[tabs.length - 1];
+    let id = crypto.randomUUID();
+    dashboards.push({
+      id: id,
+      name: `Dashboard ${dashboards.length + 1}`,
+      children: [],
+    });
+    selectedTab = id;
   }
 </script>
 
-<Tabs selectedTab={selectedTab} tabs={tabs} selectTab={tab => selectedTab = tab} newTab={newTab} />
+<Tabs
+  dashboards={dashboards}
+  selectedTab={selectedTab}
+  selectTab={tab => selectedTab = tab}
+  newTab={newTab}
+/>
 <main class="w-full max-w-256 mx-auto">
-  <Chart chartConfig={{id: "test-chart"}} />
+  {#each selectedDashboard.children as chart}
+    <Chart chartConfig={chart} />
+  {/each}
 </main>

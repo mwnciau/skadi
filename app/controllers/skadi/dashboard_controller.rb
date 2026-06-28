@@ -2,50 +2,25 @@ module Skadi
   class DashboardController < ::ApplicationController
     do_not_track! if defined?(do_not_track!)
 
-    DASHBOARD_CONFIG = [
-      {
-        "name" => "Dashboard 1",
-        "children" => [
-          {
-            "id" => "7cec5a7a-7bf7-403f-b15e-b2e45944182d",
-            "type" => "line",
-            "group" => "day",
-            "datasets" => [
-              {
-                "name" => "Visits",
-                "type" => "visit",
-                "filters" => {"verified" => true},
-              },
-              {
-                "name" => "Views",
-                "type" => "views",
-                "filters" => {"verified" => true},
-              },
-            ],
-          },
-        ],
-      },
-    ]
-
-    GROUPINGS = {
-      "day" => "DATE(created_at)"
-    }
-
     def show
-      render :show
+      dashboard = Skadi::Dashboard.new
+
+      render :show, locals: { dashboard_config: dashboard.config }
     end
 
     def data
-      chart_id = params[:chart_id]
-      chart = DASHBOARD_CONFIG["children"].find { |it| it["id"] == chart_id }
+      query_filters = params.permit(:date_from, :date_to, :verified)
 
-      data = Skadi::Visit
-        .group(GROUPINGS[chart["group"] || GROUPINGS["day"])
-        .where("created_at > ?", 90.days.ago)
-        .count
-        .map { |date, count| { date: date, count: count } }
+      dashboard = Skadi::Dashboard.new
+      chart_data = dashboard.chart_data(params[:chart_id], query_filters.to_h)
 
-      render json: data
+      # data = Skadi::Visit
+      #   .group(GROUPINGS[chart["group"]] || GROUPINGS["day"])
+      #   .where("created_at > ?", 90.days.ago)
+      #   .count
+      #   .map { |date, count| { date: date, count: count } }
+
+      render json: chart_data
     end
   end
 end

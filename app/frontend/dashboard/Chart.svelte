@@ -8,14 +8,28 @@
 
   let chart = null;
   let labels = [];
-  let data = [];
+  let data = Object.fromEntries(
+    chartConfig.datasets.map((dataset) => [dataset.id, {}])
+  );
 
   fetch(`/skadi/data/${chartConfig.id}`)
     .then((response) => response.json())
     .then((items) => {
+      let labelsInData = new Set();
       for (const item of items) {
-        labels.push(item.date);
-        data.push(item.count);
+        labelsInData.add(item.label);
+
+        data[item.id][item.label] = item.count;
+      }
+
+      labels = [...labelsInData];
+      labels.sort();
+
+      for (let dataset in chartConfig.datasets) {
+        console.log(dataset)
+        data[dataset.id] = labels.map((label) => {
+          return data[dataset.id][label] ?? 0;
+        })
       }
 
       initChart();
