@@ -7,28 +7,15 @@
   let canvas = $state<HTMLCanvasElement>();
 
   let chart = null;
-  let labels = [];
   let data = Object.fromEntries(
-    chartConfig.datasets.map((dataset) => [dataset.id, {}])
+    chartConfig.datasets.map((dataset) => [dataset.id, []])
   );
 
   fetch(`/skadi/data/${chartConfig.id}`)
     .then((response) => response.json())
     .then((items) => {
-      let labelsInData = new Set();
       for (const item of items) {
-        labelsInData.add(item.label);
-
-        data[item.id][item.label] = item.count;
-      }
-
-      labels = [...labelsInData];
-      labels.sort();
-
-      for (let dataset of chartConfig.datasets) {
-        data[dataset.id] = labels.map((label) => {
-          return data[dataset.id][label] ?? 0;
-        })
+        data[item.id].push({x: item.label, y: item.count});
       }
 
       initChart();
@@ -41,7 +28,7 @@
     chart = new Chart(canvas, {
       type: "line",
       data: {
-        labels,
+        //labels,
         datasets: chartConfig.datasets.map((dataset) => {
           return {
             label: dataset.name,
