@@ -5,7 +5,7 @@ import {svelte} from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       input: {
         dashboard: resolve(__dirname, "app/frontend/dashboard.ts"),
         skadi: resolve(__dirname, "app/frontend/skadi.ts"),

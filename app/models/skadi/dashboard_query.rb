@@ -32,10 +32,18 @@ module Skadi
           .select(safe_id_node, "#{safe_grouping} AS label", "COUNT(*) AS count")
           .group(safe_grouping)
 
-        return apply_filters(query, dataset["filters"], query_filters)
+        query = apply_global_filters(query, dataset["filters"], query_filters)
+
+        query = case model.to_s
+          when "Skadi::View"
+            apply_view_filters(query, dataset["filters"], query_filters)
+          else query
+        end
+
+        return query
       end
 
-      private def apply_filters(query, dataset_filters, query_filters)
+      private def apply_global_filters(query, dataset_filters, query_filters)
         # General rule throughout this method: if it exists in the query filters, use that. Otherwise, use
         # the dataset filters.
 
@@ -56,6 +64,20 @@ module Skadi
         to = parse_time(date_filters["date_to"]) if date_filters&.key?("date_to")
         query = query.where("DATE(created_at) >= ?", from.to_date) unless from.nil?
         query = query.where("DATE(created_at) <= ?", to.to_date) unless to.nil?
+
+        return query
+      end
+
+      private def apply_view_filters(query, dataset_filters, query_filters)
+        query_filter_fields = ["path", "action", "method", "verb"]
+
+        query_filter_fields.each do |field|
+          if query_filters.key?(field)
+            query = query.where(field => query_filters[field])
+          elsif dataset_filters.key?(field)
+            query = query.where(field => dataset_filters[field])
+          end
+        end
 
         return query
       end

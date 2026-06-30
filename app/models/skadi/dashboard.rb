@@ -17,10 +17,13 @@ module Skadi
                 "filters" => {"verified" => true},
               },
               {
-                "id" => "views",
-                "name" => "Views",
+                "id" => "checkouts",
+                "name" => "Checkouts",
                 "type" => "views",
-                "filters" => {"verified" => true},
+                "filters" => {
+                  "verified" => true,
+                  "path" => "/checkout",
+                },
               },
             ],
           },
