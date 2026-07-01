@@ -3,22 +3,23 @@ module Skadi
     DASHBOARD_CONFIG = [
       {
         "id" => "7cec5a7a-7bf7-403f-b15e-b2e45944182c",
-        "name" => "Dashboard 1",
+        "title" => "Dashboard 1",
         "children" => [
           {
             "id" => "7cec5a7a-7bf7-403f-b15e-b2e45944182d",
             "type" => "line",
+            "title" => "Visits and Checkouts",
             "group" => "day",
             "datasets" => [
               {
                 "id" => "visits",
-                "name" => "Visits",
+                "label" => "Visits",
                 "type" => "visits",
                 "filters" => {"verified" => true},
               },
               {
                 "id" => "checkouts",
-                "name" => "Checkouts",
+                "label" => "Checkouts",
                 "type" => "views",
                 "filters" => {
                   "verified" => true,

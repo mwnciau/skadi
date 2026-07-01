@@ -1,41 +1,84 @@
 <script lang="ts">
-  import { Chart } from "chart.js/auto";
-  import type { ChartConfig } from "../types";
+import { onMount, untrack } from "svelte";
+import { Chart } from "chart.js/auto";
+import type { ChartConfig, Dataset } from "../../types.d.ts";
+import ChartEditor from "../editors/ChartEditor.svelte";
 
-  let { chartConfig }: { chartConfig: ChartConfig } = $props();
+let { chartConfig }: { chartConfig: ChartConfig } = $props();
 
-  let canvas = $state<HTMLCanvasElement>();
+let canvas = $state<HTMLCanvasElement>();
 
-  let chart = null;
-  let data = Object.fromEntries(
-    chartConfig.datasets.map((dataset) => [dataset.id, []])
-  );
+let chart: Chart<"line", {x: string, y: number}, unknown>;
+let data : Record<string, {x: string, y: number}[]>;
 
-  fetch(`/skadi/data/${chartConfig.id}`)
+onMount(() => {
+  Chart.defaults.font.size = 18;
+  chart = buildChart(canvas!);
+  updateChartData();
+
+  chart.options.plugins.title.text = chartConfig.title;
+
+  return () => chart?.destroy();
+});
+
+// Keep the chart data up to date when the datasets change
+$effect(() => {
+  fetchData(chartConfig.id);
+  updateChartData();
+})
+
+$effect(() => {
+  if (!chart) {
+    return;
+  }
+
+  chart.options.plugins.title.text = chartConfig.title;
+  chart.update();
+})
+
+const fetchData = (chartId: string) => {
+  fetch(`/skadi/data/${chartId}`)
     .then((response) => response.json())
     .then((items) => {
+      data = Object.fromEntries(
+        chartConfig.datasets.map((dataset: Dataset) => [dataset.id, []])
+      );
+
       for (const item of items) {
         data[item.id].push({x: item.label, y: item.count});
       }
 
-      initChart();
+      updateChartData();
     });
+}
 
-  const initChart = () => {
-    if (!canvas) return;
+const updateChartData = () => {
+  if (!chart || !data) {
+    return;
+  }
 
-    Chart.defaults.font.size = 18;
-    chart = new Chart(canvas, {
+  chart.data.datasets = chartConfig.datasets.map((dataset: Dataset) => ({
+    label: dataset.label,
+    data: data[dataset.id],
+    fill: false,
+  }));
+
+  chart.update();
+}
+</script>
+
+<ChartEditor {chartConfig} />
+<div class="relative w-full aspect-video">
+  <canvas bind:this={canvas}></canvas>
+</div>
+<p>{chartConfig.title}</p>
+
+<script module lang="ts">
+  const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}, unknown> => {
+    return new Chart(canvas, {
       type: "line",
       data: {
-        //labels,
-        datasets: chartConfig.datasets.map((dataset) => {
-          return {
-            label: dataset.name,
-            data: data[dataset.id],
-            tension: 0.5,
-          };
-        }),
+        datasets: [],
       },
       options: {
         responsive: true,
@@ -97,12 +140,4 @@
       }],
     });
   }
-
-  $effect(() => {
-    return () => chart?.destroy();
-  });
 </script>
-
-<div class="relative w-full aspect-16/9">
-  <canvas bind:this={canvas}></canvas>
-</div>
