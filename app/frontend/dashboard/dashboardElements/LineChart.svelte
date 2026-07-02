@@ -16,7 +16,9 @@ onMount(() => {
   chart = buildChart(canvas!);
   updateChartData();
 
-  chart.options.plugins.title.text = chartConfig.title;
+  updateChartTitle();
+  updateChartAxesDisplay();
+  chart.update();
 
   return () => chart?.destroy();
 });
@@ -24,17 +26,30 @@ onMount(() => {
 // Keep the chart data up to date when the datasets change
 $effect(() => {
   fetchData(chartConfig.id);
+
   updateChartData();
+  chart.update();
 })
+
+$effect(() => {
+  updateChartAxesDisplay();
+  chart.update();
+})
+const updateChartAxesDisplay = () => {
+  chart.options.scales.y1.display = chartConfig.datasets.some((dataset) => dataset.axis === "right");
+}
 
 $effect(() => {
   if (!chart) {
     return;
   }
 
-  chart.options.plugins.title.text = chartConfig.title;
+  updateChartTitle();
   chart.update();
 })
+const updateChartTitle = () => {
+  chart.options.plugins.title.text = chartConfig.title;
+}
 
 const fetchData = (chartId: string) => {
   fetch(`/skadi/data/${chartId}`)
@@ -49,6 +64,7 @@ const fetchData = (chartId: string) => {
       }
 
       updateChartData();
+      chart.update();
     });
 }
 
@@ -60,10 +76,9 @@ const updateChartData = () => {
   chart.data.datasets = chartConfig.datasets.map((dataset: Dataset) => ({
     label: dataset.label,
     data: data[dataset.id],
+    yAxisID: dataset.axis === "right" ? "y1" : "y",
     fill: false,
   }));
-
-  chart.update();
 }
 </script>
 
@@ -110,6 +125,7 @@ const updateChartData = () => {
             },
           },
           y: { beginAtZero: true },
+          y1: { beginAtZero: true, position: "right", grid: { drawOnChartArea: false } },
         },
       },
       plugins: [{

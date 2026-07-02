@@ -12,6 +12,7 @@ export type Dataset = {
   label: string;
   type: "views" | "visits";
   filters: Filter;
+  axis?: "right" | "left";
 }
 
 export type ChartConfig = {
