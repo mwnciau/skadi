@@ -2,18 +2,21 @@ module Skadi
   class DashboardQuery
     class << self
       GROUPINGS = {
-        "day" => "DATE(created_at)"
+        "day" => "DATE(%s.created_at)"
       }
 
       def chart_query(chart, query_filters)
-        queries = chart["datasets"].map do |dataset|
+        queries = chart["datasets"].filter_map do |dataset|
           case dataset["type"]
-            when "visits"
-              build_query(Skadi::Visit, dataset, query_filters)
-            when "views"
-              build_query(Skadi::View, dataset, query_filters)
-            else
-              raise dataset.inspect
+          when "visits"
+            build_query(Skadi::Visit, dataset, query_filters)
+          when "views"
+            build_query(Skadi::View, dataset, query_filters)
+          when "percentage"
+            # Percentage charts are handled by the frontend using other datasets
+            next
+          else
+            raise dataset.inspect
           end
         end
 
@@ -24,7 +27,7 @@ module Skadi
 
       private def build_query(model, dataset, query_filters)
         # This is a SQL safe string because it can only contain the values in `GROUPINGS`
-        safe_grouping = GROUPINGS[dataset["group"]] || GROUPINGS["day"]
+        safe_grouping = (GROUPINGS[dataset["group"]] || GROUPINGS["day"]) % model.table_name
 
         safe_id_node = Arel::Nodes.build_quoted(dataset["id"]).as('id')
 
@@ -47,6 +50,8 @@ module Skadi
         # General rule throughout this method: if it exists in the query filters, use that. Otherwise, use
         # the dataset filters.
 
+        table = query.arel_table
+
         verified = false
         if query_filters.key?("verified")
           verified = true if query_filters["verified"] == true
@@ -62,8 +67,8 @@ module Skadi
         end
         from = parse_time(date_filters["date_from"]) if date_filters&.key?("date_from")
         to = parse_time(date_filters["date_to"]) if date_filters&.key?("date_to")
-        query = query.where("DATE(created_at) >= ?", from.to_date) unless from.nil?
-        query = query.where("DATE(created_at) <= ?", to.to_date) unless to.nil?
+        query = query.where("DATE(#{table}.created_at) >= ?", from.to_date) unless from.nil?
+        query = query.where("DATE(#{table}.created_at) <= ?", to.to_date) unless to.nil?
 
         return query
       end
@@ -76,6 +81,23 @@ module Skadi
             query = query.where(field => query_filters[field])
           elsif dataset_filters.key?(field)
             query = query.where(field => dataset_filters[field])
+          end
+        end
+
+        if dataset_filters["visit"] == true
+          query = query.where("visit_id IS NOT NULL")
+        elsif dataset_filters["visit"].is_a? Hash
+          query = query.joins(:visit)
+
+          if dataset_filters["visit"]["verified"] == true
+            query = query.where("skadi_visits.verified = true")
+          end
+          if dataset_filters["visit"]["tracked"] == true
+            query = query.where("skadi_visits.tracking_token IS NOT NULL")
+          elsif dataset_filters["visit"]["tracked"] == "anonymity_set"
+            # Todo: update the database to allow for tracking type detection
+          elsif dataset_filters["visit"]["tracked"] == "cookie"
+            # Todo: update the database to allow for tracking type detection
           end
         end
 

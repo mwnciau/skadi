@@ -3,6 +3,7 @@ import { onMount, untrack } from "svelte";
 import { Chart } from "chart.js/auto";
 import type { ChartConfig, Dataset } from "../../types.d.ts";
 import ChartEditor from "../editors/ChartEditor.svelte";
+import {processDerivedDatasets} from "../helpers/processData";
 
 let { chartConfig }: { chartConfig: ChartConfig } = $props();
 
@@ -63,6 +64,8 @@ const fetchData = (chartId: string) => {
         data[item.id].push({x: item.label, y: item.count});
       }
 
+      processDerivedDatasets(chartConfig.datasets, data);
+
       updateChartData();
       chart.update();
     });
@@ -73,7 +76,9 @@ const updateChartData = () => {
     return;
   }
 
-  chart.data.datasets = chartConfig.datasets.map((dataset: Dataset) => ({
+  chart.data.datasets = chartConfig.datasets
+    .filter((dataset: Dataset) => dataset.visible !== false)
+    .map((dataset: Dataset) => ({
     label: dataset.label,
     data: data[dataset.id],
     yAxisID: dataset.axis === "right" ? "y1" : "y",
@@ -86,7 +91,6 @@ const updateChartData = () => {
 <div class="relative w-full aspect-video">
   <canvas bind:this={canvas}></canvas>
 </div>
-<p>{chartConfig.title}</p>
 
 <script module lang="ts">
   const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}, unknown> => {

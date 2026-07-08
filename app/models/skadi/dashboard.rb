@@ -21,10 +21,21 @@ module Skadi
                 "id" => "checkouts",
                 "label" => "Checkouts",
                 "type" => "views",
+                "visible" => false,
                 "filters" => {
                   "verified" => true,
                   "path" => "/checkout",
+                  "visit" => {
+                    tracked: true,
+                  },
                 },
+              },
+              {
+                "id" => "conversion",
+                "label" => "Conversion rate",
+                "type" => "percentage",
+                "numerator" => "checkouts",
+                "denominator" => "visits",
               },
             ],
           },

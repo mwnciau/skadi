@@ -32,11 +32,11 @@ Skadi::Demographic.destroy_all
 
 start_time = Time.current.yesterday
 
-puts "Seeding Skadi database:"
+puts "Seeding Skadi database (#{Rails.env}):"
 10_000.times do |i|
   print "." if i % 100 == 0
-  # Let's not start with all of our mod tests matching by starting with a palindromic prime :)
-  i += 31_313
+  # Let's not start with all of our mod tests matching by multiplying and adding a prime to each i
+  i = i * 31_313 + 13_331
 
   start_time -= (1 + Random.rand(30)).minutes
   offset = 0
@@ -75,7 +75,7 @@ puts "Seeding Skadi database:"
     create_event(visit, view, name: "clicked banner", time: start_time) if i % 23 > 19
   end
 
-  next if i % 37 == 1
+  next if i % 37 < 24
 
   offset += (30 + Random.rand(630)).seconds
   view = create_view(visit, view, controller: "cart", action: "show", verb: "GET", path: "/cart", verified:, time: start_time + offset)
@@ -93,7 +93,7 @@ puts "Seeding Skadi database:"
   end
 
 
-  next if i % 37 == 2
+  next if i % 37 < 31
 
   offset += (30 + Random.rand(630)).seconds
   view = create_view(visit, view, controller: "checkout", action: "create", verb: "POST", path: "/checkout", verified:, time: start_time + offset)
@@ -105,3 +105,5 @@ puts "Seeding Skadi database:"
 
   create_event(visit, view, name: "review", properties: {starts: Random.rand(5) + 1}, time: start_time + offset) if i % 31 > 27
 end
+
+print "\n"
