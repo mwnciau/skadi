@@ -5,7 +5,7 @@ module Skadi
     include ActionController::DataStreaming
 
     def tracking_script
-      serve_built_asset("tracking.js")
+      serve_built_asset("skadi.js")
     end
 
     def dashboard_js

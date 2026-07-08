@@ -48,6 +48,7 @@ module Skadi
         utm_campaign: request.query_parameters["utm_campaign"],
 
         verified: false,
+        cookies_enabled: request.cookie_jar.key?("skadi_id"),
       )
     end
   end

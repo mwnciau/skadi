@@ -102,6 +102,7 @@ module Skadi
       # Update the existing visit with the tracking token if we've generated a new one
       if @visit
         @visit.tracking_token = tracking_token
+        @visit.cookies_enabled = true
       end
     end
 
@@ -109,13 +110,18 @@ module Skadi
       cookie_manager.tracking_opt_out = true
       cookie_manager.tracking_token = nil
 
-      if @visit&.tracking_token
-        # If an existing tracking token, delete any rows using it so existing data is anonymised instantly
-        # Note: this needs a DB update because there may be other visits outside the visit limit
-        Skadi::Visit.where(tracking_token: @visit.tracking_token).update_all(tracking_token: nil)
+      return unless @visit
 
-        # Update the local copy so it doesn't get re-set
+      @visit.cookies_enabled = false
+
+      if @visit&.tracking_token
+        # If an existing tracking token, delete it from any rows using it so existing data is anonymised instantly
+        # Note: this needs to be a DB update because there may be other visits outside the visit limit
+        Skadi::Visit.where(tracking_token: @visit.tracking_token).update_all(tracking_token: nil, cookies_enabled: false)
+
+        # Update the local visit so it doesn't get re-set when saved
         @visit.tracking_token = nil
+        @visit.cookies_enabled = false
       end
 
       if @visit&.user&.id
@@ -170,23 +176,28 @@ module Skadi
       tracking_token, user, has_utm_params, has_external_referrer = nil
 
       cookie_tracking_token = cookie_manager.tracking_token
-      consent = cookie_tracking_token.present?
+      cookie_consent = cookie_tracking_token.present?
 
       # If the user has opted out of tracking, we do not use cookies or anonymity sets
       unless cookie_manager.tracking_opt_out
         tracking_token = cookie_tracking_token || AnonymitySet.calculate(request.remote_ip, request.user_agent)
 
         # Only track the user if we have consent
-        if consent
+        if cookie_consent
           user = Skadi.configuration.user_method ? controller.send(Skadi.configuration.user_method) : nil
         end
 
         @visit = Visit.find_active_visit_for(tracking_token, user)
 
-        # Update the user if the user has logged in since the last view
-        @visit.user_id = user.id if @visit && @visit.user_id.nil?
+        if @visit
+          # Update the user if the user has logged in since the last view
+          @visit.user_id = user.id if user && @visit.user_id.nil?
 
-        return if @visit
+          # Ensure the cookie consent status is up to date
+          @visit.cookies_enabled = cookie_consent
+
+          return
+        end
       end
 
       unless tracking_token || user

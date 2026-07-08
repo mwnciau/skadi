@@ -15,6 +15,16 @@ module Skadi::Integration
         assert_match UUID_REGEX, response.cookies["skadi_id"]
       end
 
+      test "consent sets cookies_enabled on visit" do
+        visit = create :visit, tracking_token: TRACKING_TOKEN
+        view = create :view, visit: visit
+
+        post skadi.tracking_endpoint_path, params: {view: view.token, consent: true}, as: :json
+
+        assert_response :no_content
+        assert visit.reload.cookies_enabled
+      end
+
       test "consent uses different tracking token to anonymity set" do
         # Create a new visit with a tracking token (representing an anonymity set)
         visit = create :visit, tracking_token: TRACKING_TOKEN
@@ -83,6 +93,16 @@ module Skadi::Integration
         assert_equal "1", response.cookies["skadi_tracking_opt_out"]
       end
 
+      test "opt out sets cookies_enabled on visit" do
+        visit = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
+        view = create :view, visit: visit
+
+        post skadi.tracking_endpoint_path, params: {view: view.token, consent: false}, as: :json
+
+        assert_response :no_content
+        refute visit.reload.cookies_enabled
+      end
+
       test "opt out sets opt out cookie without visit" do
         view = create :view, visit: nil
 
@@ -104,6 +124,20 @@ module Skadi::Integration
         assert_response :no_content
         assert_nil visit.reload.tracking_token
         assert_nil old_visit.reload.tracking_token
+      end
+
+      test "opt out sets cookies_enabled to false on existing visits" do
+        visit = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
+        view = create :view, visit: visit
+
+        # Simulate a second visit with the same tracking token
+        old_visit = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
+
+        post skadi.tracking_endpoint_path, params: {view: view.token, consent: false}, as: :json
+
+        assert_response :no_content
+        refute visit.reload.cookies_enabled
+        refute old_visit.reload.cookies_enabled
       end
 
       test "opt out deletes user in existing visits" do

@@ -8,6 +8,7 @@ module Skadi::Integration
 
         visit = Skadi::Visit.first!
         assert_equal "example.com/referrer", visit.referrer
+        refute visit.cookies_enabled
       end
 
       test "bad referrer is not tracked" do
@@ -75,7 +76,18 @@ module Skadi::Integration
         assert_equal 1, Skadi::Visit.count
       end
 
-      test "visit tracks user with consent" do
+      test "visit uses token from cookie" do
+        cookies[:skadi_id] = TRACKING_TOKEN
+
+        get tracked_action_path
+
+        assert_equal 1, Skadi::Visit.count
+        visit = Skadi::Visit.first!
+        assert_equal TRACKING_TOKEN, visit.tracking_token
+        assert visit.cookies_enabled
+      end
+
+      test "visit tracks visit by user with consent" do
         Skadi.configuration.user_model = "DummyUser"
         Skadi.configuration.user_method = :current_user
 
@@ -89,10 +101,10 @@ module Skadi::Integration
 
         assert_equal 1, Skadi::Visit.count
         visit = Skadi::Visit.first!
-        assert_equal user_id, visit.user_id
+        assert_equal user.id, visit.user_id
       end
 
-      test "visit does not track user without consent" do
+      test "visit does not track visit by user without consent" do
         Skadi.configuration.user_model = "DummyUser"
         Skadi.configuration.user_method = :current_user
 

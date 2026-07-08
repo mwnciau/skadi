@@ -13,7 +13,7 @@ module Skadi::Integration
       assert response.body.length > 1_024
       assert response.body.length < 2_048
 
-      assert_equal "text/javascript", headers["content-type"]
+      assert_equal "application/javascript", headers["content-type"]
       assert_match "max-age=31556952", headers["cache-control"]
       assert_nil headers["content-disposition"]
     end

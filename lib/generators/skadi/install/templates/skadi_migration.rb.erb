@@ -26,6 +26,8 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
 
       # Whether the visit has been verified by the front-end
       t.boolean :verified, null: false, default: false
+      
+      t.boolean :cookies_enabled, null: false, default: false
 
       t.timestamps
     end
