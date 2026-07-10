@@ -15,8 +15,12 @@ Rails.application.routes.draw do
   get "untracked_controller_with_kwargs", to: "tracked#untracked_controller_with_kwargs", as: :untracked_controller_with_kwargs
   get "queue_then_untrack", to: "tracked#queue_then_untrack", as: :queue_then_untrack
 
-  post "consent", to: "consent#consent", as: :consent
-  post "opt-out", to: "consent#opt_out", as: :opt_out
+  post "anonymity_sets_on", to: "consent#anonymity_sets_on", as: :anonymity_sets_on
+  post "anonymity_sets_off", to: "consent#anonymity_sets_off", as: :anonymity_sets_off
+  post "cookies_on", to: "consent#cookies_on", as: :cookies_on
+  post "cookies_off", to: "consent#cookies_off", as: :cookies_off
+  post "track_users_on", to: "consent#track_users_on", as: :track_users_on
+  post "track_users_off", to: "consent#track_users_off", as: :track_users_off
 
   scope :events do
     get "simple", to: "events#simple", as: :simple_event

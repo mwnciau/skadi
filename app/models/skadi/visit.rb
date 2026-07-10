@@ -32,23 +32,23 @@ module Skadi
     # @param user [ActiveModel::Model, nil]
     # @param request [ActionDispatch::Request]
     # @return [Skadi::Visit]
-    def self.build_from(tracking_token, user, request)
+    def self.build_from(tracking_token, user_id = nil, request = nil)
       new(
         visit_token: SecureRandom.uuid_v7,
         tracking_token: tracking_token,
-        user_id: user&.id,
+        user_id: user_id,
 
-        referrer: Skadi::Url.redact_and_normalise_url(request.referrer),
-        landing_page: Skadi::Url.view_path_from_request(request),
+        referrer: request ? Skadi::Url.redact_and_normalise_url(request.referrer) : nil,
+        landing_page: request ? Skadi::Url.view_path_from_request(request) : nil,
 
-        utm_source: request.query_parameters["utm_source"],
-        utm_medium: request.query_parameters["utm_medium"],
-        utm_term: request.query_parameters["utm_term"],
-        utm_content: request.query_parameters["utm_content"],
-        utm_campaign: request.query_parameters["utm_campaign"],
+        utm_source: request ? request.query_parameters["utm_source"] : nil,
+        utm_medium: request ? request.query_parameters["utm_medium"] : nil,
+        utm_term: request ? request.query_parameters["utm_term"] : nil,
+        utm_content: request ? request.query_parameters["utm_content"] : nil,
+        utm_campaign: request ? request.query_parameters["utm_campaign"] : nil,
 
         verified: false,
-        cookies_enabled: request.cookie_jar.key?("skadi_id"),
+        cookies_enabled: request&.cookie_jar&.key?("skadi_id") || false,
       )
     end
   end

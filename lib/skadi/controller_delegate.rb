@@ -93,47 +93,6 @@ module Skadi
       @do_not_track = true
     end
 
-    def consent!
-      tracking_token = ::SecureRandom.uuid_v7
-
-      cookie_manager.tracking_token = tracking_token
-      cookie_manager.tracking_opt_out = false
-
-      # Update the existing visit with the tracking token if we've generated a new one
-      if @visit
-        @visit.tracking_token = tracking_token
-        @visit.cookies_enabled = true
-      end
-    end
-
-    def opt_out!
-      cookie_manager.tracking_opt_out = true
-      cookie_manager.tracking_token = nil
-
-      return unless @visit
-
-      @visit.cookies_enabled = false
-
-      if @visit&.tracking_token
-        # If an existing tracking token, delete it from any rows using it so existing data is anonymised instantly
-        # Note: this needs to be a DB update because there may be other visits outside the visit limit
-        Skadi::Visit.where(tracking_token: @visit.tracking_token).update_all(tracking_token: nil, cookies_enabled: false)
-
-        # Update the local visit so it doesn't get re-set when saved
-        @visit.tracking_token = nil
-        @visit.cookies_enabled = false
-      end
-
-      if @visit&.user&.id
-        # If an existing user, delete any rows using it so existing data is anonymised instantly
-        # Note: this needs a DB update because there may be other visits outside the visit limit
-        Skadi::Visit.where(user_id: @visit.user_id).update_all(user_id: nil)
-
-        # Update the local copy so it doesn't get re-set
-        @visit.user_id = nil
-      end
-    end
-
     # Create or increment a demographic with a given name or value. If the action_specific parameter
     # is set to true, the demographic is linked specifically to the current action. Demographics are
     # not linked to any other individual data. E.g:
@@ -172,32 +131,140 @@ module Skadi
       @events << event
     end
 
-    private def build_visit
-      tracking_token, user, has_utm_params, has_external_referrer = nil
+    # Set consent for tracking by anonymity set
+    # @param [TrueClass, FalseClass] consent
+    def anonymity_set_consent!(consent)
+      anonymity_set = AnonymitySet.calculate(request.remote_ip, request.user_agent)
 
-      cookie_tracking_token = cookie_manager.tracking_token
-      cookie_consent = cookie_tracking_token.present?
+      if consent
+        cookie_manager.use_anonymity_sets = true
 
-      # If the user has opted out of tracking, we do not use cookies or anonymity sets
-      unless cookie_manager.tracking_opt_out
-        tracking_token = cookie_tracking_token || AnonymitySet.calculate(request.remote_ip, request.user_agent)
-
-        # Only track the user if we have consent
-        if cookie_consent
-          user = Skadi.configuration.user_method ? controller.send(Skadi.configuration.user_method) : nil
-        end
-
-        @visit = Visit.find_active_visit_for(tracking_token, user)
-
+        # If a visit is attached to the request, we update it with the anonymity set token
         if @visit
-          # Update the user if the user has logged in since the last view
-          @visit.user_id = user.id if user && @visit.user_id.nil?
-
-          # Ensure the cookie consent status is up to date
-          @visit.cookies_enabled = cookie_consent
-
-          return
+          @visit.tracking_token ||= anonymity_set
+        else
+          # Build the visit without the request, because the current request is likely not the original first request
+          @visit = Visit.build_from(anonymity_set)
+          @view.visit = @visit
         end
+      else
+        cookie_manager.use_anonymity_sets = false
+
+        return unless @visit
+
+        # Check to see if the currrent visit is using an anonymity set
+        if @visit&.tracking_token && !@visit.cookies_enabled
+          # If so, delete it from the db so existing data is anonymised instantly
+          # Note: this needs to be a DB update because there may be other visits outside the visit limit
+          Skadi::Visit.where(tracking_token: anonymity_set).update_all(tracking_token: nil)
+
+          # Update the local instance of the visit if it uses anonymity sets so it doesn't get re-set when saved
+          @visit.tracking_token = nil if @visit.tracking_token == anonymity_set
+        end
+      end
+    end
+
+    # Set consent for tracking by cookie
+    # @param [TrueClass, FalseClass] consent
+    def cookie_consent!(consent)
+      if consent
+        return unless cookie_manager.tracking_token.nil?
+
+        # Re-use an existing cookie-based token
+        tracking_token = @visit&.tracking_token if @visit&.cookies_enabled
+        tracking_token ||= ::SecureRandom.uuid_v7
+
+        cookie_manager.tracking_token = tracking_token
+
+        # Update the existing visit with the tracking token if we've generated a new one
+        if @visit
+          @visit.tracking_token = tracking_token
+          @visit.cookies_enabled = true
+        else
+          @visit = Visit.build_from(tracking_token)
+          @view.visit = @visit
+        end
+      else
+        cookie_manager.tracking_token = nil
+
+        # No need to anonymise existing sessions here because there is no way to link to the user once the tracking token is deleted.
+        if @visit
+          @visit.cookies_enabled = false
+
+          # If the user has opted in for anonymity sets
+          if cookie_manager.use_anonymity_sets == true || (Skadi.configuration.use_anonymity_sets && cookie_manager.use_anonymity_sets != false)
+            @visit.tracking_token = AnonymitySet.calculate(request.remote_ip, request.user_agent)
+          end
+        end
+      end
+    end
+
+    # Set consent for tracking by logged in user
+    # @param [TrueClass, FalseClass] consent
+    def user_consent!(consent)
+      tracked_user_id = @visit&.user_id || logged_in_user&.id
+
+      if consent
+        cookie_manager.track_users = true
+
+        unless tracked_user_id.nil?
+          if @visit
+            @visit.user_id = tracked_user_id
+          else
+            # Build the visit without the request, because the current request is likely not the original first request
+            @visit = Visit.build_from(nil, tracked_user_id)
+            @view.visit = @visit
+          end
+        end
+      else
+        cookie_manager.track_users = false
+
+        # If there is a logged in user, we delete the user id from any rows that match
+        unless tracked_user_id.nil?
+          # Note: this needs a DB update because there may be other visits outside the visit limit
+          Skadi::Visit.where(user_id: tracked_user_id).update_all(user_id: nil)
+
+          # Update the local instance of the visit so it doesn't get re-set when saved
+          @visit.user_id = nil
+        end
+      end
+    end
+
+    private def build_visit
+      user, has_utm_params, has_external_referrer = nil
+
+      tracking_token = cookie_manager.tracking_token
+      cookie_consent = tracking_token.present?
+
+      if tracking_token.nil?
+        anonymity_set_consent = cookie_manager.use_anonymity_sets
+
+        # Either we have explicit consent to use anonymity sets
+        use_anonymity_sets = anonymity_set_consent == true ||
+          # Or there is no explicit opt-out and they are enabled by configuration
+          (anonymity_set_consent.nil? && Skadi.configuration.use_anonymity_sets)
+
+        if use_anonymity_sets
+          tracking_token = AnonymitySet.calculate(request.remote_ip, request.user_agent)
+        end
+      end
+
+      # Only track the user if we have explicit consent
+      if cookie_manager.track_users == true
+        user = logged_in_user
+        puts "tracking user: #{logged_in_user.inspect}"
+      end
+
+      @visit = Visit.find_active_visit_for(tracking_token, user)
+
+      if @visit
+        # Update the user if the user has logged in since the last view
+        @visit.user_id = user.id if user && @visit.user_id.nil?
+
+        # Ensure the cookie consent status is up to date
+        @visit.cookies_enabled = cookie_consent
+
+        return
       end
 
       unless tracking_token || user
@@ -208,7 +275,7 @@ module Skadi
       # Only create a visit if we have some useful data or way of tracking users across pages
       return unless tracking_token || user || has_utm_params || has_external_referrer
 
-      @visit = Visit.build_from(tracking_token, user, request)
+      @visit = Visit.build_from(tracking_token, user&.id, request)
       @new_visit = true
     end
 
@@ -234,6 +301,17 @@ module Skadi
       demographic "Browser engine", user_agent.engine
       demographic "Browser engine version", "#{user_agent.engine} #{user_agent.engine_version}"
       demographic "Operating system", user_agent.os
+    end
+
+    private def logged_in_user
+      return @logged_in_user unless @logged_in_user.nil?
+
+      return nil if Skadi.configuration.user_method.nil?
+      return nil unless controller.respond_to?(Skadi.configuration.user_method)
+
+      @logged_in_user = controller.send(Skadi.configuration.user_method)
+
+      return @logged_in_user
     end
   end
 end

@@ -1,11 +1,17 @@
 // Define these non-constant variables first so the minifier can group all the consts together
 let demographics: SkadiDemographic[] = [];
 let events: SkadiEvent[] = [];
-let consent: boolean | null = null;
 let largestContentfulPaint: number = -1;
 let requestTimeout: number|null = null;
 let exitPage: string|null = null;
 let useExitPage: boolean = false;
+
+type Consent = {
+  cookie?: boolean;
+  anonymity_set?: boolean;
+  user?: boolean;
+}
+let consent: Consent = {};
 
 // The minifier doesn't automatically shorten these variables, so we make a local variable to force it to
 const _window = window;
@@ -64,7 +70,7 @@ const sendRequest = () => {
   if (result) {
     demographics = [];
     events = [];
-    consent = null;
+    consent = {};
 
     // Note: no need to set useExitPage here as it is only set as the page is being unloaded.
   }
@@ -176,7 +182,7 @@ _window.addEventListener('pagehide', () => {
 })
 
 _window.addEventListener('visibilitychange', () => {
-  // Ensure a beacon is sent immediately if the user switches
+  // Ensure any queued beacon is sent immediately if the user switches tab
   if (requestTimeout !== null) {
     sendRequest();
   }
@@ -192,12 +198,8 @@ _window.skadi = {
     addDemographic(name, value, isPageSpecific);
     queueRequest();
   },
-  consent: () => {
-    consent = true;
-    sendRequest();
-  },
-  optOut: () => {
-    consent = false;
+  consent: (newConsent: Consent) => {
+    consent = newConsent;
     sendRequest();
   },
 };

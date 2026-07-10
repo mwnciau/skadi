@@ -10,7 +10,7 @@ module Skadi::Unit
       assert_equal TRACKING_TOKEN, manager.tracking_token
     end
 
-    test "tracking_token rejects non-TRACKING_TOKEN values" do
+    test "tracking_token rejects non-UUID values" do
       manager = build_manager(skadi_id: "not-a-uuid")
 
       assert_nil manager.tracking_token
@@ -47,45 +47,100 @@ module Skadi::Unit
       assert_nil request.cookie_jar["skadi_id"]
     end
 
-    test "tracking_opt_out is true when cookie is '1'" do
-      manager = build_manager(skadi_tracking_opt_out: "1")
+    test "use_anonymity_sets is true when cookie is '1'" do
+      manager = build_manager(skadi_anonymity_set: "1")
 
-      assert manager.tracking_opt_out == true
+      assert manager.use_anonymity_sets == true
     end
 
-    test "tracking_opt_out is false otherwise" do
+    test "use_anonymity_sets is false when cookie is '0'" do
+      manager = build_manager(skadi_anonymity_set: "0")
+
+      assert manager.use_anonymity_sets == false
+    end
+
+    test "use_anonymity_sets is nil when cookie is not set" do
       manager = build_manager
 
-      assert manager.tracking_opt_out == false
+      assert manager.use_anonymity_sets.nil?
     end
 
-    test "tracking_opt_out= true sets cookie to '1'" do
+    test "use_anonymity_sets is nil when cookie is invalid" do
+      manager = build_manager(skadi_anonymity_set: "invalid")
+
+      assert manager.use_anonymity_sets.nil?
+    end
+
+    test "use_anonymity_sets= true sets cookie to '1'" do
       request = build_request
       manager = Skadi::CookieManager.new(request)
 
-      manager.tracking_opt_out = true
+      manager.use_anonymity_sets = true
 
-      assert_equal "1", request.cookie_jar["skadi_tracking_opt_out"]
+      assert_equal "1", request.cookie_jar["skadi_anonymity_set"]
     end
 
-    test "tracking_opt_out= false deletes the cookie" do
-      request = build_request({skadi_tracking_opt_out: "1"})
+    test "use_anonymity_sets= false sets the cookie to 0" do
+      request = build_request({skadi_anonymity_set: "1"})
       manager = Skadi::CookieManager.new(request)
 
-      manager.tracking_opt_out = false
+      manager.use_anonymity_sets = false
 
-      assert_nil request.cookie_jar["skadi_tracking_opt_out"]
+      assert_equal "0", request.cookie_jar["skadi_anonymity_set"]
+    end
+
+    test "track_users is true when cookie is '1'" do
+      manager = build_manager(skadi_track_user: "1")
+
+      assert manager.track_users == true
+    end
+
+    test "track_users is false when cookie is '0'" do
+      manager = build_manager(skadi_track_user: "0")
+
+      assert manager.track_users == false
+    end
+
+    test "track_users is nil when cookie is not set" do
+      manager = build_manager
+
+      assert manager.track_users.nil?
+    end
+
+    test "track_users is nil when cookie is invalid" do
+      manager = build_manager(skadi_track_user: "invalid")
+
+      assert manager.track_users.nil?
+    end
+
+    test "track_users= true sets cookie to '1'" do
+      request = build_request
+      manager = Skadi::CookieManager.new(request)
+
+      manager.track_users = true
+
+      assert_equal "1", request.cookie_jar["skadi_track_user"]
+    end
+
+    test "track_users= false sets the cookie to 0" do
+      request = build_request({skadi_track_user: "1"})
+      manager = Skadi::CookieManager.new(request)
+
+      manager.track_users = false
+
+      assert_equal "0", request.cookie_jar["skadi_track_user"]
     end
 
     test "renew! re-writes existing cookies" do
-      request = build_request({skadi_id: TRACKING_TOKEN, skadi_tracking_opt_out: "1"})
+      request = build_request({skadi_id: TRACKING_TOKEN, skadi_anonymity_set: "1", skadi_track_user: "1"})
       manager = Skadi::CookieManager.new(request)
 
       manager.renew!
 
       # The cookies are still present, and the underlying jar has new write options
       assert_equal TRACKING_TOKEN, request.cookie_jar["skadi_id"]
-      assert_equal "1", request.cookie_jar["skadi_tracking_opt_out"]
+      assert_equal "1", request.cookie_jar["skadi_anonymity_set"]
+      assert_equal "1", request.cookie_jar["skadi_track_user"]
     end
 
     test "renew! does not create cookies that do not exist" do
@@ -95,10 +150,11 @@ module Skadi::Unit
       manager.renew!
 
       assert_nil request.cookie_jar["skadi_id"]
-      assert_nil request.cookie_jar["skadi_tracking_opt_out"]
+      assert_nil request.cookie_jar["skadi_anonymity_set"]
+      assert_nil request.cookie_jar["skadi_track_user"]
     end
 
-    test "renew! deletes tracking token for invalid cookies" do
+    test "renew! deletes tracking token for invalid skadi_id cookie" do
       request = build_request({skadi_id: "invalid tracking token"})
       manager = Skadi::CookieManager.new(request)
 

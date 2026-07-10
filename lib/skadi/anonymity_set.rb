@@ -3,8 +3,6 @@ module Skadi
     # Generates a unique token for the given IP and user agent
     # @return [String]
     def self.calculate(ip, user_agent)
-      return nil unless Skadi.configuration.use_anonymity_sets
-
       user_fingerprint = "#{ip}|#{user_agent}"
 
       hash = OpenSSL::HMAC.hexdigest("sha256", pepper, user_fingerprint)

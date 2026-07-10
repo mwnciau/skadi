@@ -3,26 +3,16 @@ require_relative "test_case"
 module Skadi::Unit
   class AnonymitySetTest < TestCase
     test "calculate returns a uuid" do
-      Skadi.configuration.use_anonymity_sets = true
-
       anonymity_set = Skadi::AnonymitySet.calculate("1.2.3.4", "Test user agent")
 
       assert_match(/\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/, anonymity_set)
     end
 
     test "calculate returns a consistent value" do
-      Skadi.configuration.use_anonymity_sets = true
-
       anonymity_set_1 = Skadi::AnonymitySet.calculate("1.2.3.4", "Test user agent")
       anonymity_set_2 = Skadi::AnonymitySet.calculate("1.2.3.4", "Test user agent")
 
       assert_equal anonymity_set_1, anonymity_set_2
-    end
-
-    test "calculate returns nil if anonymity sets are disabled" do
-      anonymity_set = Skadi::AnonymitySet.calculate("1.2.3.4", "Test user agent")
-
-      assert_nil anonymity_set
     end
 
     test "pepper returns a consistent value until reset hour" do

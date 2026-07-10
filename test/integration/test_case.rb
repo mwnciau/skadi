@@ -7,6 +7,7 @@ module Skadi
       include FactoryBot::Syntax::Methods
 
       TRACKING_TOKEN = "8cec5a7a-7bf7-403f-b15e-b2e45944182c"
+      UUID_REGEX = Skadi::CookieManager::UUID_REGEX
 
       setup do
         # Reset the configuration
@@ -27,6 +28,14 @@ module Skadi
         headers["Cookie"] = "skadi_id=#{tracking_token}" unless tracking_token.nil?
 
         get tracked_action_path, headers: headers, params: params
+      end
+
+      def log_in_as(user)
+        # Ensure user config is setup
+        Skadi.configuration.user_model = "DummyUser"
+        Skadi.configuration.user_method = :current_user
+
+        ::ApplicationController.current_user = user
       end
     end
   end

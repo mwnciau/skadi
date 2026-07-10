@@ -2,89 +2,133 @@ require "integration/test_case"
 
 module Skadi::Integration
   module ControllerDelegate
+    # Tests that the tracking controller correctly handles consent changes, closely mimicking the `Skadi::Integration::TrackingController::ConsentTest` tests; more thorough testing is done in unit tests for the ControllerDelegate class
     class ConsentTest < TestCase
-      UUID_REGEX = Skadi::CookieManager::UUID_REGEX
-
-      setup do
+      test "cookie consent" do
         Skadi.configuration.use_anonymity_sets = true
-      end
 
-      test "consent sets tracking cookie" do
-        post consent_path
+        cookies["skadi_anonymity_set"] = "1"
 
-        assert_response :ok
+        get tracked_action_path
         visit = Skadi::Visit.first!
-        assert_equal visit.tracking_token, response.cookies["skadi_id"]
-      end
+        anonymity_set = visit.tracking_token
 
-      test "consent sets tracking cookie without visit" do
-        cookies["skadi_tracking_opt_out"] = "1"
+        post cookies_on_path
 
-        post consent_path
+        assert_response :no_content
+        assert_equal 1, Skadi::Visit.count
 
-        assert_response :ok
-        assert_equal 0, Skadi::Visit.count
+        # Check a new token is generated
+        refute_equal anonymity_set, response.cookies["skadi_id"]
         assert_match UUID_REGEX, response.cookies["skadi_id"]
+
+        # Cookies enabled on visits
+        assert visit.reload.cookies_enabled
+
+        # Tracking cookie is set
+        assert_equal response.cookies["skadi_id"], visit.reload.tracking_token
       end
 
-      test "consent clears opt out cookie" do
-        cookies["skadi_tracking_opt_out"] = "1"
-
-        post consent_path
-
-        assert_response :ok
-        assert response.cookies.has_key?("skadi_tracking_opt_out")
-        assert_nil response.cookies["skadi_tracking_opt_out"]
-      end
-
-      test "opt out sets opt out cookie" do
-        post opt_out_path
-
-        assert_response :ok
-        assert_equal "1", response.cookies["skadi_tracking_opt_out"]
-      end
-
-      test "opt out deletes tracking tokens in existing visits" do
-        visit = create :visit, tracking_token: TRACKING_TOKEN
-
-        # Simulate a second visit with the same tracking token
-        old_visit = create :visit, tracking_token: TRACKING_TOKEN
+      test "cookie opt out" do
+        visit = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
 
         cookies["skadi_id"] = TRACKING_TOKEN
 
-        post opt_out_path
+        post cookies_off_path
 
-        assert_response :ok
-        assert_nil visit.reload.tracking_token
-        assert_nil old_visit.reload.tracking_token
+        assert_response :no_content
+        assert_equal 1, Skadi::Visit.count
+
+        # Cookies disabled on visits
+        refute visit.reload.cookies_enabled
+
+        # Tracking cookie is deleted
+        assert response.cookies.has_key?("skadi_id")
+        assert_nil response.cookies["skadi_id"]
       end
 
-      test "opt out deletes user in existing visits" do
-        user = create :user
-        ApplicationController.current_user = user
+      test "anonymity set consent" do
+        cookies["skadi_tracking_opt_out"] = "0"
 
-        visit = create :visit, user: user, tracking_token: TRACKING_TOKEN
+        post anonymity_sets_on_path
+
+        assert_response :no_content
+
+        #  Sets cookie
+        assert_equal "1", response.cookies["skadi_anonymity_set"]
+
+        visit = Skadi::Visit.first!
+
+        # Sets tracking token on visit
+        assert_match UUID_REGEX, visit.tracking_token
+
+        # Check future visits use the same visit
+        get tracked_action_path
+        assert_equal 1, Skadi::Visit.count
+      end
+
+      test "anonymity set opt out" do
+        # Create a visit with an anonymity set
+        cookies["skadi_anonymity_set"] = "1"
+        get tracked_action_path
+
+        visit = Skadi::Visit.first!
+        anonymity_set = visit.tracking_token
+
+        # Simulate a second visit with the same anonymity set
+        old_visit = create :visit, tracking_token: anonymity_set
+
+        post anonymity_sets_off_path
+
+        assert_response :no_content
+
+        # Sets cookie
+        assert_equal "0", response.cookies["skadi_anonymity_set"]
+
+        # Ensure all visits using the anonymity set are removed
+        refute_equal anonymity_set, visit.reload.tracking_token
+        refute_equal anonymity_set, old_visit.reload.tracking_token
+      end
+
+      test "user consent" do
+        user = create :user
+
+        visit = create :visit, tracking_token: TRACKING_TOKEN
+
+        cookies["skadi_id"] = TRACKING_TOKEN
+
+        log_in_as user
+        post track_users_on_path
+
+        assert_response :no_content
+        assert_equal "1", response.cookies["skadi_track_user"]
+
+        # User should be set on the visit on the next request
+        get tracked_action_path
+        assert_equal user, visit.reload.user
+      end
+
+      test "user opt out" do
+        user = create :user
+        visit = create :visit, user: user
 
         # Simulate a second visit with the same tracking user
         old_visit = create :visit, user: user
 
-        cookies["skadi_id"] = TRACKING_TOKEN
+        cookies["skadi_track_user"] = "1"
 
-        post opt_out_path
+        log_in_as user
+        post track_users_off_path
 
-        assert_response :ok
+        assert_response :no_content
+        assert_equal 2, Skadi::Visit.count
+
+        # Cookie is set
+        assert_equal "0", response.cookies["skadi_track_user"]
+
+        # User deleted from visits
         assert_nil visit.reload.user
         assert_nil old_visit.reload.user
-      end
-
-      test "opt out clears tracking cookie" do
-        cookies["skadi_id"] = TRACKING_TOKEN
-
-        post opt_out_path
-
-        assert_response :ok
-        assert response.cookies.has_key?("skadi_id")
-        assert_nil response.cookies["skadi_id"]
       end
     end
   end

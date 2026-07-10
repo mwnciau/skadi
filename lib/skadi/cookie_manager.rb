@@ -1,7 +1,8 @@
 module Skadi
   class CookieManager
-    OPT_OUT_KEY = "skadi_tracking_opt_out"
+    ANONYMITY_SET_KEY = "skadi_anonymity_set"
     TRACKING_TOKEN_KEY = "skadi_id"
+    TRACK_USER_KEY = "skadi_track_user"
     UUID_REGEX = /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
 
     # @return [ActionDispatch::Cookies::CookieJar]
@@ -13,29 +14,36 @@ module Skadi
     end
 
     def renew!
-      set_cookie OPT_OUT_KEY, "1" if cookies.has_key? OPT_OUT_KEY
+      set_cookie ANONYMITY_SET_KEY, cookies[ANONYMITY_SET_KEY] if ["1", "0"].include?(cookies[ANONYMITY_SET_KEY])
+      set_cookie TRACK_USER_KEY, cookies[TRACK_USER_KEY] if ["1", "0"].include?(cookies[TRACK_USER_KEY])
 
       if cookies.has_key? TRACKING_TOKEN_KEY
         token = tracking_token
         if token
           set_cookie TRACKING_TOKEN_KEY, token
         else
-          # If the key is set, but the token is nil, then the cookie is malformed and we delete it
+          # If the key is set, but the token returned by `tracking_token()` is nil, then the cookie is malformed and we delete it
           delete_cookie TRACKING_TOKEN_KEY
         end
       end
     end
 
-    def tracking_opt_out = cookies[OPT_OUT_KEY] == "1"
+    def use_anonymity_sets
+      return true if cookies[ANONYMITY_SET_KEY] == "1"
+      return false if cookies[ANONYMITY_SET_KEY] == "0"
+    end
 
-    def tracking_opt_out=(new_value)
-      if !new_value
-        delete_cookie(OPT_OUT_KEY)
+    def use_anonymity_sets=(new_value)
+      set_cookie ANONYMITY_SET_KEY, new_value ? "1" : "0"
+    end
 
-        return
-      end
+    def track_users
+      return true if cookies[TRACK_USER_KEY] == "1"
+      return false if cookies[TRACK_USER_KEY] == "0"
+    end
 
-      set_cookie OPT_OUT_KEY, "1"
+    def track_users=(new_value)
+      set_cookie TRACK_USER_KEY, new_value ? "1" : "0"
     end
 
     def tracking_token

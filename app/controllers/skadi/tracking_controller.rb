@@ -61,10 +61,18 @@ module Skadi
     end
 
     private def handle_consent(consent)
-      if consent == true
-        skadi.consent!
-      elsif consent == false
-        skadi.opt_out!
+      return unless consent.is_a?(Hash)
+
+      if consent["cookie"] == true || consent["cookie"] == false
+        skadi.cookie_consent!(consent["cookie"])
+      end
+
+      if consent["anonymity_set"] == true || consent["anonymity_set"] == false
+        skadi.anonymity_set_consent!(consent["anonymity_set"])
+      end
+
+      if consent["user"] == true || consent["user"] == false
+        skadi.user_consent!(consent["user"])
       end
     end
 
