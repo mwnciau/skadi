@@ -9,9 +9,6 @@ module Skadi::Unit
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
 
         test "consent sets cookie" do
-          # Attach a visit to prevent an error when it tries to build one
-          skadi._attach(visit: build(:visit))
-
           skadi.user_consent!(true)
 
           assert_cookie "skadi_track_user", "1"
@@ -74,6 +71,17 @@ module Skadi::Unit
           skadi.user_consent!(false)
 
           assert_nil old_visit.reload.user_id
+        end
+
+        test "opt out with no visit" do
+          user = create :user
+          skadi.instance_variable_set(:@logged_in_user, user)
+
+          @request.cookies["skadi_track_user"] = "1"
+
+          skadi.user_consent!(false)
+
+          assert_cookie "skadi_track_user", "0"
         end
       end
     end

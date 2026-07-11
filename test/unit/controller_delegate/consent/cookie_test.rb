@@ -9,9 +9,6 @@ module Skadi::Unit
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
 
         test "consent sets cookie" do
-          # Attach a visit to prevent an error when it tries to build one
-          skadi._attach(visit: build(:visit))
-
           skadi.cookie_consent!(true)
 
           assert_cookie "skadi_id", Skadi::CookieManager::UUID_REGEX
@@ -62,6 +59,7 @@ module Skadi::Unit
           refute_nil view.visit
           assert_match Skadi::CookieManager::UUID_REGEX, view.visit.tracking_token
           assert_cookie "skadi_id", view.visit.tracking_token
+          assert view.visit.cookies_enabled
         end
 
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #

@@ -9,9 +9,6 @@ module Skadi::Unit
         # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
 
         test "consent sets cookie" do
-          # Attach a visit to prevent an error when it tries to build one
-          skadi._attach(visit: build(:visit))
-
           skadi.anonymity_set_consent!(true)
 
           assert_cookie "skadi_anonymity_set", "1"
@@ -26,13 +23,14 @@ module Skadi::Unit
           assert_match Skadi::CookieManager::UUID_REGEX, visit.tracking_token
         end
 
-        test "consent does not overwrite existing token" do
-          visit = build :visit, tracking_token: TRACKING_TOKEN
+        test "consent does not overwrite token from cookie" do
+          visit = build :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
           skadi._attach(visit: visit)
 
           skadi.anonymity_set_consent!(true)
 
           assert_match TRACKING_TOKEN, visit.tracking_token
+          assert visit.cookies_enabled
         end
 
         test "consent builds visit if one doesn't exist" do

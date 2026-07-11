@@ -32,7 +32,11 @@ module Skadi
     # @param user [ActiveModel::Model, nil]
     # @param request [ActionDispatch::Request]
     # @return [Skadi::Visit]
-    def self.build_from(tracking_token, user_id = nil, request = nil)
+    def self.build_from(tracking_token, user_id = nil, request = nil, cookies_enabled: nil)
+      if cookies_enabled.nil?
+        cookies_enabled = request&.cookie_jar&.key?("skadi_id") || false
+      end
+
       new(
         visit_token: SecureRandom.uuid_v7,
         tracking_token: tracking_token,
@@ -48,7 +52,7 @@ module Skadi
         utm_campaign: request ? request.query_parameters["utm_campaign"] : nil,
 
         verified: false,
-        cookies_enabled: request&.cookie_jar&.key?("skadi_id") || false,
+        cookies_enabled: cookies_enabled,
       )
     end
   end
