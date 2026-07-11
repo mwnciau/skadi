@@ -14,6 +14,12 @@ module Skadi::Unit
           assert_cookie "skadi_anonymity_set", "1"
         end
 
+        test "cookie grants consent" do
+          @request.cookies["skadi_anonymity_set"] = "1"
+
+          assert skadi.anonymity_set_consent?
+        end
+
         test "consent adds anonymity set token" do
           visit = build :visit, tracking_token: nil
           skadi._attach(visit: visit)
@@ -72,6 +78,29 @@ module Skadi::Unit
 
           assert_nil visit.tracking_token
           assert_nil old_visit.reload.tracking_token
+        end
+
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+        #        Configuration tests       #
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+
+        test "use_anonymisation_sets on by default" do
+          Skadi.configuration.use_anonymity_sets = true
+
+          skadi.send(:build_visit)
+
+          assert_equal anonymity_set, skadi.visit.tracking_token
+          assert skadi.anonymity_set_consent?
+        end
+
+        test "use_anonymisation_sets off by default" do
+          Skadi.configuration.use_anonymity_sets = false
+          @request.env["HTTP_REFERER"] = "force a visit to be created"
+
+          skadi.send(:build_visit)
+
+          assert_nil skadi.visit.tracking_token
+          refute skadi.anonymity_set_consent?
         end
       end
     end

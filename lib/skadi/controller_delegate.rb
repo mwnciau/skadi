@@ -164,6 +164,14 @@ module Skadi
       end
     end
 
+    def anonymity_set_consent?
+      cookie_value = cookie_manager.use_anonymity_sets
+      return cookie_value unless cookie_value.nil?
+
+      # There is no explicit consent or opt-out, so we use the configured default value
+      return Skadi.configuration.use_anonymity_sets
+    end
+
     # Set consent for tracking by cookie
     # @param [TrueClass, FalseClass] consent
     def cookie_consent!(consent)
@@ -199,6 +207,8 @@ module Skadi
       end
     end
 
+    def cookie_consent? = cookie_manager.tracking_token.present?
+
     # Set consent for tracking by logged in user
     # @param [TrueClass, FalseClass] consent
     def user_consent!(consent)
@@ -230,27 +240,24 @@ module Skadi
       end
     end
 
+    def user_consent?
+      cookie_value = cookie_manager.track_users
+      return cookie_value unless cookie_value.nil?
+
+      # There is no explicit consent or opt-out, so we use the configured default value
+      return Skadi.configuration.track_users
+    end
+
     private def build_visit
       user, has_utm_params, has_external_referrer = nil
 
       tracking_token = cookie_manager.tracking_token
-      cookie_consent = tracking_token.present?
 
-      if tracking_token.nil?
-        anonymity_set_consent = cookie_manager.use_anonymity_sets
-
-        # Either we have explicit consent to use anonymity sets
-        use_anonymity_sets = anonymity_set_consent == true ||
-          # Or there is no explicit opt-out and they are enabled by configuration
-          (anonymity_set_consent.nil? && Skadi.configuration.use_anonymity_sets)
-
-        if use_anonymity_sets
-          tracking_token = AnonymitySet.calculate(request.remote_ip, request.user_agent)
-        end
+      if tracking_token.nil? && anonymity_set_consent?
+        tracking_token = AnonymitySet.calculate(request.remote_ip, request.user_agent)
       end
 
-      # Only track the user if we have explicit consent
-      if cookie_manager.track_users == true
+      if user_consent?
         user = logged_in_user
       end
 
@@ -261,7 +268,7 @@ module Skadi
         @visit.user_id = user.id if user && @visit.user_id.nil?
 
         # Ensure the cookie consent status is up to date
-        @visit.cookies_enabled = cookie_consent
+        @visit.cookies_enabled = cookie_consent?
 
         return
       end

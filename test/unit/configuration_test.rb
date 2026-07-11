@@ -24,6 +24,12 @@ module Skadi::Unit
       assert_values_are_invalid(:use_anonymity_sets, nil, "true", "false", 123)
     end
 
+    test "track_users validates" do
+      assert_values_are_valid(:track_users, true, false)
+
+      assert_values_are_invalid(:track_users, nil, "true", "false", 123)
+    end
+
     test "anonymity_set_cache_key validates" do
       assert_values_are_valid(:anonymity_set_cache_key, "key", "cache key")
 

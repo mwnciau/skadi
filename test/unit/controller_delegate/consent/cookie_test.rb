@@ -14,6 +14,12 @@ module Skadi::Unit
           assert_cookie "skadi_id", Skadi::CookieManager::UUID_REGEX
         end
 
+        test "cookie grants consent" do
+          @request.cookies["skadi_id"] = TRACKING_TOKEN
+
+          assert skadi.cookie_consent?
+        end
+
         test "consent sets cookies_enabled" do
           visit = build :visit, tracking_token: nil
           skadi._attach(visit: visit)

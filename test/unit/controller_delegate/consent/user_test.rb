@@ -14,6 +14,12 @@ module Skadi::Unit
           assert_cookie "skadi_track_user", "1"
         end
 
+        test "cookie grants consent" do
+          @request.cookies["skadi_track_user"] = "1"
+
+          assert skadi.user_consent?
+        end
+
         test "consent sets user_id" do
           visit = build :visit, tracking_token: nil
           skadi._attach(visit: visit)
@@ -82,6 +88,35 @@ module Skadi::Unit
           skadi.user_consent!(false)
 
           assert_cookie "skadi_track_user", "0"
+        end
+
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+        #        Configuration tests       #
+        # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-= #
+
+        test "track_users on by default" do
+          Skadi.configuration.track_users = true
+
+          user = create :user
+          skadi.instance_variable_set(:@logged_in_user, user)
+
+          skadi.send(:build_visit)
+
+          assert_equal user, skadi.visit.user
+          assert skadi.user_consent?
+        end
+
+        test "track_users off by default" do
+          Skadi.configuration.track_users = false
+          @request.env["HTTP_REFERER"] = "force a visit to be created"
+
+          user = create :user
+          skadi.instance_variable_set(:@logged_in_user, user)
+
+          skadi.send(:build_visit)
+
+          assert_nil skadi.visit.user
+          refute skadi.user_consent?
         end
       end
     end

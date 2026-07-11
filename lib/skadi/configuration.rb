@@ -15,13 +15,22 @@ module Skadi
       validators[attribute] = {expecting: expecting, default: default, validator: block}
     end
 
-    # An anonymity set is a token keeps track of a user using a hash of their IP address and User Agent. A
-    # cryptographic pepper is added to the hash, which, when discarded, makes the generated token no longer able to
-    # be used to track the user. If disabled, views and events will not be linked to a visitor unless a tracking cookie
-    # is set. Defaults to false.
+    # When enabled, users will automatically be tracked by their anonymity set.
+    # An anonymity set keeps track of a user using a hash of their IP address and User Agent. A cryptographic pepper is added to the hash, which, when discarded, makes the generated token no longer able to be used to track the user.
+    # When disabled, views and events will not be linked to a visitor without explicit consent to use anonymity sets or tracking cookies.
+    # This option defined the default behaviour for using anonymity sets, but the consent cookie, if it exists, will always take precedence over this configuration option.
+    # Defaults to false.
     # @return [Boolean]
     attr_accessor :use_anonymity_sets
     validates(:use_anonymity_sets, "boolean", default: false) { |it| it == true || it == false }
+
+    # When enabled, visits will be tracked by using the logged in user. See the :user_model and :user_method configuration options.
+    # When disabled, users will not be saved to visits without explicit consent.
+    # This option defined the default behaviour for tracking users, but the consent cookie, if it exists, will always take precedence over this configuration option.
+    # Defaults to false.
+    # @return [Boolean]
+    attr_accessor :track_users
+    validates(:track_users, "boolean", default: false) { |it| it == true || it == false }
 
     attr_accessor :anonymity_set_cache_key
     validates(:anonymity_set_cache_key, "string", default: "skadi/anonymity_set_pepper") { |it| it.is_a?(String) && it.present? }

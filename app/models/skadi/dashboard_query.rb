@@ -95,9 +95,9 @@ module Skadi
           if dataset_filters["visit"]["tracked"] == true
             query = query.where("skadi_visits.tracking_token IS NOT NULL")
           elsif dataset_filters["visit"]["tracked"] == "anonymity_set"
-            # Todo: update the database to allow for tracking type detection
+            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
           elsif dataset_filters["visit"]["tracked"] == "cookie"
-            # Todo: update the database to allow for tracking type detection
+            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
           end
         end
 
