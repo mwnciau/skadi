@@ -25,12 +25,12 @@ onMount(() => {
 });
 
 // Keep the chart data up to date when the datasets change
-$effect(() => {
-  fetchData(chartConfig.id);
-
-  updateChartData();
-  chart.update();
-})
+// $effect(() => {
+//   fetchData();
+//
+//   updateChartData();
+//   chart.update();
+// })
 
 $effect(() => {
   updateChartAxesDisplay();
@@ -48,19 +48,20 @@ $effect(() => {
   updateChartTitle();
   chart.update();
 })
+
 const updateChartTitle = () => {
   chart.options.plugins.title.text = chartConfig.title;
 }
 
-const fetchData = (chartId: string) => {
-  fetch(`/skadi/data/${chartId}`)
+const fetchData = () => {
+  const chartConfigJSON = encodeURIComponent(JSON.stringify(chartConfig));
+  fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}`)
     .then((response) => response.json())
     .then((items) => {
-      data = Object.fromEntries(
-        chartConfig.datasets.map((dataset: Dataset) => [dataset.id, []])
-      );
+      data = {};
 
       for (const item of items) {
+        data[item.id] ??= [];
         data[item.id].push({x: item.label, y: item.count});
       }
 
@@ -78,16 +79,45 @@ const updateChartData = () => {
 
   chart.data.datasets = chartConfig.datasets
     .filter((dataset: Dataset) => dataset.visible !== false)
-    .map((dataset: Dataset) => ({
-    label: dataset.label,
-    data: data[dataset.id],
-    yAxisID: dataset.axis === "right" ? "y1" : "y",
-    fill: false,
-  }));
+    .flatMap((dataset: Dataset) => {
+      if (dataset.type === "views" && dataset.split_by) {
+        const splitIds = Object.keys(data)
+          .filter((id) => id.startsWith(dataset.id))
+          .map((id) => id.split(" ", 2)[1]);
+        console.log("dataset", dataset);
+        console.log("splitIds", splitIds);
+
+        return splitIds.map((splitId) => ({
+          label: dataset.label + " " + splitId,
+          data: data[dataset.id + " " + splitId],
+          yAxisID: dataset.axis === "right" ? "y1" : "y",
+          fill: false,
+        }))
+      }
+
+      if (!data[dataset.id]) {
+        return [];
+      }
+
+      return {
+        label: dataset.label,
+        data: data[dataset.id],
+        yAxisID: dataset.axis === "right" ? "y1" : "y",
+        fill: false,
+      }
+    });
 }
+
+const reloadChart = () => {
+  fetchData();
+}
+
+onMount(() => {
+  fetchData();
+})
 </script>
 
-<ChartEditor {chartConfig} />
+<ChartEditor {chartConfig} reloadChart={reloadChart} />
 <div class="relative w-full aspect-video">
   <canvas bind:this={canvas}></canvas>
 </div>

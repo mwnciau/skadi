@@ -1,9 +1,5 @@
 export type DateTime = string;
 
-type CommonFilter = {
-  verified?: boolean;
-}
-
 type CommonDataset = {
   id: string;
   label: string;
@@ -11,27 +7,26 @@ type CommonDataset = {
   axis?: "right" | "left";
 }
 
-export type ViewFilter = CommonFilter & {
-  action?: string;
-  controller?: string;
-  path?: string;
-  verb?: string;
-  visit?: boolean | VisitFilter;
-}
-
 export type ViewDataset = CommonDataset & {
   type: "views";
-  filters: ViewFilter;
-}
-
-export type VisitFilter = {
+  unique_visits?: boolean;
+  split_by?: "controller" | "controller_action" | "path" | "verb";
   verified?: boolean;
-  tracked?: true | "anonymity_set" | "cookie";
+
+  view_action?: string;
+  view_controller?: string;
+  view_path?: string;
+  view_verb?: string;
+
+  // Filter to only views that have visits, or specific types of visit
+  visit_tracking?: "any" | "anonymity_set" | "cookie";
 }
 
 export type VisitDataset = CommonDataset & {
   type: "visits";
-  filters: VisitFilter;
+  verified?: boolean;
+
+  visit_tracking?: "any" | "anonymity_set" | "cookie";
 }
 
 export type PercentageDataset = CommonDataset & {
@@ -40,7 +35,6 @@ export type PercentageDataset = CommonDataset & {
   denominator: string;
 }
 
-export type Filter = ViewFilter | VisitFilter;
 export type Dataset = ViewDataset | VisitDataset | PercentageDataset;
 
 export type ChartConfig = {

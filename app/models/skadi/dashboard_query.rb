@@ -3,15 +3,17 @@ module Skadi
     class << self
       GROUPINGS = {
         "day" => "DATE(%s.created_at)"
+        # TODO: add week and month
       }
+      VIEW_SPLIT_BY = ["controller", "controller_action", "path", "verb"]
 
-      def chart_query(chart, query_filters)
+      def chart_query(chart, global_filters)
         queries = chart["datasets"].filter_map do |dataset|
           case dataset["type"]
           when "visits"
-            build_query(Skadi::Visit, dataset, query_filters)
+            build_query(Skadi::Visit, dataset, chart)
           when "views"
-            build_query(Skadi::View, dataset, query_filters)
+            build_query(Skadi::View, dataset, chart)
           when "percentage"
             # Percentage charts are handled by the frontend using other datasets
             next
@@ -25,45 +27,66 @@ module Skadi
         end
       end
 
-      private def build_query(model, dataset, query_filters)
-        # This is a SQL safe string because it can only contain the values in `GROUPINGS`
-        safe_grouping = (GROUPINGS[dataset["group"]] || GROUPINGS["day"]) % model.table_name
-
-        safe_id_node = Arel::Nodes.build_quoted(dataset["id"]).as('id')
-
-        query = model
-          .select(safe_id_node, "#{safe_grouping} AS label", "COUNT(*) AS count")
-          .group(safe_grouping)
-
-        query = apply_global_filters(query, dataset["filters"], query_filters)
+      private def build_query(model, dataset, chart)
+        query = model.all
+        query = add_query_select(query, model, dataset, chart)
+        query = apply_global_filters(query, dataset, chart)
 
         query = case model.to_s
           when "Skadi::View"
-            apply_view_filters(query, dataset["filters"], query_filters)
+            apply_view_filters(query, dataset)
+          when "Skadi::Visit"
+            apply_visit_filters(query, dataset)
           else query
         end
 
         return query
       end
 
-      private def apply_global_filters(query, dataset_filters, query_filters)
+      private def add_query_select(query, model, dataset, chart)
+        # This is a SQL safe string because it can only contain the values in `GROUPINGS`
+        label = (GROUPINGS[chart["group"]] || GROUPINGS["day"]) % model.table_name
+        safe_group = [label]
+
+        safe_dataset_id = model.connection.quote(dataset["id"])
+
+        if model == Skadi::View && dataset["split_by"] && VIEW_SPLIT_BY.include?(dataset["split_by"])
+          split_columns = if dataset["split_by"] == "controller_action"
+            ["skadi_views.controller", "skadi_views.action"]
+          else
+            ["skadi_views.#{dataset["split_by"]}"]
+          end
+
+          safe_dataset_id = "CONCAT(#{safe_dataset_id}, ' ', #{split_columns.join(", '::', ")})"
+          safe_group.push(*split_columns)
+        end
+
+        count = if model == Skadi::View && dataset["unique_visits"] == true
+          "COUNT(DISTINCT skadi_views.visit_id) AS count"
+        else
+          "COUNT(*) AS count"
+        end
+
+        query.select("#{safe_dataset_id} as id", "#{label} AS label", count)
+          .group(safe_group)
+      end
+
+      private def apply_global_filters(query, dataset, chart)
         # General rule throughout this method: if it exists in the query filters, use that. Otherwise, use
         # the dataset filters.
 
         table = query.arel_table
 
         verified = false
-        if query_filters.key?("verified")
-          verified = true if query_filters["verified"] == true
-        elsif dataset_filters.key?("verified")
-          verified = true if dataset_filters["verified"] == true
+        if dataset.key?("verified")
+          verified = true if dataset["verified"] == true
         end
         query = query.where(verified: true) if verified
 
-        date_filters = if query_filters.key?("date_from") || query_filters.key?("date_to")
-          query_filters
-        elsif dataset_filters.key?("date_from") || dataset_filters.key?("date_to")
-          dataset_filters
+        date_filters = if chart.key?("date_from") || chart.key?("date_to")
+          chart
+        elsif dataset.key?("date_from") || dataset.key?("date_to")
+          dataset
         end
         from = parse_time(date_filters["date_from"]) if date_filters&.key?("date_from")
         to = parse_time(date_filters["date_to"]) if date_filters&.key?("date_to")
@@ -73,32 +96,32 @@ module Skadi
         return query
       end
 
-      private def apply_view_filters(query, dataset_filters, query_filters)
-        query_filter_fields = ["path", "action", "method", "verb"]
+      private def apply_view_filters(query, dataset_filters)
+        query_filter_fields = ["path", "controller", "action", "verb"]
 
         query_filter_fields.each do |field|
-          if query_filters.key?(field)
-            query = query.where(field => query_filters[field])
-          elsif dataset_filters.key?(field)
-            query = query.where(field => dataset_filters[field])
+          key = "view_#{field}"
+          if dataset_filters.key?(key)
+            query = query.where(field => dataset_filters[key])
           end
         end
 
-        if dataset_filters["visit"] == true
-          query = query.where("visit_id IS NOT NULL")
-        elsif dataset_filters["visit"].is_a? Hash
+        if dataset_filters["visit_tracking"]
           query = query.joins(:visit)
 
-          if dataset_filters["visit"]["verified"] == true
-            query = query.where("skadi_visits.verified = true")
-          end
-          if dataset_filters["visit"]["tracked"] == true
-            query = query.where("skadi_visits.tracking_token IS NOT NULL")
-          elsif dataset_filters["visit"]["tracked"] == "anonymity_set"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
-          elsif dataset_filters["visit"]["tracked"] == "cookie"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
-          end
+          query = apply_visit_filters(query, dataset_filters)
+        end
+
+        return query
+      end
+
+      private def apply_visit_filters(query, dataset_filters)
+        if dataset_filters["visit_tracking"] == "any"
+          query = query.where("skadi_visits.tracking_token IS NOT NULL")
+        elsif dataset_filters["visit_tracking"] == "anonymity_set"
+          query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
+        elsif dataset_filters["visit_tracking"] == "cookie"
+          query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
         end
 
         return query

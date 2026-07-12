@@ -2,8 +2,9 @@
 import type {ChartConfig} from "../../types";
 import DatasetEditor from "./DatasetEditor.svelte";
 
-const { chartConfig }: {
+const { chartConfig, reloadChart }: {
   chartConfig: ChartConfig;
+  reloadChart: () => void;
 } = $props();
 
 let persistedChartConfigString = $state(JSON.stringify(chartConfig));
@@ -14,7 +15,6 @@ const addDataset = () => {
     id: crypto.randomUUID(),
     label: `Dataset ${chartConfig.datasets.length + 1}`,
     type: "views",
-    filters: {},
   });
 }
 
@@ -45,9 +45,6 @@ const deleteDataset = (index: number) => () => {
   </div>
 
   {#if unsavedChanges}
-    <button type="button" class="emph mt-4">Save changes</button>
+    <button type="button" class="emph mt-4" onclick={reloadChart}>Preview changes</button>
   {/if}
-
-
-  <pre>{JSON.stringify(chartConfig, null, 2)}</pre>
 </div>

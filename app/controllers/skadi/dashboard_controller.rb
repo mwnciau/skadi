@@ -12,7 +12,9 @@ module Skadi
       query_filters = params.permit(:date_from, :date_to, :verified)
 
       dashboard = Skadi::Dashboard.new
-      chart_data = dashboard.chart_data(params[:chart_id], query_filters.to_h)
+
+      # Todo: select by ID by default, optionally use config if user is admin
+      chart_data = dashboard.chart_data(JSON.parse(params[:config]), query_filters.to_h)
 
       render json: chart_data
     end

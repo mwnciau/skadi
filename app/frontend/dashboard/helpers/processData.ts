@@ -9,6 +9,13 @@ export const processDerivedDatasets = (datasets: Dataset[], data: Record<string,
       let n = 0;
       let d = 0;
 
+      if (!numerator || !denominator) {
+        console.error(`Could not find numerator or denominator for percentage dataset ${dataset.id}`);
+        delete data[dataset.id];
+
+        continue;
+      }
+
       // Loop through the sorted numerator and denominator arrays and calculate a percentage
       // where the x values both exist.
       while (n < numerator.length && d < denominator.length) {

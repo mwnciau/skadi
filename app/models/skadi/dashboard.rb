@@ -15,38 +15,97 @@ module Skadi
                 "id" => "visits",
                 "label" => "Visits",
                 "type" => "visits",
-                "filters" => {"verified" => true},
+                "verified" => true,
               },
               {
-                "id" => "checkouts",
+                "id" => "checkouts1",
                 "label" => "Checkouts",
                 "type" => "views",
-                "visible" => false,
-                "filters" => {
-                  "verified" => true,
-                  "path" => "/checkout",
-                  "visit" => {
-                    tracked: true,
-                  },
-                },
+                "visible" => true,
+
+                "unique_visits" => true,
+
+                "verified" => true,
+
+                "view_path" => "/checkout",
+                "view_verb" => "PUT",
               },
               {
-                "id" => "conversion",
-                "label" => "Conversion rate",
-                "type" => "percentage",
-                "numerator" => "checkouts",
-                "denominator" => "visits",
+                "id" => "checkouts2",
+                "label" => "Views",
+                "type" => "views",
+                "visible" => true,
+
+                "unique_visits" => true,
+
+                "verified" => true,
               },
+              # {
+              #   "id" => "checkouts1",
+              #   "label" => "Checkouts unique",
+              #   "type" => "views",
+              #   "visible" => true,
+              #
+              #   "unique_visits" => true,
+              #   "split_by" => "verb",
+              #
+              #   "verified" => true,
+              #
+              #   "view_path" => "/checkout",
+              #   "view_verb" => "PUT",
+              #
+              #   "visit_tracking" => "any",
+              # },
+              # {
+              #   "id" => "checkouts1",
+              #   "label" => "Checkouts",
+              #   "type" => "views",
+              #   "visible" => false,
+              #
+              #   "verified" => true,
+              #
+              #   "view_path" => "/checkout",
+              #   "view_verb" => "PUT",
+              #
+              #   "visit_tracking" => "any",
+              # },
+              # {
+              #   "id" => "views",
+              #   "label" => "Checkouts grouped",
+              #   "type" => "views",
+              #   "visible" => true,
+              #
+              #   "verified" => true,
+              #   "unique_visits" => true,
+              #
+              #   "view_path" => "/checkout",
+              #   "view_verb" => "PUT",
+              #
+              #   "visit_tracking" => "any",
+              # },
+              # {
+              #   "id" => "conversion",
+              #   "label" => "Conversion rate",
+              #   "type" => "percentage",
+              #   "numerator" => "checkouts2",
+              #   "denominator" => "visits",
+              # },
             ],
           },
         ],
       },
     ]
 
-    def config = DASHBOARD_CONFIG
+    def config
+      @config ||= DASHBOARD_CONFIG
+    end
 
-    def chart_data(chart_id, filters)
-      chart = find_item_by_id(DASHBOARD_CONFIG, chart_id)
+    def config=(config)
+      @config = config
+    end
+
+    def chart_data(chart, filters)
+      #chart = find_item_by_id(DASHBOARD_CONFIG, chart_id)
 
       return DashboardQuery.chart_query(chart, filters) unless chart.nil?
     end

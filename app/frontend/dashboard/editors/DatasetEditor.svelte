@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type {Dataset, Filter} from "../../types";
+  import type {Dataset} from "../../types";
 import Switch from "../components/Switch.svelte";
 
 const { dataset, onDelete, index }: {
@@ -8,27 +8,19 @@ const { dataset, onDelete, index }: {
   index: number;
 } = $props();
 
-const toggleVisible = () => {
-  if (dataset.visible === false) {
-    delete dataset.visible;
+const toggleFilterBoolean = (key: string, defaultValue = false) => {
+  if (dataset[key] === !defaultValue) {
+    delete dataset[key];
   } else {
-    dataset.visible = false;
+    dataset[key] = !defaultValue;
   }
 }
 
-const toggleVerified = () => {
-  if (dataset.filters.verified) {
-    delete dataset.filters.verified;
-  } else {
-    dataset.filters.verified = true;
-  }
-}
-
-const setFilterString = (filter: keyof Filter, value: string) => {
+const setFilterString = (filter: string, value: string) => {
   if (value) {
-    dataset.filters[filter] = value;
+    dataset[filter] = value;
   } else {
-    delete dataset.filters[filter];
+    delete dataset[filter];
   }
 }
 </script>
@@ -55,20 +47,75 @@ const setFilterString = (filter: keyof Filter, value: string) => {
 
   <label>
     Show on chart
-    <Switch value={dataset.visible === false} onToggle={toggleVisible} />
+    <Switch value={dataset.visible !== false} onToggle={() => toggleFilterBoolean("visible", true)} />
   </label>
 
-  <p class="mt-4 text-xs font-semibold text-ice-500">Filters</p>
+  {#if dataset.type === "views" || dataset.type === "visits"}
+    <p class="mt-4 text-xs font-semibold text-ice-500">Filters</p>
 
-  <label>
-    Show only verified views
-    <Switch value={dataset.filters?.verified === true} onToggle={toggleVerified} />
-  </label>
+
+    <label>
+      Show only verified {dataset.type}
+      <Switch value={dataset?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
+    </label>
+  {/if}
 
   {#if dataset.type === "views"}
     <label>
+      Split by
+      <select onchange="{event => setFilterString("split_by", event.target.value)}" value={dataset?.split_by}>
+        <option></option>
+        <option value="controller">Controller</option>
+        <option value="controller_action">Controller and action</option>
+        <option value="path">Path</option>
+        <option value="verb">Verb</option>
+      </select>
+    </label>
+
+    <label>
       Path
-      <input type="text" onkeyup={event => setFilterString("path", event.target.value)} value={dataset.filters?.path} />
+      <input type="text" onkeyup={event => setFilterString("view_path", event.target.value)} value={dataset?.view_path} />
+    </label>
+
+    <label>
+      Controller
+      <input type="text" onkeyup={event => setFilterString("view_controller", event.target.value)} value={dataset?.view_controller} />
+    </label>
+
+    <label>
+      Action
+      <input type="text" onkeyup={event => setFilterString("view_action", event.target.value)} value={dataset?.view_action} />
+    </label>
+
+    <label>
+      Verb
+      <select onchange="{event => setFilterString("view_verb", event.target.value)}" value={dataset?.view_verb}>
+        <option></option>
+        <option>GET</option>
+        <option>POST</option>
+        <option>PUT</option>
+        <option>PATCH</option>
+        <option>DELETE</option>
+      </select>
+    </label>
+
+    <p class="mt-4 text-xs font-semibold text-ice-500">Visit filters</p>
+
+    <label>
+      One view per visit
+      <Switch value={dataset?.unique_visits === true} onToggle={() => toggleFilterBoolean("unique_visits")} />
+    </label>
+  {/if}
+
+  {#if dataset.type === "visits" || dataset.type === "views"}
+    <label>
+      Visit tracking
+      <select onchange="{event => setFilterString("visit_tracking", event.target.value)}" value={dataset?.visit_tracking}>
+        <option value="">Show all visits</option>
+        <option value="any">Show visits tracked by anonymity set or cookie</option>
+        <option value="anonymity_set">Show visits tracked by anonymity set</option>
+        <option value="cookie">Show visits tracked by cookie</option>
+      </select>
     </label>
   {/if}
 </div>
