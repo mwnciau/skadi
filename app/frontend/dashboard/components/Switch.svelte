@@ -1,7 +1,14 @@
 <script lang="ts">
-const { value, onToggle } = $props<{
+const {
+  value,
+  onToggle,
+  labelOn = "YES",
+  labelOff = "NO",
+} = $props<{
   value: boolean;
   onToggle: () => void;
+  labelOn?: string;
+  labelOff?: string;
 }>();
 
 const handleCheckboxChange = (e: Event) => {
@@ -38,7 +45,7 @@ const handleCheckboxChange = (e: Event) => {
       {value && "translate-x-6.5"}
     "
     aria-hidden={!value}
-  >YES</span>
+  >{labelOn}</span>
   <span
     class="
       absolute top-1/2 -right-4.75
@@ -47,5 +54,5 @@ const handleCheckboxChange = (e: Event) => {
       {value || "-translate-x-6.5"}
     "
     aria-hidden={value}
-  >NO</span>
+  >{labelOff}</span>
 </button>

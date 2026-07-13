@@ -27,7 +27,7 @@
   selectTab={tab => selectedTab = tab}
   newTab={newTab}
 />
-<main class="w-full max-w-256 mx-auto">
+<main class="w-full max-w-256 mx-auto flex flex-col gap-4 pt-8">
   {#each selectedDashboard?.children as chart}
     <LineChart chartConfig={chart} />
   {/each}

@@ -65,7 +65,8 @@
 
   button:not(.unstyled) {
     @apply
-      flex gap-2 px-4 pt-1.5 pb-1 w-max
+      flex gap-2 items-center
+      px-4 pt-1.5 pb-1 w-max
       border-b-4 border-black/10 backdrop-brightness-95 backdrop-saturate-800
       text-black/80 text-lg font-semibold
       cursor-pointer translate-0
@@ -82,7 +83,7 @@
     }
 
     &.sm {
-      @apply px-3 pt-1 pb-0.75 text-base font-medium;
+      @apply px-3 pt-1 gap-1 pb-0.75 text-base font-medium;
     }
 
     &.emph {
@@ -109,19 +110,19 @@
 
   nav {
     @apply
-    flex items-start gap-4
-    w-full max-w-256
-    mx-auto
-    border-b-2 border-ice-100
+      flex items-start gap-4
+      w-full max-w-256
+      mx-auto
+      border-b-2 border-ice-100
     ;
   }
 
   nav > a,
   nav > button {
     @apply
-    pb-2.5 -mb-0.5
-    border-0 backdrop-brightness-100 backdrop-saturate-100
-    text-base font-semibold
+      pb-2.5 -mb-0.5
+      border-0 backdrop-brightness-100 backdrop-saturate-100
+      text-base font-semibold
     ;
 
     &:active {

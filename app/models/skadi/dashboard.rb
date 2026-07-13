@@ -18,7 +18,7 @@ module Skadi
                 "verified" => true,
               },
               {
-                "id" => "checkouts1",
+                "id" => "checkouts",
                 "label" => "Checkouts",
                 "type" => "views",
                 "visible" => true,
@@ -28,10 +28,9 @@ module Skadi
                 "verified" => true,
 
                 "view_path" => "/checkout",
-                "view_verb" => "PUT",
               },
               {
-                "id" => "checkouts2",
+                "id" => "views",
                 "label" => "Views",
                 "type" => "views",
                 "visible" => true,
@@ -39,6 +38,14 @@ module Skadi
                 "unique_visits" => true,
 
                 "verified" => true,
+              },
+              {
+                "id" => "conversion",
+                "label" => "Conversion rate",
+                "type" => "percentage",
+                "numerator" => "checkouts",
+                "denominator" => "visits",
+                "axis" => "right",
               },
               # {
               #   "id" => "checkouts1",
@@ -82,13 +89,6 @@ module Skadi
               #   "view_verb" => "PUT",
               #
               #   "visit_tracking" => "any",
-              # },
-              # {
-              #   "id" => "conversion",
-              #   "label" => "Conversion rate",
-              #   "type" => "percentage",
-              #   "numerator" => "checkouts2",
-              #   "denominator" => "visits",
               # },
             ],
           },

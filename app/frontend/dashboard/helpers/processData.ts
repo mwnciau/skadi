@@ -16,6 +16,8 @@ export const processDerivedDatasets = (datasets: Dataset[], data: Record<string,
         continue;
       }
 
+      data[dataset.id] = [];
+
       // Loop through the sorted numerator and denominator arrays and calculate a percentage
       // where the x values both exist.
       while (n < numerator.length && d < denominator.length) {
