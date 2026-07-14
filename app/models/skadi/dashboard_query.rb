@@ -5,7 +5,7 @@ module Skadi
         "day" => "DATE(%s.created_at)"
         # TODO: add week and month
       }
-      VIEW_SPLIT_BY = ["controller", "controller_action", "path", "verb"]
+      VIEW_SPLIT_BY = ["controller", "controller_action", "path", "verb", "version"]
 
       def chart_query(chart, global_filters)
         queries = chart["datasets"].filter_map do |dataset|
@@ -14,6 +14,8 @@ module Skadi
             build_query(Skadi::Visit, dataset, chart)
           when "views"
             build_query(Skadi::View, dataset, chart)
+          when "events"
+            build_query(Skadi::Event, dataset, chart)
           when "percentage"
             # Percentage charts are handled by the frontend using other datasets
             next
@@ -33,10 +35,12 @@ module Skadi
         query = apply_global_filters(query, dataset, chart)
 
         query = case model.to_s
-          when "Skadi::View"
-            apply_view_filters(query, dataset)
           when "Skadi::Visit"
-            apply_visit_filters(query, dataset)
+            apply_visit_filters(query, dataset, chart)
+          when "Skadi::View"
+            apply_view_filters(query, dataset, chart)
+          when "Skadi::Event"
+            apply_event_filters(query, dataset, chart)
           else query
         end
 
@@ -50,19 +54,22 @@ module Skadi
 
         safe_dataset_id = model.connection.quote(dataset["id"])
 
-        if model == Skadi::View && dataset["split_by"] && VIEW_SPLIT_BY.include?(dataset["split_by"])
+        valid_split_by = false
+        valid_split_by ||= model == Skadi::View && dataset["split_by"].present? && VIEW_SPLIT_BY.include?(dataset["split_by"])
+        valid_split_by ||= model == Skadi::Event && dataset["split_by"] == "name"
+        if valid_split_by
           split_columns = if dataset["split_by"] == "controller_action"
-            ["skadi_views.controller", "skadi_views.action"]
+            ["#{model.table_name}.controller", "#{model.table_name}.action"]
           else
-            ["skadi_views.#{dataset["split_by"]}"]
+            ["#{model.table_name}.#{dataset["split_by"]}"]
           end
 
           safe_dataset_id = "CONCAT(#{safe_dataset_id}, ' ', #{split_columns.join(", '::', ")})"
           safe_group.push(*split_columns)
         end
 
-        count = if model == Skadi::View && dataset["unique_visits"] == true
-          "COUNT(DISTINCT skadi_views.visit_id) AS count"
+        count = if (model == Skadi::View || model == Skadi::Event) && chart["unique_visits"] == true
+          "COUNT(DISTINCT #{model.table_name}.visit_id) AS count"
         else
           "COUNT(*) AS count"
         end
@@ -77,12 +84,6 @@ module Skadi
 
         table = query.arel_table
 
-        verified = false
-        if dataset.key?("verified")
-          verified = true if dataset["verified"] == true
-        end
-        query = query.where(verified: true) if verified
-
         date_filters = if chart.key?("date_from") || chart.key?("date_to")
           chart
         elsif dataset.key?("date_from") || dataset.key?("date_to")
@@ -96,32 +97,66 @@ module Skadi
         return query
       end
 
-      private def apply_view_filters(query, dataset_filters)
-        query_filter_fields = ["path", "controller", "action", "verb"]
+      private def apply_visit_filters(query, dataset, chart)
+        query = query.where(verified: true) if chart["verified"] == true
+
+        query = apply_common_visit_filters(query, dataset, chart)
+
+        return query
+      end
+
+      private def apply_view_filters(query, dataset, chart)
+        query_filter_fields = ["path", "controller", "action", "verb", "version"]
+
+        query = query.where(verified: true) if chart["verified"] == true
 
         query_filter_fields.each do |field|
           key = "view_#{field}"
-          if dataset_filters.key?(key)
-            query = query.where(field => dataset_filters[key])
+          if dataset.key?(key)
+            query = query.where(field => dataset[key])
           end
         end
 
-        if dataset_filters["visit_tracking"]
+        if chart["visit_tracking"].present?
           query = query.joins(:visit)
 
-          query = apply_visit_filters(query, dataset_filters)
+          query = apply_common_visit_filters(query, dataset, chart)
         end
 
         return query
       end
 
-      private def apply_visit_filters(query, dataset_filters)
-        if dataset_filters["visit_tracking"] == "any"
+      private def apply_common_visit_filters(query, _dataset, chart)
+        if chart["visit_tracking"] == "any"
           query = query.where("skadi_visits.tracking_token IS NOT NULL")
-        elsif dataset_filters["visit_tracking"] == "anonymity_set"
+        elsif chart["visit_tracking"] == "anonymity_set"
           query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
-        elsif dataset_filters["visit_tracking"] == "cookie"
+        elsif chart["visit_tracking"] == "cookie"
           query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
+        end
+
+        return query
+      end
+
+      private def apply_event_filters(query, dataset, chart)
+        if dataset.key?("event_name")
+          query = query.where(name: dataset["event_name"])
+        end
+
+        if chart["visit_tracking"] || chart["verified"] == true || chart["unique_visits"] == true
+          query = query.left_joins(:visit)
+
+          query = apply_common_visit_filters(query, dataset, chart)
+
+          if chart["verified"] == true
+            # Either this visit is linked to a verified visit, or it is not linked at all
+            query = query.where("skadi_visits.id IS NULL OR skadi_visits.verified = TRUE")
+          end
+
+          if chart["unique_visits"] == true
+            # If we are looking for unique visits, then we need to be linked to a visit
+            query = query.where("skadi_visits.id IS NOT NULL")
+          end
         end
 
         return query

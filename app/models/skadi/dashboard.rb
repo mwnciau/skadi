@@ -10,22 +10,22 @@ module Skadi
             "type" => "line",
             "title" => "Visits and Checkouts",
             "group" => "day",
+
+            "verified" => true,
+            "unique_visits" => true,
+            "visit_tracking" => "any",
+
             "datasets" => [
               {
                 "id" => "visits",
                 "label" => "Visits",
                 "type" => "visits",
-                "verified" => true,
               },
               {
                 "id" => "checkouts",
                 "label" => "Checkouts",
                 "type" => "views",
                 "visible" => true,
-
-                "unique_visits" => true,
-
-                "verified" => true,
 
                 "view_path" => "/checkout",
               },
@@ -34,10 +34,6 @@ module Skadi
                 "label" => "Views",
                 "type" => "views",
                 "visible" => true,
-
-                "unique_visits" => true,
-
-                "verified" => true,
               },
               {
                 "id" => "conversion",

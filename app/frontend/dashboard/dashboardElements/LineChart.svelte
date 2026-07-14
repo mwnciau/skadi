@@ -24,14 +24,6 @@ onMount(() => {
   return () => chart?.destroy();
 });
 
-// Keep the chart data up to date when the datasets change
-// $effect(() => {
-//   fetchData();
-//
-//   updateChartData();
-//   chart.update();
-// })
-
 $effect(() => {
   updateChartAxesDisplay();
   chart.update();
@@ -80,15 +72,15 @@ const updateChartData = () => {
   chart.data.datasets = chartConfig.datasets
     .filter((dataset: Dataset) => dataset.visible !== false)
     .flatMap((dataset: Dataset) => {
-      if (dataset.type === "views" && dataset.split_by) {
+      if (dataset.split_by) {
         const splitIds = Object.keys(data)
           .filter((id) => id.startsWith(dataset.id))
-          .map((id) => id.split(" ", 2)[1]);
+          .map((id) => id.replace(/^[^ ]+ /, ""));
         console.log("dataset", dataset);
         console.log("splitIds", splitIds);
 
         return splitIds.map((splitId) => ({
-          label: dataset.label + " " + splitId,
+          label: (dataset.label + " " + splitId).trim(),
           data: data[dataset.id + " " + splitId],
           yAxisID: dataset.axis === "right" ? "y1" : "y",
           fill: false,

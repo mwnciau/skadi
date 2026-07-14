@@ -1,9 +1,18 @@
 <script lang="ts">
-import type {Dataset} from "../../types";
+  import type {
+    ChartConfig,
+    CommonDataset,
+    Dataset,
+    EventDataset,
+    PercentageDataset,
+    ViewDataset,
+    VisitDataset
+  } from "../../types";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
 
-const { dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
+const { chartConfig, dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
+  chartConfig: ChartConfig,
   dataset: Dataset;
   index: number;
   startOpen?: boolean;
@@ -13,9 +22,56 @@ const { dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMo
   onMoveDown?: null | (() => void);
 } = $props();
 
+let derivedSources = $derived.by(() => {
+  if (dataset.type !== "percentage") {
+    return [];
+  }
+
+  return chartConfig.datasets
+    .filter((dataset) => {
+      if (dataset.type === "percentage") {
+        return false;
+      }
+
+      if (dataset.split_by) {
+        return false;
+      }
+
+      return true;
+    })
+  .map((dataset) => ({
+    value: dataset.id,
+    label: dataset.label,
+  }))
+})
+
 let open = $state(startOpen);
 const toggleOpen = () => {
   open = !open;
+}
+
+const typeFields: {
+  common: (keyof CommonDataset)[]
+  visits: (keyof VisitDataset)[];
+  views: (keyof ViewDataset)[];
+  events: (keyof EventDataset)[];
+  percentage: (keyof PercentageDataset)[];
+} = {
+  common: ["id", "label", "visible", "axis", "type"],
+  visits: [],
+  views: ["split_by", "view_controller", "view_action", "view_path", "view_verb", "view_version"],
+  events: ["event_name"],
+  percentage: ["numerator", "denominator"],
+}
+const changeType = (newType: string) => {
+  dataset.type = newType as typeof dataset.type;
+
+  const types = typeFields.common + typeFields[newType];
+  for (const key of Object.keys(dataset)) {
+    if (!types.includes(key)) {
+      delete dataset[key];
+    }
+  }
 }
 
 const toggleFilterBoolean = (key: string, defaultValue = false) => {
@@ -61,9 +117,10 @@ const duplicate = () => {
 
         <label>
           Type
-          <select bind:value={dataset.type}>
+          <select onchange="{event => changeType(event.target.value)}" value={dataset.type}>
             <option value="visits">Visits</option>
             <option value="views">Views</option>
+            <option value="events">Events</option>
             <option value="percentage">Percentage</option>
           </select>
         </label>
@@ -89,13 +146,6 @@ const duplicate = () => {
           </label>
         {/if}
 
-        {#if dataset.type === "views" || dataset.type === "visits"}
-          <label>
-            Show only verified {dataset.type}
-            <Switch value={dataset?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
-          </label>
-        {/if}
-
         {#if dataset.type === "views"}
           <label>
             Split by
@@ -105,6 +155,7 @@ const duplicate = () => {
               <option value="controller_action">Controller and action</option>
               <option value="path">Path</option>
               <option value="verb">Verb</option>
+              <option value="version">Version</option>
             </select>
           </label>
 
@@ -124,6 +175,11 @@ const duplicate = () => {
           </label>
 
           <label>
+            Version
+            <input type="text" onkeyup={event => setFilterString("view_version", event.target.value)} value={dataset?.view_version} />
+          </label>
+
+          <label>
             Verb
             <select onchange="{event => setFilterString("view_verb", event.target.value)}" value={dataset?.view_verb}>
               <option></option>
@@ -134,22 +190,47 @@ const duplicate = () => {
               <option>DELETE</option>
             </select>
           </label>
-
-          <label>
-            One view per visit
-            <Switch value={dataset?.unique_visits === true} onToggle={() => toggleFilterBoolean("unique_visits")} />
-          </label>
         {/if}
 
-        {#if dataset.type === "visits" || dataset.type === "views"}
+        {#if dataset.type === "events"}
+          {#if dataset.split_by !== "name"}
+            <label>
+              Event name
+              <input type="text" onkeyup={event => setFilterString("event_name", event.target.value)} value={dataset?.event_name} />
+            </label>
+          {/if}
+
+          {#if !dataset.event_name}
+            <label>
+              Split by name
+              <Switch value={dataset.split_by === "name"} onToggle={() => setFilterString("split_by", dataset.split_by ? "" : "name")} />
+            </label>
+          {/if}
+        {/if}
+
+        {#if dataset.type === "percentage"}
           <label>
-            Visit tracking
-            <select onchange="{event => setFilterString("visit_tracking", event.target.value)}" value={dataset?.visit_tracking}>
-              <option value="">Show all visits</option>
-              <option value="any">Show visits tracked by anonymity set or cookie</option>
-              <option value="anonymity_set">Show visits tracked by anonymity set</option>
-              <option value="cookie">Show visits tracked by cookie</option>
+            Numerator
+            <select onchange="{event => setFilterString("numerator", event.target.value)}" value={dataset?.numerator}>
+              {#each derivedSources as source}
+                <option value={source.value}>{source.label}</option>
+              {/each}
             </select>
+            <span class="help-text">
+              The dataset you are using for your target, e.g. a specific page view or event.
+            </span>
+          </label>
+
+          <label>
+            Denominator
+            <select onchange="{event => setFilterString("denominator", event.target.value)}" value={dataset?.denominator}>
+              {#each derivedSources as source}
+                <option value={source.value}>{source.label}</option>
+              {/each}
+            </select>
+            <span class="help-text">
+              The dataset you are using for comparison, e.g. the number of visits.
+            </span>
           </label>
         {/if}
 

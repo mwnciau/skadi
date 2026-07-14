@@ -4,10 +4,7 @@ import { mount } from "svelte"
 import Dashboard from "./dashboard/Dashboard.svelte"
 
 window.addEventListener('load', () => {
-  mount(
-    Dashboard,
-    {
-      target: document.getElementById("skadi-dashboard"),
-    },
-  );
+  const root = document.getElementById("skadi-dashboard") as HTMLDivElement;
+
+  mount(Dashboard, {target: root});
 });

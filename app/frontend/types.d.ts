@@ -1,32 +1,33 @@
 export type DateTime = string;
 
-type CommonDataset = {
+export type CommonDataset = {
   id: string;
   label: string;
   visible?: boolean;
   axis?: "right" | "left";
+  type: "visits" | "views" | "events" | "percentage";
+}
+
+export type VisitDataset = CommonDataset & {
+  type: "visits";
 }
 
 export type ViewDataset = CommonDataset & {
   type: "views";
-  unique_visits?: boolean;
-  split_by?: "controller" | "controller_action" | "path" | "verb";
-  verified?: boolean;
+  split_by?: "controller" | "controller_action" | "path" | "verb" | "version";
 
   view_action?: string;
   view_controller?: string;
   view_path?: string;
   view_verb?: string;
-
-  // Filter to only views that have visits, or specific types of visit
-  visit_tracking?: "any" | "anonymity_set" | "cookie";
+  view_version?: string;
 }
 
-export type VisitDataset = CommonDataset & {
-  type: "visits";
-  verified?: boolean;
+export type EventDataset = CommonDataset & {
+  type: "events";
+  split_by?: "name";
 
-  visit_tracking?: "any" | "anonymity_set" | "cookie";
+  event_name?: string;
 }
 
 export type PercentageDataset = CommonDataset & {
@@ -35,7 +36,7 @@ export type PercentageDataset = CommonDataset & {
   denominator: string;
 }
 
-export type Dataset = ViewDataset | VisitDataset | PercentageDataset;
+export type Dataset = VisitDataset | ViewDataset | EventDataset | PercentageDataset;
 
 export type ChartConfig = {
   id: string;
@@ -44,6 +45,9 @@ export type ChartConfig = {
   group: "day" | "week" | "month";
   date_from?: DateTime;
   date_to?: DateTime;
+  verified?: boolean;
+  unique_visits?: boolean;
+  visit_tracking?: "any" | "anonymity_set" | "cookie";
   datasets: Dataset[];
 }
 

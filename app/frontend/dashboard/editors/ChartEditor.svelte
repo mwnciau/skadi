@@ -2,23 +2,46 @@
 import type {ChartConfig} from "../../types";
 import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
+import Switch from "../components/Switch.svelte";
 
-const { chartConfig, reloadChart }: {
+let { chartConfig = $bindable(), reloadChart }: {
   chartConfig: ChartConfig;
   reloadChart: () => void;
 } = $props();
 
 let persistedChartConfigString = $state(JSON.stringify(chartConfig));
+let previewChartConfigString = $state(JSON.stringify(chartConfig));
 let unsavedChanges = $derived.by(() => JSON.stringify(chartConfig) !== persistedChartConfigString);
+let unpreviewedChanges = $derived.by(() => JSON.stringify(chartConfig) !== previewChartConfigString);
 
-// Intentionally left state-less because this will be a one-off thing when the dataset is duplicated
-let duplicatedDatasetId: string | null = null;
+// Intentionally left state-less because this will be a one-off thing when a dataset is added or duplicated
+let datasetIdToOpen: string | null = null;
+
+const saveChanges = () => {
+  persistedChartConfigString = JSON.stringify(chartConfig);
+  previewChartConfigString = persistedChartConfigString;
+
+  // Todo: save changes
+}
+
+const cancelChanges = () => {
+  chartConfig = JSON.parse(persistedChartConfigString);
+  previewChartConfigString = persistedChartConfigString;
+  reloadChart();
+}
+
+const previewChanges = () => {
+  previewChartConfigString = JSON.stringify(chartConfig);
+  reloadChart();
+}
 
 const addDataset = () => {
+  const datasetId = crypto.randomUUID();
+  datasetIdToOpen = datasetId;
   chartConfig.datasets.push({
-    id: crypto.randomUUID(),
+    id: datasetId,
     label: `Dataset ${chartConfig.datasets.length + 1}`,
-    type: "views",
+    type: "visits",
   });
 }
 
@@ -28,7 +51,7 @@ const deleteDataset = (index: number) => () => {
 const duplicateDataset = (index: number) => {
   const newDataset = $state.snapshot(chartConfig.datasets[index]);
   newDataset.id = crypto.randomUUID();
-  duplicatedDatasetId = newDataset.id;
+  datasetIdToOpen = newDataset.id;
   newDataset.label = `Copy of ${newDataset.label}`
 
   chartConfig.datasets.splice(index + 1, 0, newDataset);
@@ -51,6 +74,22 @@ const moveDown = (index: number) => {
   // Splice returns the items that were removed, so this overwrites `index` with `index + 1`, then sets `index + 1` to the removed item
   chartConfig.datasets[index + 1] = chartConfig.datasets.splice(index, 1, chartConfig.datasets[index + 1])[0];
 }
+
+const toggleFilterBoolean = (key: string, defaultValue = false) => {
+  if (chartConfig[key] === !defaultValue) {
+    delete chartConfig[key];
+  } else {
+    chartConfig[key] = !defaultValue;
+  }
+}
+
+const setVisitTracking = (newValue: string) => {
+  if (!newValue) {
+    delete chartConfig.visit_tracking;
+  } else {
+    chartConfig.visit_tracking = newValue as typeof chartConfig.visit_tracking;
+  }
+}
 </script>
 
 <div class="flex flex-col gap-4 border-l-4 border-ice-400 pl-4">
@@ -68,12 +107,36 @@ const moveDown = (index: number) => {
     </select>
   </label>
 
-  <div class="flex flex-col gap-4 max-w-124">
+  <label>
+    Show only verified visits and views
+    <Switch value={chartConfig?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
+    <span class="help-text">
+      Visits and views are created by the backend, and verified by a frontend request. Enabling this will filter out some bots and prevent page pre-fetching being tracked.
+    </span>
+  </label>
+
+  <label>
+    Deduplicate views and events per visit
+    <Switch value={chartConfig?.unique_visits === true} onToggle={() => toggleFilterBoolean("unique_visits")} />
+  </label>
+
+  <label>
+    Visit tracking
+    <select onchange="{event => setVisitTracking(event.target.value)}" value={chartConfig?.visit_tracking}>
+      <option value="">Show all visits</option>
+      <option value="any">Show visits tracked by anonymity set or cookie</option>
+      <option value="anonymity_set">Show visits tracked by anonymity set</option>
+      <option value="cookie">Show visits tracked by cookie</option>
+    </select>
+  </label>
+
+  <div class="flex flex-col gap-4 max-w-124 mt-4">
     {#each chartConfig.datasets as dataset, index (dataset.id)}
       <DatasetEditor
+        {chartConfig}
         {dataset}
         {index}
-        startOpen={dataset.id === duplicatedDatasetId}
+        startOpen={dataset.id === datasetIdToOpen}
         onDelete={() => deleteDataset(index)}
         onDuplicate={() => duplicateDataset(index)}
         onMoveUp={index !== 0 ? (() => moveUp(index)) : null}
@@ -81,13 +144,19 @@ const moveDown = (index: number) => {
       />
     {/each}
 
-    <button type="button" class="sm text-sm ghost w-full border-l-4 border-night-700 pl-4 hover:bg-transparent hover:backdrop-filter-none" onclick={addDataset}>
-      <Icon name="plus" size={18} />
+    <button type="button" class="sm text-sm ghost w-full border-l-4 border-night-100 hover:border-night-700 pl-4 hover:bg-transparent hover:backdrop-filter-none" onclick={addDataset}>
+      <Icon name="plus" size={18} class="-ml-1 mt-px" />
       New dataset
     </button>
   </div>
 
-  {#if unsavedChanges}
-    <button type="button" class="emph mt-4" onclick={reloadChart}>Preview changes</button>
-  {/if}
+  <div class="flex gap-2">
+    {#if unpreviewedChanges}
+      <button type="button" class="emph bg-ice-600 text-white mt-4" onclick={previewChanges}>Preview</button>
+    {/if}
+    {#if unsavedChanges}
+      <button type="button" class="emph mt-4" onclick={saveChanges}>Save</button>
+      <button type="button" class="bg-gray-100 mt-4" onclick={cancelChanges}>Cancel</button>
+    {/if}
+  </div>
 </div>

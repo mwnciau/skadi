@@ -55,6 +55,9 @@
   label {
     @apply flex flex-col gap-0.5 text-sm font-medium;
   }
+  .help-text {
+    @apply text-sm text-gray-500 font-normal max-w-128;
+  }
 
   input, select {
     @apply
