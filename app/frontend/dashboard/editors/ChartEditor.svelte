@@ -4,21 +4,26 @@ import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
 
-let { chartConfig = $bindable(), reloadChart }: {
+let { chartConfig = $bindable(), reloadChart, onCancel }: {
   chartConfig: ChartConfig;
-  reloadChart: () => void;
+  reloadChart: () => Promise<any>;
+  onCancel: () => void;
 } = $props();
 
-let persistedChartConfigString = $state(JSON.stringify(chartConfig));
-let previewChartConfigString = $state(JSON.stringify(chartConfig));
-let unsavedChanges = $derived.by(() => JSON.stringify(chartConfig) !== persistedChartConfigString);
-let unpreviewedChanges = $derived.by(() => JSON.stringify(chartConfig) !== previewChartConfigString);
+let chartConfigString = $derived(JSON.stringify(chartConfig));
+let persistedChartConfigString = $state(chartConfigString);
+let previewChartConfigString = $state(chartConfigString);
+let unsavedChanges = $derived.by(() => chartConfigString !== persistedChartConfigString);
+let unpreviewedChanges = $derived.by(() => chartConfigString !== previewChartConfigString);
+let previewLoaded = $derived(previewChartConfigString === chartConfigString)
+
+let errorMessage: string | null = $state(null);
 
 // Intentionally left state-less because this will be a one-off thing when a dataset is added or duplicated
 let datasetIdToOpen: string | null = null;
 
 const saveChanges = () => {
-  persistedChartConfigString = JSON.stringify(chartConfig);
+  persistedChartConfigString = chartConfigString;
   previewChartConfigString = persistedChartConfigString;
 
   // Todo: save changes
@@ -28,11 +33,19 @@ const cancelChanges = () => {
   chartConfig = JSON.parse(persistedChartConfigString);
   previewChartConfigString = persistedChartConfigString;
   reloadChart();
+  onCancel();
 }
 
 const previewChanges = () => {
-  previewChartConfigString = JSON.stringify(chartConfig);
-  reloadChart();
+  const requestedPreviewString = chartConfigString;
+  reloadChart()
+    .then(() => {
+      previewChartConfigString = requestedPreviewString;
+      errorMessage = null;
+    })
+    .catch(error => {
+      errorMessage = error.message.trim();
+    });
 }
 
 const addDataset = () => {
@@ -108,6 +121,15 @@ const setVisitTracking = (newValue: string) => {
   </label>
 
   <label>
+    X axis
+    <select bind:value={chartConfig.group}>
+      <option value="day">Day</option>
+      <option value="week">Week</option>
+      <option value="month">Month</option>
+    </select>
+  </label>
+
+  <label>
     Show only verified visits and views
     <Switch value={chartConfig?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
     <span class="help-text">
@@ -130,7 +152,7 @@ const setVisitTracking = (newValue: string) => {
     </select>
   </label>
 
-  <div class="flex flex-col gap-4 max-w-124 mt-4">
+  <div class="flex flex-col gap-4 max-w-160 mt-4">
     {#each chartConfig.datasets as dataset, index (dataset.id)}
       <DatasetEditor
         {chartConfig}
@@ -150,13 +172,22 @@ const setVisitTracking = (newValue: string) => {
     </button>
   </div>
 
-  <div class="flex gap-2">
+  {#if errorMessage}
+    <div class="p-1 px-2 bg-red-50/50 border border-red-500">
+      <p class="text-red-800 font-semibold">An error occurred during this request:</p>
+      <pre class="text-red-800 whitespace-pre-wrap">{errorMessage}</pre>
+    </div>
+  {/if}
+
+  <div class="flex gap-2 mt-4">
     {#if unpreviewedChanges}
-      <button type="button" class="emph bg-ice-600 text-white mt-4" onclick={previewChanges}>Preview</button>
+      <button type="button" class="emph bg-ice-600 text-white" onclick={previewChanges}>Preview</button>
     {/if}
-    {#if unsavedChanges}
-      <button type="button" class="emph mt-4" onclick={saveChanges}>Save</button>
-      <button type="button" class="bg-gray-100 mt-4" onclick={cancelChanges}>Cancel</button>
+
+    {#if unsavedChanges && previewLoaded}
+      <button type="button" class="emph" onclick={saveChanges}>Save</button>
     {/if}
+
+    <button type="button" class="bg-gray-100" onclick={cancelChanges}>Cancel</button>
   </div>
 </div>

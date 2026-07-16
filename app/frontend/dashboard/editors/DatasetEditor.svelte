@@ -4,12 +4,20 @@
     CommonDataset,
     Dataset,
     EventDataset,
-    PercentageDataset,
+    PercentageDataset, SqlDataset,
     ViewDataset,
     VisitDataset
   } from "../../types";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
+
+const sqlDefault = (datasetId: string) => `SELECT
+  '${datasetId}' as "id",
+  NULL as "split",
+  DATE(skadi_events.created_at) as "label",
+  COUNT(*) as "count"
+FROM skadi_events
+GROUP BY DATE(skadi_events.created_at)`;
 
 const { chartConfig, dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
   chartConfig: ChartConfig,
@@ -56,12 +64,14 @@ const typeFields: {
   views: (keyof ViewDataset)[];
   events: (keyof EventDataset)[];
   percentage: (keyof PercentageDataset)[];
+  sql: (keyof SqlDataset)[];
 } = {
   common: ["id", "label", "visible", "axis", "type"],
   visits: [],
   views: ["split_by", "view_controller", "view_action", "view_path", "view_verb", "view_version"],
   events: ["event_name"],
   percentage: ["numerator", "denominator"],
+  sql: ["sql"],
 }
 const changeType = (newType: string) => {
   dataset.type = newType as typeof dataset.type;
@@ -71,6 +81,10 @@ const changeType = (newType: string) => {
     if (!types.includes(key)) {
       delete dataset[key];
     }
+  }
+
+  if (newType === "sql") {
+    dataset.sql = sqlDefault(dataset.id);
   }
 }
 
@@ -99,9 +113,10 @@ const duplicate = () => {
 <div class="border-l-4 border-night-700 pl-4 py-0.5">
   <button class="group w-full flex justify-between items-center unstyled cursor-pointer py-0.5" onclick={toggleOpen}>
     <p class="text-sm font-semibold text-night-700 group-hover:text-night-800">
-      Dataset {index + 1}
-      {#if !open}
-        - {dataset.label}
+      {#if open}
+        Dataset {index + 1}
+      {:else}
+        <span class="capitalize">{dataset.type}</span> dataset: {dataset.label}
       {/if}
     </p>
     <Icon name={open ? "chevron_up" : "chevron_down"} size={24} class="text-ice-800 group-hover:text-black" />
@@ -122,6 +137,7 @@ const duplicate = () => {
             <option value="views">Views</option>
             <option value="events">Events</option>
             <option value="percentage">Percentage</option>
+            <option value="sql">SQL</option>
           </select>
         </label>
 
@@ -231,6 +247,20 @@ const duplicate = () => {
             <span class="help-text">
               The dataset you are using for comparison, e.g. the number of visits.
             </span>
+          </label>
+        {/if}
+
+        {#if dataset.type === "sql"}
+          <label>
+            SQL Query
+            <textarea
+              class="font-mono text-red-800 bg-red-50/50 p-1 border border-red-800"
+              onchange={e => setFilterString("sql", e.target.value)}
+              rows="10"
+            >{dataset.sql}</textarea>
+            <p class="help-text">
+              Note: to be compatible with the line chart, your query must return four columns: <code>'{dataset.id}' as id</code>; <code>NULL</code> or a string value as <code>split</code>, which will split it into multiple datasets; <code>label</code>; <code>count</code>
+            </p>
           </label>
         {/if}
 

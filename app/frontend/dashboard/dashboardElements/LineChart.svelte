@@ -5,9 +5,15 @@ import type { ChartConfig, Dataset } from "../../types.d.ts";
 import ChartEditor from "../editors/ChartEditor.svelte";
 import {processDerivedDatasets} from "../helpers/processData";
 
-let { chartConfig }: { chartConfig: ChartConfig } = $props();
+let { chartConfig, startEditing, onDelete }: {
+  chartConfig: ChartConfig;
+  startEditing: boolean;
+  onDelete: () => void;
+} = $props();
 
 let canvas = $state<HTMLCanvasElement>();
+let editing = $state(startEditing);
+let confirmDelete: boolean = $state(false);
 
 let chart: Chart<"line", {x: string, y: number}, unknown>;
 let data : Record<string, {x: string, y: number}[]>;
@@ -47,14 +53,23 @@ const updateChartTitle = () => {
 
 const fetchData = () => {
   const chartConfigJSON = encodeURIComponent(JSON.stringify(chartConfig));
-  fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}`)
-    .then((response) => response.json())
+  return fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}`)
+    .then((response) => {
+      if (!response.ok) {
+        return response.json().then((body) => {
+          throw new Error(body.error ?? `Request failed with status ${response.status}`);
+        });
+      }
+
+      return response.json();
+    })
     .then((items) => {
       data = {};
 
       for (const item of items) {
-        data[item.id] ??= [];
-        data[item.id].push({x: item.label, y: item.count});
+        const key = item.split ? `${item.id} ${item.split}` : item.id;
+        data[key] ??= [];
+        data[key].push({x: item.label, y: item.count});
       }
 
       processDerivedDatasets(chartConfig.datasets, data);
@@ -72,36 +87,28 @@ const updateChartData = () => {
   chart.data.datasets = chartConfig.datasets
     .filter((dataset: Dataset) => dataset.visible !== false)
     .flatMap((dataset: Dataset) => {
-      if (dataset.split_by) {
-        const splitIds = Object.keys(data)
-          .filter((id) => id.startsWith(dataset.id))
-          .map((id) => id.replace(/^[^ ]+ /, ""));
-        console.log("dataset", dataset);
-        console.log("splitIds", splitIds);
+      let datasetIds = {}
 
-        return splitIds.map((splitId) => ({
-          label: (dataset.label + " " + splitId).trim(),
-          data: data[dataset.id + " " + splitId],
-          yAxisID: dataset.axis === "right" ? "y1" : "y",
-          fill: false,
-        }))
+      const splitDatasetIds = Object.keys(data)
+        .filter((id) => id.startsWith(dataset.id))
+
+      for (let splitDatasetId of splitDatasetIds) {
+        const split = splitDatasetId.replace(/^[^ ]+ ?/, "");
+
+        datasetIds[split] = splitDatasetId
       }
 
-      if (!data[dataset.id]) {
-        return [];
-      }
-
-      return {
-        label: dataset.label,
-        data: data[dataset.id],
+      return Object.entries(datasetIds).map(([split, datasetId]) => ({
+        label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
+        data: data[datasetId],
         yAxisID: dataset.axis === "right" ? "y1" : "y",
         fill: false,
-      }
+      }));
     });
 }
 
 const reloadChart = () => {
-  fetchData();
+  return fetchData();
 }
 
 onMount(() => {
@@ -109,10 +116,28 @@ onMount(() => {
 })
 </script>
 
-<ChartEditor {chartConfig} reloadChart={reloadChart} />
 <div class="relative w-full aspect-video">
   <canvas bind:this={canvas}></canvas>
 </div>
+
+
+{#if editing}
+  <ChartEditor
+    {chartConfig}
+    reloadChart={reloadChart}
+    onCancel={() => (editing = false)}
+  />
+{:else}
+  <div class="flex gap-2">
+    <button onclick={() => (editing = true)}>Edit</button>
+
+    {#if confirmDelete}
+      <button type="button" class="bg-dawn-100 ml-auto" onclick={onDelete}>Yes, delete this chart</button>
+    {:else}
+      <button type="button" class="bg-dawn-100 ml-auto" onclick={() => (confirmDelete = true)}>Delete</button>
+    {/if}
+</div>
+{/if}
 
 <script module lang="ts">
   const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}, unknown> => {

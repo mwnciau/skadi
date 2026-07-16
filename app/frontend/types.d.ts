@@ -5,7 +5,7 @@ export type CommonDataset = {
   label: string;
   visible?: boolean;
   axis?: "right" | "left";
-  type: "visits" | "views" | "events" | "percentage";
+  type: "visits" | "views" | "events" | "percentage" | "sql";
 }
 
 export type VisitDataset = CommonDataset & {
@@ -36,7 +36,12 @@ export type PercentageDataset = CommonDataset & {
   denominator: string;
 }
 
-export type Dataset = VisitDataset | ViewDataset | EventDataset | PercentageDataset;
+export type SqlDataset = CommonDataset & {
+  type: "sql";
+  sql: string;
+}
+
+export type Dataset = VisitDataset | ViewDataset | EventDataset | PercentageDataset | SqlDataset;
 
 export type ChartConfig = {
   id: string;

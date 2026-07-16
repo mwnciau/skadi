@@ -2,8 +2,21 @@ module Skadi
   class DashboardQuery
     class << self
       GROUPINGS = {
-        "day" => "DATE(%s.created_at)"
-        # TODO: add week and month
+        "day" => {
+          "PostgreSQL" => "DATE(<table_name>.created_at)",
+          "Mysql2" => "DATE(<table_name>.created_at)",
+          "SQLite" => "DATE(<table_name>.created_at)"
+        },
+        "week" => {
+          "PostgreSQL" => "DATE_TRUNC('week', <table_name>.created_at)::date",
+          "Mysql2" => "DATE_SUB(DATE(<table_name>.created_at), INTERVAL WEEKDAY(<table_name>.created_at) DAY)",
+          "SQLite" => "DATE(<table_name>.created_at, '-' || ((CAST(STRFTIME('%w', <table_name>.created_at) AS INTEGER) + 6) % 7) || ' days')"
+        },
+        "month" => {
+          "PostgreSQL" => "DATE_TRUNC('month', <table_name>.created_at)::date",
+          "Mysql2" => "DATE_FORMAT(<table_name>.created_at, '%Y-%m-01')",
+          "SQLite" => "DATE(<table_name>.created_at, 'start of month')"
+        }
       }
       VIEW_SPLIT_BY = ["controller", "controller_action", "path", "verb", "version"]
 
@@ -16,6 +29,8 @@ module Skadi
             build_query(Skadi::View, dataset, chart)
           when "events"
             build_query(Skadi::Event, dataset, chart)
+          when "sql"
+            dataset["sql"]
           when "percentage"
             # Percentage charts are handled by the frontend using other datasets
             next
@@ -25,7 +40,13 @@ module Skadi
         end
 
         return Skadi::ApplicationRecord.connection.unprepared_statement do
-          Skadi::Visit.connection.select_all(queries.map(&:to_sql).join(" UNION ALL "))
+          queries.map! do |query|
+            next query if query.is_a?(String)
+
+            next query.to_sql
+          end
+
+          Skadi::Visit.connection.select_all(queries.join(" UNION ALL "))
         end
       end
 
@@ -48,11 +69,18 @@ module Skadi
       end
 
       private def add_query_select(query, model, dataset, chart)
+        # Variables named safe_* are using our definitions, or are escaped user input
+
+        group_template = (GROUPINGS[chart["group"]] || GROUPINGS["day"]).fetch(model.connection.adapter_name) do
+          raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
+        end
+
         # This is a SQL safe string because it can only contain the values in `GROUPINGS`
-        label = (GROUPINGS[chart["group"]] || GROUPINGS["day"]) % model.table_name
-        safe_group = [label]
+        safe_label = group_template.gsub("<table_name>", model.table_name)
+        safe_group = [safe_label]
 
         safe_dataset_id = model.connection.quote(dataset["id"])
+        safe_split = "NULL"
 
         valid_split_by = false
         valid_split_by ||= model == Skadi::View && dataset["split_by"].present? && VIEW_SPLIT_BY.include?(dataset["split_by"])
@@ -64,17 +92,22 @@ module Skadi
             ["#{model.table_name}.#{dataset["split_by"]}"]
           end
 
-          safe_dataset_id = "CONCAT(#{safe_dataset_id}, ' ', #{split_columns.join(", '::', ")})"
+          safe_split = "CONCAT(#{split_columns.join(", '::', ")})"
           safe_group.push(*split_columns)
         end
 
-        count = if (model == Skadi::View || model == Skadi::Event) && chart["unique_visits"] == true
+        safe_count = if (model == Skadi::View || model == Skadi::Event) && chart["unique_visits"] == true
           "COUNT(DISTINCT #{model.table_name}.visit_id) AS count"
         else
           "COUNT(*) AS count"
         end
 
-        query.select("#{safe_dataset_id} as id", "#{label} AS label", count)
+        query.select(
+          "#{safe_dataset_id} as id",
+          "#{safe_split} as split",
+          "#{safe_label} AS label",
+          safe_count
+        )
           .group(safe_group)
       end
 
