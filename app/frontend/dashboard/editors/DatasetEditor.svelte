@@ -54,6 +54,8 @@ let derivedSources = $derived.by(() => {
 })
 
 let open = $state(startOpen);
+let confirmDelete: boolean = $state(false);
+
 const toggleOpen = () => {
   open = !open;
 }
@@ -76,7 +78,7 @@ const typeFields: {
 const changeType = (newType: string) => {
   dataset.type = newType as typeof dataset.type;
 
-  const types = typeFields.common + typeFields[newType];
+  const types = typeFields.common.concat(typeFields[newType]);
   for (const key of Object.keys(dataset)) {
     if (!types.includes(key)) {
       delete dataset[key];
@@ -265,13 +267,18 @@ const duplicate = () => {
         {/if}
 
         <div class="flex flex-row gap-2 mt-4">
-          <button type="button" class="sm bg-dawn-100" onclick={onDelete}>Delete</button>
           <button type="button" class="sm" onclick={duplicate}>Duplicate</button>
           {#if onMoveUp !== null }
             <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
           {/if}
           {#if onMoveDown !== null }
             <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
+          {/if}
+
+          {#if confirmDelete}
+            <button type="button" class="sm bg-dawn-100 ml-auto" onclick={onDelete}>Yes, delete this dataset</button>
+          {:else}
+            <button type="button" class="sm bg-dawn-100 ml-auto" onclick={() => (confirmDelete = true)}>Delete</button>
           {/if}
         </div>
       </div>

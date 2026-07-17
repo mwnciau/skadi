@@ -4,18 +4,22 @@ import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
 
-let { chartConfig = $bindable(), reloadChart, onCancel }: {
+let { chartConfig, reloadChartData, onClose, onSave }: {
   chartConfig: ChartConfig;
-  reloadChart: () => Promise<any>;
-  onCancel: () => void;
+  reloadChartData: (chartConfig?: ChartConfig) => Promise<any>;
+  onClose: () => void;
+  onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
 
+let localChartConfig = $state($state.snapshot(chartConfig));
+
 let chartConfigString = $derived(JSON.stringify(chartConfig));
-let persistedChartConfigString = $state(chartConfigString);
-let previewChartConfigString = $state(chartConfigString);
-let unsavedChanges = $derived.by(() => chartConfigString !== persistedChartConfigString);
-let unpreviewedChanges = $derived.by(() => chartConfigString !== previewChartConfigString);
-let previewLoaded = $derived(previewChartConfigString === chartConfigString)
+let localChartConfigString = $derived(JSON.stringify(localChartConfig));
+
+let displayedChartConfigString = $state(chartConfigString);
+
+let unsavedChanges = $derived(chartConfigString !== localChartConfigString);
+let unpreviewedChanges = $derived(localChartConfigString !== displayedChartConfigString);
 
 let errorMessage: string | null = $state(null);
 
@@ -23,24 +27,23 @@ let errorMessage: string | null = $state(null);
 let datasetIdToOpen: string | null = null;
 
 const saveChanges = () => {
-  persistedChartConfigString = chartConfigString;
-  previewChartConfigString = persistedChartConfigString;
-
-  // Todo: save changes
+  onSave(localChartConfig);
 }
 
 const cancelChanges = () => {
-  chartConfig = JSON.parse(persistedChartConfigString);
-  previewChartConfigString = persistedChartConfigString;
-  reloadChart();
-  onCancel();
+  // If we've previewed at all, reset the chart display
+  if (displayedChartConfigString !== chartConfigString) {
+    reloadChartData();
+  }
+
+  onClose();
 }
 
 const previewChanges = () => {
-  const requestedPreviewString = chartConfigString;
-  reloadChart()
+  const requestedPreviewString = localChartConfigString;
+  reloadChartData(localChartConfig)
     .then(() => {
-      previewChartConfigString = requestedPreviewString;
+      displayedChartConfigString = requestedPreviewString;
       errorMessage = null;
     })
     .catch(error => {
@@ -51,23 +54,24 @@ const previewChanges = () => {
 const addDataset = () => {
   const datasetId = crypto.randomUUID();
   datasetIdToOpen = datasetId;
-  chartConfig.datasets.push({
+  localChartConfig.datasets.push({
     id: datasetId,
-    label: `Dataset ${chartConfig.datasets.length + 1}`,
+    label: `Dataset ${localChartConfig.datasets.length + 1}`,
     type: "visits",
   });
 }
 
-const deleteDataset = (index: number) => () => {
-  chartConfig.datasets.splice(index, 1);
+const deleteDataset = (index: number) => {
+  localChartConfig.datasets.splice(index, 1);
 }
+
 const duplicateDataset = (index: number) => {
-  const newDataset = $state.snapshot(chartConfig.datasets[index]);
+  const newDataset = $state.snapshot(localChartConfig.datasets[index]);
   newDataset.id = crypto.randomUUID();
   datasetIdToOpen = newDataset.id;
   newDataset.label = `Copy of ${newDataset.label}`
 
-  chartConfig.datasets.splice(index + 1, 0, newDataset);
+  localChartConfig.datasets.splice(index + 1, 0, newDataset);
 }
 
 const moveUp = (index: number) => {
@@ -76,31 +80,31 @@ const moveUp = (index: number) => {
   }
 
   // Splice returns the items that were removed, so this overwrites `index - 1` with `index`, then sets `index` to the removed item
-  chartConfig.datasets[index] = chartConfig.datasets.splice(index - 1, 1, chartConfig.datasets[index])[0];
+  localChartConfig.datasets[index] = localChartConfig.datasets.splice(index - 1, 1, localChartConfig.datasets[index])[0];
 }
 
 const moveDown = (index: number) => {
-  if (index >= chartConfig.datasets.length - 1) {
+  if (index >= localChartConfig.datasets.length - 1) {
     return;
   }
 
   // Splice returns the items that were removed, so this overwrites `index` with `index + 1`, then sets `index + 1` to the removed item
-  chartConfig.datasets[index + 1] = chartConfig.datasets.splice(index, 1, chartConfig.datasets[index + 1])[0];
+  localChartConfig.datasets[index + 1] = localChartConfig.datasets.splice(index, 1, localChartConfig.datasets[index + 1])[0];
 }
 
 const toggleFilterBoolean = (key: string, defaultValue = false) => {
-  if (chartConfig[key] === !defaultValue) {
-    delete chartConfig[key];
+  if (localChartConfig[key] === !defaultValue) {
+    delete localChartConfig[key];
   } else {
-    chartConfig[key] = !defaultValue;
+    localChartConfig[key] = !defaultValue;
   }
 }
 
 const setVisitTracking = (newValue: string) => {
   if (!newValue) {
-    delete chartConfig.visit_tracking;
+    delete localChartConfig.visit_tracking;
   } else {
-    chartConfig.visit_tracking = newValue as typeof chartConfig.visit_tracking;
+    localChartConfig.visit_tracking = newValue as typeof localChartConfig.visit_tracking;
   }
 }
 </script>
@@ -110,19 +114,19 @@ const setVisitTracking = (newValue: string) => {
 
   <label>
     Title
-    <input type="text" bind:value={chartConfig.title} />
+    <input type="text" bind:value={localChartConfig.title} />
   </label>
 
   <label>
     Type
-    <select bind:value={chartConfig.type}>
+    <select bind:value={localChartConfig.type}>
       <option value="line">Line chart</option>
     </select>
   </label>
 
   <label>
     X axis
-    <select bind:value={chartConfig.group}>
+    <select bind:value={localChartConfig.group}>
       <option value="day">Day</option>
       <option value="week">Week</option>
       <option value="month">Month</option>
@@ -131,7 +135,7 @@ const setVisitTracking = (newValue: string) => {
 
   <label>
     Show only verified visits and views
-    <Switch value={chartConfig?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
+    <Switch value={localChartConfig?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
     <span class="help-text">
       Visits and views are created by the backend, and verified by a frontend request. Enabling this will filter out some bots and prevent page pre-fetching being tracked.
     </span>
@@ -139,12 +143,12 @@ const setVisitTracking = (newValue: string) => {
 
   <label>
     Deduplicate views and events per visit
-    <Switch value={chartConfig?.unique_visits === true} onToggle={() => toggleFilterBoolean("unique_visits")} />
+    <Switch value={localChartConfig?.unique_visits === true} onToggle={() => toggleFilterBoolean("unique_visits")} />
   </label>
 
   <label>
     Visit tracking
-    <select onchange="{event => setVisitTracking(event.target.value)}" value={chartConfig?.visit_tracking}>
+    <select onchange="{event => setVisitTracking(event.target.value)}" value={localChartConfig?.visit_tracking}>
       <option value="">Show all visits</option>
       <option value="any">Show visits tracked by anonymity set or cookie</option>
       <option value="anonymity_set">Show visits tracked by anonymity set</option>
@@ -153,16 +157,16 @@ const setVisitTracking = (newValue: string) => {
   </label>
 
   <div class="flex flex-col gap-4 max-w-160 mt-4">
-    {#each chartConfig.datasets as dataset, index (dataset.id)}
+    {#each localChartConfig.datasets as dataset, index (dataset.id)}
       <DatasetEditor
-        {chartConfig}
+        chartConfig={localChartConfig}
         {dataset}
         {index}
         startOpen={dataset.id === datasetIdToOpen}
         onDelete={() => deleteDataset(index)}
         onDuplicate={() => duplicateDataset(index)}
         onMoveUp={index !== 0 ? (() => moveUp(index)) : null}
-        onMoveDown={index !== chartConfig.datasets.length - 1 ? (() => moveDown(index)) : null}
+        onMoveDown={index !== localChartConfig.datasets.length - 1 ? (() => moveDown(index)) : null}
       />
     {/each}
 
@@ -182,10 +186,10 @@ const setVisitTracking = (newValue: string) => {
   <div class="flex gap-2 mt-4">
     {#if unpreviewedChanges}
       <button type="button" class="emph bg-ice-600 text-white" onclick={previewChanges}>Preview</button>
-    {/if}
-
-    {#if unsavedChanges && previewLoaded}
-      <button type="button" class="emph" onclick={saveChanges}>Save</button>
+    {:else}
+      {#if unsavedChanges}
+        <button type="button" class="emph" onclick={saveChanges}>Save</button>
+      {/if}
     {/if}
 
     <button type="button" class="bg-gray-100" onclick={cancelChanges}>Cancel</button>

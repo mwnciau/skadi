@@ -1,6 +1,6 @@
 <script lang="ts">
 import Tabs from "./Tabs.svelte";
-import LineChart from "./dashboardElements/LineChart.svelte";
+import ChartWrapper from "./dashboardElements/ChartWrapper.svelte";
 import type { DashboardConfig } from "../types.d.ts";
 
 let dashboards = $state<DashboardConfig[]>(
@@ -43,6 +43,34 @@ const addChart = () => {
 const deleteChart = (index: number) => {
   selectedDashboard.children.splice(index, 1);
 }
+
+const duplicateDataset = (index: number) => {
+  const newChart = $state.snapshot(selectedDashboard.children[index]);
+  // Note: the dataset ids will be still be the same between the datasets, but changing them potentially breaks and SQL datasets, so we just accept that datasets in different graphs might have the same ID
+  newChart.id = crypto.randomUUID();
+  chartIdToEdit = newChart.id;
+  newChart.title = `Copy of ${newChart.title}`
+
+  selectedDashboard.children.splice(index + 1, 0, newChart);
+}
+
+const moveUp = (index: number) => {
+  if (index === 0) {
+    return;
+  }
+
+  // Splice returns the items that were removed, so this overwrites `index - 1` with `index`, then sets `index` to the removed item
+  selectedDashboard.children[index] = selectedDashboard.children.splice(index - 1, 1, selectedDashboard.children[index])[0];
+}
+
+const moveDown = (index: number) => {
+  if (index >= selectedDashboard.children.length - 1) {
+    return;
+  }
+
+  // Splice returns the items that were removed, so this overwrites `index` with `index + 1`, then sets `index + 1` to the removed item
+  selectedDashboard.children[index + 1] = selectedDashboard.children.splice(index, 1, selectedDashboard.children[index + 1])[0];
+}
 </script>
 
 <Tabs
@@ -52,11 +80,15 @@ const deleteChart = (index: number) => {
   newTab={newTab}
 />
 <main class="w-full max-w-256 mx-auto flex flex-col gap-4 pt-8">
-  {#each selectedDashboard?.children as chart, index}
-    <LineChart
+  {#each selectedDashboard?.children as chart, index (chart.id)}
+    <ChartWrapper
       chartConfig={chart}
       onDelete={() => deleteChart(index)}
       startEditing={chartIdToEdit === chart.id}
+      onDuplicate={() => duplicateDataset(index)}
+      onMoveUp={index !== 0 ? (() => moveUp(index)) : null}
+      onMoveDown={index !== selectedDashboard.children.length - 1 ? (() => moveDown(index)) : null}
+      onSave={(newChartConfig) => selectedDashboard.children[index] = newChartConfig}
     />
   {/each}
 

@@ -2,39 +2,29 @@
 import { onMount, untrack } from "svelte";
 import { Chart } from "chart.js/auto";
 import type { ChartConfig, Dataset } from "../../types.d.ts";
-import ChartEditor from "../editors/ChartEditor.svelte";
-import {processDerivedDatasets} from "../helpers/processData";
 
-let { chartConfig, startEditing, onDelete }: {
+let { chartConfig, data } = $props<{
   chartConfig: ChartConfig;
-  startEditing: boolean;
-  onDelete: () => void;
-} = $props();
+  data: Record<string, {x: string, y: number}[]>;
+}>();
 
 let canvas = $state<HTMLCanvasElement>();
-let editing = $state(startEditing);
-let confirmDelete: boolean = $state(false);
-
 let chart: Chart<"line", {x: string, y: number}, unknown>;
-let data : Record<string, {x: string, y: number}[]>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;
   chart = buildChart(canvas!);
   updateChartData();
+  updateChartConfig();
 
-  updateChartTitle();
-  updateChartAxesDisplay();
   chart.update();
 
   return () => chart?.destroy();
 });
 
-$effect(() => {
-  updateChartAxesDisplay();
-  chart.update();
-})
-const updateChartAxesDisplay = () => {
+const updateChartConfig = () => {
+  chart.options.plugins.title.text = chartConfig.title;
+
   chart.options.scales.y1.display = chartConfig.datasets.some((dataset) => dataset.axis === "right");
 }
 
@@ -43,41 +33,9 @@ $effect(() => {
     return;
   }
 
-  updateChartTitle();
+  updateChartConfig();
   chart.update();
-})
-
-const updateChartTitle = () => {
-  chart.options.plugins.title.text = chartConfig.title;
-}
-
-const fetchData = () => {
-  const chartConfigJSON = encodeURIComponent(JSON.stringify(chartConfig));
-  return fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}`)
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then((body) => {
-          throw new Error(body.error ?? `Request failed with status ${response.status}`);
-        });
-      }
-
-      return response.json();
-    })
-    .then((items) => {
-      data = {};
-
-      for (const item of items) {
-        const key = item.split ? `${item.id} ${item.split}` : item.id;
-        data[key] ??= [];
-        data[key].push({x: item.label, y: item.count});
-      }
-
-      processDerivedDatasets(chartConfig.datasets, data);
-
-      updateChartData();
-      chart.update();
-    });
-}
+});
 
 const updateChartData = () => {
   if (!chart || !data) {
@@ -107,37 +65,19 @@ const updateChartData = () => {
     });
 }
 
-const reloadChart = () => {
-  return fetchData();
-}
+$effect(() => {
+  if (!chart) {
+    return;
+  }
 
-onMount(() => {
-  fetchData();
-})
+  updateChartData();
+  chart.update();
+});
 </script>
 
 <div class="relative w-full aspect-video">
   <canvas bind:this={canvas}></canvas>
 </div>
-
-
-{#if editing}
-  <ChartEditor
-    {chartConfig}
-    reloadChart={reloadChart}
-    onCancel={() => (editing = false)}
-  />
-{:else}
-  <div class="flex gap-2">
-    <button onclick={() => (editing = true)}>Edit</button>
-
-    {#if confirmDelete}
-      <button type="button" class="bg-dawn-100 ml-auto" onclick={onDelete}>Yes, delete this chart</button>
-    {:else}
-      <button type="button" class="bg-dawn-100 ml-auto" onclick={() => (confirmDelete = true)}>Delete</button>
-    {/if}
-</div>
-{/if}
 
 <script module lang="ts">
   const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}, unknown> => {
