@@ -1,4 +1,43 @@
-import {Dataset} from "../../types";
+import { ChartConfig, Dataset } from "../../types";
+
+const months = {"01": "January", "02": "February", "03": "March", "04": "April", "05": "May", "06": "June", "07": "July", "08": "August", "09": "September", "10": "October", "11": "November", "12": "December"};
+const shortMonths = {"01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun", "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"};
+
+export const processLabels = (chartConfig: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
+  for (const dataset of chartConfig.datasets) {
+    if (!["day", "week", "month"].includes(chartConfig.group)) {
+      continue;
+    }
+
+    let dateFn: (dateParts: string[]) => string;
+    if (chartConfig.group === "month") {
+      dateFn = (dateParts: string[]) => {
+        return `${months[dateParts[1]]} ${dateParts[0]}`
+      }
+    } else if (chartConfig.group === "week") {
+      dateFn = (dateParts: string[]) => {
+        return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 2)}`
+      }
+    } else {
+      dateFn = (dateParts: string[]) => {
+        return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 2)}`
+      }
+    }
+
+    // Loop through the returned data to find rows for this dataset
+    for (const datasetId of Object.keys(data)) {
+      if (!datasetId.startsWith(dataset.id)) {
+        continue;
+      }
+
+      for (const item of data[datasetId]) {
+        const dateParts = item.x.split("-", 3);
+
+        item.x = dateFn(dateParts);
+      }
+    }
+  }
+}
 
 export const processDerivedDatasets = (datasets: Dataset[], data: Record<string, {x: string, y: number}[]>) => {
   for (const dataset of datasets) {

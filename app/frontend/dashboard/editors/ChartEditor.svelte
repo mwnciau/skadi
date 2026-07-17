@@ -41,7 +41,7 @@ const cancelChanges = () => {
 
 const previewChanges = () => {
   const requestedPreviewString = localChartConfigString;
-  reloadChartData(localChartConfig)
+  reloadChartData($state.snapshot(localChartConfig))
     .then(() => {
       displayedChartConfigString = requestedPreviewString;
       errorMessage = null;
@@ -49,6 +49,21 @@ const previewChanges = () => {
     .catch(error => {
       errorMessage = error.message.trim();
     });
+}
+
+const setType = (newType: typeof localChartConfig.type) => {
+  if (newType === "line") {
+    localChartConfig.type = "line";
+    localChartConfig.group ??= "day"
+  }
+
+  if (newType === "bar") {
+    localChartConfig.type = "bar";
+
+    if (localChartConfig.group === "day") {
+      delete localChartConfig.group;
+    }
+  }
 }
 
 const addDataset = () => {
@@ -100,11 +115,11 @@ const toggleFilterBoolean = (key: string, defaultValue = false) => {
   }
 }
 
-const setVisitTracking = (newValue: string) => {
-  if (!newValue) {
-    delete localChartConfig.visit_tracking;
+const setFilterString = (filter: string, value: string) => {
+  if (value) {
+    localChartConfig[filter] = value;
   } else {
-    localChartConfig.visit_tracking = newValue as typeof localChartConfig.visit_tracking;
+    delete localChartConfig[filter];
   }
 }
 </script>
@@ -119,17 +134,23 @@ const setVisitTracking = (newValue: string) => {
 
   <label>
     Type
-    <select bind:value={localChartConfig.type}>
+    <select onchange={e => setType(e.target.value)} value={localChartConfig.type}>
       <option value="line">Line chart</option>
+      <option value="bar">Bar chart</option>
     </select>
   </label>
 
   <label>
-    X axis
-    <select bind:value={localChartConfig.group}>
-      <option value="day">Day</option>
-      <option value="week">Week</option>
-      <option value="month">Month</option>
+    Time series
+    <select onchange={(e) => setFilterString("group", e.target.value)} value={localChartConfig.group ?? ""}>
+      {#if localChartConfig.type !== "line"}
+        <option value="">All time</option>
+      {/if}
+      {#if localChartConfig.type !== "bar"}
+        <option value="day">Daily</option>
+      {/if}
+      <option value="week">Weekly</option>
+      <option value="month">Monthly</option>
     </select>
   </label>
 
@@ -148,7 +169,7 @@ const setVisitTracking = (newValue: string) => {
 
   <label>
     Visit tracking
-    <select onchange="{event => setVisitTracking(event.target.value)}" value={localChartConfig?.visit_tracking}>
+    <select onchange="{event => setFilterString("visit_tracking", event.target.value)}" value={localChartConfig?.visit_tracking ?? ""}>
       <option value="">Show all visits</option>
       <option value="any">Show visits tracked by anonymity set or cookie</option>
       <option value="anonymity_set">Show visits tracked by anonymity set</option>

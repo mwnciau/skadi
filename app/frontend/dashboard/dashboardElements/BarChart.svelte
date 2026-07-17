@@ -9,7 +9,7 @@ let { chartConfig, data } = $props<{
 }>();
 
 let canvas = $state<HTMLCanvasElement>();
-let chart: Chart<"line", {x: string, y: number}, unknown>;
+let chart: Chart<"bar", {x: string, y: number}, unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;
@@ -24,8 +24,6 @@ onMount(() => {
 
 const updateChartConfig = () => {
   chart.options.plugins.title.text = chartConfig.title;
-
-  chart.options.scales.y1.display = chartConfig.datasets.some((dataset) => dataset.axis === "right");
 }
 
 $effect(() => {
@@ -50,7 +48,6 @@ const updateChartData = () => {
     .flatMap((dataset: Dataset) => {
       let datasetIds = {}
 
-
       const splitDatasetIds = Object.keys(data)
         .filter((id) => id.startsWith(dataset.id))
 
@@ -66,14 +63,37 @@ const updateChartData = () => {
         leftAxis = true;
       }
 
+      const isSplit = Object.keys(datasetIds).some((split) => split !== "");
+
+      // Without a time grouping, every row for a split shares the same (constant) label as
+      // its x value, so splitting into separate datasets would plot them all at that one
+      // x position. Instead, collapse into a single dataset and use the split as the x value,
+      // so each split gets its own bar along the x axis.
+      if (!chartConfig.group && isSplit) {
+        return [{
+          label: dataset.label,
+          data: Object.entries(datasetIds).map(([split, datasetId]) => ({
+            x: `${dataset.label} ${split}`,
+            y: data[datasetId][0]?.y ?? 0,
+          })),
+          yAxisID: dataset.axis === "right" ? "y1" : "y",
+          backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
+          fill: false,
+          skipNull: true,
+        }];
+      }
+
       return Object.entries(datasetIds).map(([split, datasetId]) => ({
         label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
         data: data[datasetId],
         yAxisID: dataset.axis === "right" ? "y1" : "y",
+          backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
         fill: false,
+        skipNull: true,
       }));
     });
 
+  chart.options.plugins.legend.display = leftAxis && rightAxis;
   chart.options.scales.y.display = leftAxis;
   chart.options.scales.y1.display = rightAxis;
 }
@@ -93,9 +113,15 @@ $effect(() => {
 </div>
 
 <script module lang="ts">
-  const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}, unknown> => {
+
+  const AXIS_COLORS = {
+    left: "#3366CCCC",
+    right: "#DC3912CC",  // dawn-500
+  };
+
+  const buildChart = (canvas: HTMLCanvasElement): Chart<"bar", {x: string, y: number}, unknown> => {
     return new Chart(canvas, {
-      type: "line",
+      type: "bar",
       data: {
         datasets: [],
       },
@@ -103,59 +129,36 @@ $effect(() => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "top" },
+          legend: {
+            display: false,
+            labels: {
+              generateLabels: (_chart) => [
+                  {text: "Left axis", fillStyle: AXIS_COLORS.left, strokeStyle: AXIS_COLORS.left},
+                  {text: "Right axis", fillStyle: AXIS_COLORS.right, strokeStyle: AXIS_COLORS.right},
+                ],
+            },
+          },
           title: { display: true, text: "Total visits" },
           tooltip: {
-            // Show all datasets in the tooltip on the same x-coordinate
+            position: "average",
+            // Don't require hovering on top of the bars
             intersect: false,
-            mode: "index",
-            // Show the tooltip on the nearest data point
-            position: "nearest",
-            // Show the tooltip below the point
-            xAlign: "center",
-            yAlign: "top",
+            mode: "nearest",
+            axis: "x",
             // Make tooltip caret bigger
             caretPadding: 10,
             caretSize: 8,
+            xAlign: "center",
+            yAlign: "bottom",
           },
         },
         scales: {
-          x: {
-            ticks: {
-              // The label sizes are all dates so Chart.js doesn't need to look at multiple to see the size
-              sampleSize: 1,
-            },
-          },
+          x: true,
           y: { beginAtZero: true },
           y1: { beginAtZero: true, position: "right", grid: { drawOnChartArea: false } },
         },
       },
-      plugins: [{
-        id: 'verticalLineOnHover',
-        afterDraw: (chart) => {
-          // Check if the tooltip is active and has data points
-          if (chart.tooltip?._active?.length) {
-            const activePoint = chart.tooltip._active[0];
-            const ctx = chart.ctx;
-            const x = activePoint.element.x;
-            const topY = chart.scales.y.top;
-            const bottomY = chart.scales.y.bottom;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.moveTo(x, topY);
-            ctx.lineTo(x, bottomY);
-
-            ctx.lineWidth = 1;
-            ctx.strokeStyle = 'rgb(0, 0, 0, 0.4)';
-
-            ctx.setLineDash([4, 6]);
-
-            ctx.stroke();
-            ctx.restore();
-          }
-        }
-      }],
+      plugins: [],
     });
   }
 </script>

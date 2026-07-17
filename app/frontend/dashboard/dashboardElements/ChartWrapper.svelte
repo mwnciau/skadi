@@ -1,12 +1,13 @@
 <script lang="ts">
-import { onMount, untrack } from "svelte";
-import type { ChartConfig, Dataset } from "../../types.d.ts";
-import ChartEditor from "../editors/ChartEditor.svelte";
-import {processDerivedDatasets} from "../helpers/processData";
-import LineChart from "./LineChart.svelte";
-import Icon from "../components/Icon.svelte";
+  import { onMount } from "svelte";
+  import type { ChartConfig } from "../../types.d.ts";
+  import ChartEditor from "../editors/ChartEditor.svelte";
+  import { processDerivedDatasets, processLabels } from "../helpers/processData";
+  import BarChart from "./BarChart.svelte";
+  import LineChart from "./LineChart.svelte";
+  import Icon from "../components/Icon.svelte";
 
-let { chartConfig, startEditing, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  let { chartConfig, startEditing, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
   chartConfig: ChartConfig;
   startEditing: boolean;
   onDelete: () => void;
@@ -46,6 +47,7 @@ const fetchData = (newChartConfig: ChartConfig | null = null) => {
         newData[key].push({x: item.label, y: item.count});
       }
 
+      processLabels(localChartConfig, newData)
       processDerivedDatasets(localChartConfig.datasets, newData);
       data = newData;
     });
@@ -67,7 +69,11 @@ onMount(() => {
 })
 </script>
 
-<LineChart chartConfig={localChartConfig} {data} />
+{#if localChartConfig.type === "line"}
+  <LineChart chartConfig={localChartConfig} {data} />
+{:else if localChartConfig.type === "bar"}
+  <BarChart chartConfig={localChartConfig} {data} />
+{/if}
 
 {#if editing}
   <ChartEditor

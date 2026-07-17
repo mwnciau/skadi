@@ -45,9 +45,9 @@ export type Dataset = VisitDataset | ViewDataset | EventDataset | PercentageData
 
 export type ChartConfig = {
   id: string;
-  type: "line";
+  type: "bar" | "line";
   title: string;
-  group: "day" | "week" | "month";
+  group?: "day" | "week" | "month";
   date_from?: DateTime;
   date_to?: DateTime;
   verified?: boolean;

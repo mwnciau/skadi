@@ -71,13 +71,18 @@ module Skadi
       private def add_query_select(query, model, dataset, chart)
         # Variables named safe_* are using our definitions, or are escaped user input
 
-        group_template = (GROUPINGS[chart["group"]] || GROUPINGS["day"]).fetch(model.connection.adapter_name) do
-          raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
-        end
+        safe_group = []
+        safe_label = model.connection.quote(dataset["label"])
 
-        # This is a SQL safe string because it can only contain the values in `GROUPINGS`
-        safe_label = group_template.gsub("<table_name>", model.table_name)
-        safe_group = [safe_label]
+        if chart["group"].present?
+          group_template = (GROUPINGS[chart["group"]]).fetch(model.connection.adapter_name) do
+            raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
+          end
+
+          # This is a SQL safe string because it can only contain the values in `GROUPINGS`
+          safe_label = group_template.gsub("<table_name>", model.table_name)
+          safe_group << [safe_label]
+        end
 
         safe_dataset_id = model.connection.quote(dataset["id"])
         safe_split = "NULL"
