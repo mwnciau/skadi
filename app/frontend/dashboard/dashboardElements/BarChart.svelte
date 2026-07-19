@@ -24,6 +24,9 @@ onMount(() => {
 
 const updateChartConfig = () => {
   chart.options.plugins.title.text = chartConfig.title;
+  chart.options.plugins.tooltip.mode = chartConfig.group ? "index" : "x";
+  chart.options.plugins.tooltip.yAlign = chartConfig.group ? undefined : "bottom";
+  chart.options.hover.mode = chartConfig.group ? "index" : "x";
 }
 
 $effect(() => {
@@ -74,10 +77,10 @@ const updateChartData = () => {
           label: dataset.label,
           data: Object.entries(datasetIds).map(([split, datasetId]) => ({
             x: `${dataset.label} ${split}`,
-            y: data[datasetId][0]?.y ?? 0,
+            y: data[datasetId][0].y,
           })),
           yAxisID: dataset.axis === "right" ? "y1" : "y",
-          backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
+          //backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
           fill: false,
           skipNull: true,
         }];
@@ -87,7 +90,7 @@ const updateChartData = () => {
         label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
         data: data[datasetId],
         yAxisID: dataset.axis === "right" ? "y1" : "y",
-          backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
+        //backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
         fill: false,
         skipNull: true,
       }));
@@ -113,12 +116,6 @@ $effect(() => {
 </div>
 
 <script module lang="ts">
-
-  const AXIS_COLORS = {
-    left: "#3366CCCC",
-    right: "#DC3912CC",  // dawn-500
-  };
-
   const buildChart = (canvas: HTMLCanvasElement): Chart<"bar", {x: string, y: number}, unknown> => {
     return new Chart(canvas, {
       type: "bar",
@@ -129,36 +126,65 @@ $effect(() => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: {
-            display: false,
-            labels: {
-              generateLabels: (_chart) => [
-                  {text: "Left axis", fillStyle: AXIS_COLORS.left, strokeStyle: AXIS_COLORS.left},
-                  {text: "Right axis", fillStyle: AXIS_COLORS.right, strokeStyle: AXIS_COLORS.right},
-                ],
-            },
-          },
           title: { display: true, text: "Total visits" },
           tooltip: {
             position: "average",
             // Don't require hovering on top of the bars
             intersect: false,
-            mode: "nearest",
-            axis: "x",
+            mode: "index",
             // Make tooltip caret bigger
             caretPadding: 10,
             caretSize: 8,
-            xAlign: "center",
-            yAlign: "bottom",
+            //displayColors: false
           },
         },
         scales: {
-          x: true,
           y: { beginAtZero: true },
           y1: { beginAtZero: true, position: "right", grid: { drawOnChartArea: false } },
         },
+        hover: {
+          mode: "x",
+          intersect: false,
+        },
+        onHover: (event, activeElements, chart) => {
+          let hoveredPosition;
+          if (activeElements.length) {
+            hoveredPosition = (activeElements[0].element.x + activeElements[activeElements.length - 1].element.x) / 2
+          }
+          else {
+            hoveredPosition = null
+          }
+
+          // Only do the re-render if the hovered element has meaningfully changed
+          if (hoveredPosition !== chart.hoveredPosition) {
+            chart.hoveredPosition = hoveredPosition;
+
+            // Re-render without animations
+            chart.update('none');
+          }
+        },
       },
-      plugins: [],
+      plugins: [{
+        id: 'highlightXAxisBand',
+        beforeDatasetsDraw(chart, args, options) {
+          const { ctx, hoveredPosition, scales: { x, y } } = chart;
+
+          if (!hoveredPosition) {
+            return;
+          }
+
+          const pixelWidth = x.getPixelForTick(1) - x.getPixelForTick(0);
+          let pixelLeft = hoveredPosition - (pixelWidth / 2);
+
+          ctx.save();
+
+          // Draw background highlight
+          ctx.fillStyle = "#3366CC11";
+          ctx.fillRect(pixelLeft, y.top, pixelWidth, y.height);
+
+          ctx.restore();
+        }
+      }],
     });
   }
 </script>

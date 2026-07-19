@@ -111,9 +111,6 @@ $effect(() => {
             mode: "index",
             // Show the tooltip on the nearest data point
             position: "nearest",
-            // Show the tooltip below the point
-            xAlign: "center",
-            yAlign: "top",
             // Make tooltip caret bigger
             caretPadding: 10,
             caretSize: 8,
