@@ -2,7 +2,7 @@
   import { onMount } from "svelte";
   import type { ChartConfig } from "../../types.d.ts";
   import ChartEditor from "../editors/ChartEditor.svelte";
-  import { processDerivedDatasets, processLabels } from "../helpers/processData";
+  import {fillDataGaps, processDerivedDatasets, processLabels} from "../helpers/processData";
   import BarChart from "./BarChart.svelte";
   import LineChart from "./LineChart.svelte";
   import Icon from "../components/Icon.svelte";
@@ -47,8 +47,9 @@ const fetchData = (newChartConfig: ChartConfig | null = null) => {
         newData[key].push({x: item.label, y: item.count});
       }
 
+      fillDataGaps(localChartConfig, newData);
       processLabels(localChartConfig, newData)
-      processDerivedDatasets(localChartConfig.datasets, newData);
+      processDerivedDatasets(localChartConfig, newData);
       data = newData;
     });
 }

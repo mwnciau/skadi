@@ -39,14 +39,11 @@ export const processLabels = (chartConfig: ChartConfig, data: Record<string, {x:
   }
 }
 
-export const processDerivedDatasets = (datasets: Dataset[], data: Record<string, {x: string, y: number}[]>) => {
-  for (const dataset of datasets) {
+export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
+  for (const dataset of chart.datasets) {
     if (dataset.type === "percentage") {
       const numerator = data[dataset.numerator];
       const denominator = data[dataset.denominator];
-
-      let n = 0;
-      let d = 0;
 
       if (!numerator || !denominator) {
         console.error(`Could not find numerator or denominator for percentage dataset ${dataset.id}`);
@@ -55,33 +52,99 @@ export const processDerivedDatasets = (datasets: Dataset[], data: Record<string,
         continue;
       }
 
-      data[dataset.id] = [];
-
-      // Loop through the sorted numerator and denominator arrays and calculate a percentage
-      // where the x values both exist.
-      while (n < numerator.length && d < denominator.length) {
-        // The labels match so populate the percentage for this label
-        if (numerator[n].x === denominator[d].x) {
-          // If the denominator is zero, skip it to avoid division by zero
-          if (denominator[d].y > 0) {
-            data[dataset.id].push({
-              x: numerator[n].x,
-              y: Math.round((numerator[n].y / denominator[d].y) * 1000) / 10,
-            });
-          }
-
-          n++;
-          d++;
-        }
-        // If the numerator is behind the denominator, incremenet just it to catch up
-        else if (numerator[n].x < denominator[d].x) {
-          n++;
-        }
-        // And vice versa. If they're not equal, and the numerator isn't smaller, the denominator must be behind.
-        else {
-          d++;
-        }
+      if (chart.group) {
+        data[dataset.id] = populatePercentageDate(data, numerator, denominator);
+      } else {
+        // If there is no time-series, there is only one item per dataset
+        data[dataset.id] = [{x: dataset.label, y: Math.round((numerator[0].y / denominator[0].y) * 1000) / 10}]
       }
+    }
+  }
+}
+
+const populatePercentageDate = (data: Record<string, {x: string, y: number}[]>, numerator: {x: string, y: number}[], denominator: {x: string, y: number}[]) => {
+  let n = 0;
+  let d = 0;
+  const percentageData = [];
+
+  // Loop through the sorted numerator and denominator arrays and calculate a percentage
+  // where the x values both exist.
+  while (n < numerator.length && d < denominator.length) {
+    // The labels match so populate the percentage for this label
+    if (numerator[n].x === denominator[d].x) {
+      // If the denominator is zero, skip it to avoid division by zero
+      if (denominator[d].y > 0) {
+        percentageData.push({
+          x: numerator[n].x,
+          y: Math.round((numerator[n].y / denominator[d].y) * 1000) / 10,
+        });
+      }
+
+      n++;
+      d++;
+    }
+    // If the numerator is behind the denominator, incremenet just it to catch up
+    else if (numerator[n].x < denominator[d].x) {
+      n++;
+    }
+    // And vice versa. If they're not equal, and the numerator isn't smaller, the denominator must be behind.
+    else {
+      d++;
+    }
+  }
+
+  return percentageData;
+}
+
+export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string, y: number | null}[]>) => {
+  if (!chart.group) {
+    // There will be no gaps if there is no time series
+    return;
+  }
+
+  let uniqueXValues = new Set();
+
+  for (const dataPoints of Object.values(data)) {
+    for (const dataPoint of dataPoints) {
+      uniqueXValues.add(dataPoint.x);
+    }
+  }
+
+  const xValues = Array.from(uniqueXValues).sort();
+  interpolateXValues(chart, xValues);
+
+  for (const dataset of Object.keys(data)) {
+    for (let index = 0; index < xValues.length; index++) {
+      if (data[dataset][index].x > xValues[index]) {
+        data[dataset].splice(index, 0, {x: xValues[index], y: 0});
+      }
+    }
+  }
+}
+
+const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
+  if (!["day", "week", "month"].includes(chart.group)) {
+    return;
+  }
+
+  for (let i = 0; i < xValues.length - 1; i++) {
+    let current = xValues[i];
+    let currentDate = new Date(current);
+
+    if (chart.group === "day") {
+      currentDate.setUTCDate(currentDate.getUTCDate() + 1);
+    }
+    else if (chart.group === "week") {
+      currentDate.setUTCDate(currentDate.getUTCDate() + 7);
+    }
+    else if (chart.group === "month") {
+      currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
+    }
+
+    let next = currentDate.toISOString().split("T", 1)[0];
+
+    if (next !== xValues[i + 1] && next < xValues[xValues.length - 1]) {
+      xValues.splice(i + 1, 0, next);
     }
   }
 }
