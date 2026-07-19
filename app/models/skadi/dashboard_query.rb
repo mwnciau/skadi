@@ -2,17 +2,17 @@ module Skadi
   class DashboardQuery
     class << self
       GROUPINGS = {
-        "day" => {
+        "daily" => {
           "PostgreSQL" => "DATE(<table_name>.created_at)",
           "Mysql2" => "DATE(<table_name>.created_at)",
           "SQLite" => "DATE(<table_name>.created_at)"
         },
-        "week" => {
+        "weekly" => {
           "PostgreSQL" => "DATE_TRUNC('week', <table_name>.created_at)::date",
           "Mysql2" => "DATE_SUB(DATE(<table_name>.created_at), INTERVAL WEEKDAY(<table_name>.created_at) DAY)",
           "SQLite" => "DATE(<table_name>.created_at, '-' || ((CAST(STRFTIME('%w', <table_name>.created_at) AS INTEGER) + 6) % 7) || ' days')"
         },
-        "month" => {
+        "monthly" => {
           "PostgreSQL" => "DATE_TRUNC('month', <table_name>.created_at)::date",
           "Mysql2" => "DATE_FORMAT(<table_name>.created_at, '%Y-%m-01')",
           "SQLite" => "DATE(<table_name>.created_at, 'start of month')"
@@ -74,8 +74,8 @@ module Skadi
         safe_group = []
         safe_label = model.connection.quote(dataset["label"])
 
-        if chart["group"].present?
-          group_template = (GROUPINGS[chart["group"]]).fetch(model.connection.adapter_name) do
+        if chart["time_series"].present?
+          group_template = (GROUPINGS[chart["time_series"]]).fetch(model.connection.adapter_name) do
             raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
           end
 

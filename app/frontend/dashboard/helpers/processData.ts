@@ -5,20 +5,23 @@ const shortMonths = {"01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "
 
 export const processLabels = (chartConfig: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
   for (const dataset of chartConfig.datasets) {
-    if (!["day", "week", "month"].includes(chartConfig.group)) {
+    if (!chartConfig.time_series) {
       continue;
     }
 
     let dateFn: (dateParts: string[]) => string;
-    if (chartConfig.group === "month") {
+    if (chartConfig.time_series === "monthly") {
       dateFn = (dateParts: string[]) => {
         return `${months[dateParts[1]]} ${dateParts[0]}`
       }
-    } else if (chartConfig.group === "week") {
+    }
+    else if (chartConfig.time_series === "weekly") {
       dateFn = (dateParts: string[]) => {
         return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 2)}`
       }
-    } else {
+    }
+    // time_series = "daily"
+    else {
       dateFn = (dateParts: string[]) => {
         return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 2)}`
       }
@@ -52,7 +55,7 @@ export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, 
         continue;
       }
 
-      if (chart.group) {
+      if (chart.time_series) {
         data[dataset.id] = populatePercentageDate(data, numerator, denominator);
       } else {
         // If there is no time-series, there is only one item per dataset
@@ -97,7 +100,7 @@ const populatePercentageDate = (data: Record<string, {x: string, y: number}[]>, 
 }
 
 export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string, y: number | null}[]>) => {
-  if (!chart.group) {
+  if (!chart.time_series) {
     // There will be no gaps if there is no time series
     return;
   }
@@ -123,7 +126,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
 }
 
 const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
-  if (!["day", "week", "month"].includes(chart.group)) {
+  if (!["day", "week", "month"].includes(chart.time_series)) {
     return;
   }
 
@@ -131,13 +134,13 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
     let current = xValues[i];
     let currentDate = new Date(current);
 
-    if (chart.group === "day") {
+    if (chart.time_series === "day") {
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
-    else if (chart.group === "week") {
+    else if (chart.time_series === "week") {
       currentDate.setUTCDate(currentDate.getUTCDate() + 7);
     }
-    else if (chart.group === "month") {
+    else if (chart.time_series === "month") {
       currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
     }
 

@@ -54,14 +54,14 @@ const previewChanges = () => {
 const setType = (newType: typeof localChartConfig.type) => {
   if (newType === "line") {
     localChartConfig.type = "line";
-    localChartConfig.group ??= "day"
+    localChartConfig.time_series ??= "day"
   }
 
   if (newType === "bar") {
     localChartConfig.type = "bar";
 
-    if (localChartConfig.group === "day") {
-      delete localChartConfig.group;
+    if (localChartConfig.time_series === "day") {
+      delete localChartConfig.time_series;
     }
   }
 }
@@ -142,15 +142,15 @@ const setFilterString = (filter: string, value: string) => {
 
   <label>
     Time series
-    <select onchange={(e) => setFilterString("group", e.target.value)} value={localChartConfig.group ?? ""}>
+    <select onchange={(e) => setFilterString("time_series", e.target.value)} value={localChartConfig.time_series ?? ""}>
       {#if localChartConfig.type !== "line"}
         <option value="">All time</option>
       {/if}
       {#if localChartConfig.type !== "bar"}
-        <option value="day">Daily</option>
+        <option value="daily">Daily</option>
       {/if}
-      <option value="week">Weekly</option>
-      <option value="month">Monthly</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
     </select>
   </label>
 

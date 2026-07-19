@@ -24,9 +24,9 @@ onMount(() => {
 
 const updateChartConfig = () => {
   chart.options.plugins.title.text = chartConfig.title;
-  chart.options.plugins.tooltip.mode = chartConfig.group ? "index" : "x";
-  chart.options.plugins.tooltip.yAlign = chartConfig.group ? undefined : "bottom";
-  chart.options.hover.mode = chartConfig.group ? "index" : "x";
+  chart.options.plugins.tooltip.mode = chartConfig.time_series ? "index" : "x";
+  chart.options.plugins.tooltip.yAlign = chartConfig.time_series ? undefined : "bottom";
+  chart.options.hover.mode = chartConfig.time_series ? "index" : "x";
 }
 
 $effect(() => {
@@ -72,7 +72,7 @@ const updateChartData = () => {
       // its x value, so splitting into separate datasets would plot them all at that one
       // x position. Instead, collapse into a single dataset and use the split as the x value,
       // so each split gets its own bar along the x axis.
-      if (!chartConfig.group && isSplit) {
+      if (!chartConfig.time_series && isSplit) {
         return [{
           label: dataset.label,
           data: Object.entries(datasetIds).map(([split, datasetId]) => ({

@@ -9,7 +9,7 @@ module Skadi
             "id" => "7cec5a7a-7bf7-403f-b15e-b2e45944182d",
             "type" => "line",
             "title" => "Visits and Checkouts",
-            "group" => "day",
+            "time_series" => "weekly",
 
             "verified" => true,
             "unique_visits" => true,
