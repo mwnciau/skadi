@@ -59,5 +59,7 @@ export type ChartConfig = {
 export type DashboardConfig = {
   id: string;
   title: string;
+  date_from?: string;
+  date_to?: string;
   children: ChartConfig[];
 }

@@ -3,6 +3,7 @@ import type {ChartConfig} from "../../types";
 import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
+import Filter from "../components/Filter.svelte";
 
 let { chartConfig, reloadChartData, onClose, onSave }: {
   chartConfig: ChartConfig;
@@ -51,16 +52,18 @@ const previewChanges = () => {
     });
 }
 
-const setType = (newType: typeof localChartConfig.type) => {
+const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
+  const newType = event.currentTarget.value;
+
   if (newType === "line") {
     localChartConfig.type = "line";
-    localChartConfig.time_series ??= "day"
+    localChartConfig.time_series ??= "daily"
   }
 
   if (newType === "bar") {
     localChartConfig.type = "bar";
 
-    if (localChartConfig.time_series === "day") {
+    if (localChartConfig.time_series === "daily") {
       delete localChartConfig.time_series;
     }
   }
@@ -106,22 +109,6 @@ const moveDown = (index: number) => {
   // Splice returns the items that were removed, so this overwrites `index` with `index + 1`, then sets `index + 1` to the removed item
   localChartConfig.datasets[index + 1] = localChartConfig.datasets.splice(index, 1, localChartConfig.datasets[index + 1])[0];
 }
-
-const toggleFilterBoolean = (key: string, defaultValue = false) => {
-  if (localChartConfig[key] === !defaultValue) {
-    delete localChartConfig[key];
-  } else {
-    localChartConfig[key] = !defaultValue;
-  }
-}
-
-const setFilterString = (filter: string, value: string) => {
-  if (value) {
-    localChartConfig[filter] = value;
-  } else {
-    delete localChartConfig[filter];
-  }
-}
 </script>
 
 <div class="flex flex-col gap-4 border-l-4 border-ice-400 pl-4">
@@ -134,15 +121,16 @@ const setFilterString = (filter: string, value: string) => {
 
   <label>
     Type
-    <select onchange={e => setType(e.target.value)} value={localChartConfig.type}>
+    <select onchange={setType} value={localChartConfig.type}>
       <option value="line">Line chart</option>
       <option value="bar">Bar chart</option>
     </select>
   </label>
 
-  <label>
+  <Filter type="select" model={localChartConfig} key="time_series">
     Time series
-    <select onchange={(e) => setFilterString("time_series", e.target.value)} value={localChartConfig.time_series ?? ""}>
+
+    {#snippet selectOptions()}
       {#if localChartConfig.type !== "line"}
         <option value="">All time</option>
       {/if}
@@ -151,31 +139,40 @@ const setFilterString = (filter: string, value: string) => {
       {/if}
       <option value="weekly">Weekly</option>
       <option value="monthly">Monthly</option>
-    </select>
-  </label>
+    {/snippet}
+  </Filter>
 
-  <label>
+
+  <Filter
+    type="boolean"
+    model={localChartConfig}
+    key="verified"
+    description="Visits and views are created by the backend, and verified by a frontend request. Enabling this will filter out some bots and prevent page pre-fetching being tracked."
+  >
     Show only verified visits and views
-    <Switch value={localChartConfig?.verified === true} onToggle={() => toggleFilterBoolean("verified")} />
-    <span class="help-text">
-      Visits and views are created by the backend, and verified by a frontend request. Enabling this will filter out some bots and prevent page pre-fetching being tracked.
-    </span>
-  </label>
+  </Filter>
 
-  <label>
+  <Filter
+    type="boolean"
+    model={localChartConfig}
+    key="unique_visits"
+  >
     Deduplicate views and events per visit
-    <Switch value={localChartConfig?.unique_visits === true} onToggle={() => toggleFilterBoolean("unique_visits")} />
-  </label>
+  </Filter>
 
-  <label>
+  <Filter
+    type="select"
+    model={localChartConfig}
+    key="visit_tracking"
+    selectOptions={[
+      {label: "Show all visits", value: ""},
+      {label: "Show visits tracked by anonymity set or cookie", value: "any"},
+      {label: "Show visits tracked by anonymity set", value: "anonymity_set"},
+      {label: "Show visits tracked by cookie", value: "cookie"},
+    ]}
+  >
     Visit tracking
-    <select onchange="{event => setFilterString("visit_tracking", event.target.value)}" value={localChartConfig?.visit_tracking ?? ""}>
-      <option value="">Show all visits</option>
-      <option value="any">Show visits tracked by anonymity set or cookie</option>
-      <option value="anonymity_set">Show visits tracked by anonymity set</option>
-      <option value="cookie">Show visits tracked by cookie</option>
-    </select>
-  </label>
+  </Filter>
 
   <div class="flex flex-col gap-4 max-w-160 mt-4">
     {#each localChartConfig.datasets as dataset, index (dataset.id)}

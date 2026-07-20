@@ -10,6 +10,7 @@
   } from "../../types";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
+  import Filter from "../components/Filter.svelte";
 
 const sqlDefault = (datasetId: string) => `SELECT
   '${datasetId}' as "id",
@@ -75,7 +76,9 @@ const typeFields: {
   percentage: ["numerator", "denominator"],
   sql: ["sql"],
 }
-const changeType = (newType: string) => {
+const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
+  const newType = event.currentTarget.value;
+
   dataset.type = newType as typeof dataset.type;
 
   const types = typeFields.common.concat(typeFields[newType]);
@@ -87,22 +90,6 @@ const changeType = (newType: string) => {
 
   if (newType === "sql") {
     dataset.sql = sqlDefault(dataset.id);
-  }
-}
-
-const toggleFilterBoolean = (key: string, defaultValue = false) => {
-  if (dataset[key] === !defaultValue) {
-    delete dataset[key];
-  } else {
-    dataset[key] = !defaultValue;
-  }
-}
-
-const setFilterString = (filter: string, value: string) => {
-  if (value) {
-    dataset[filter] = value;
-  } else {
-    delete dataset[filter];
   }
 }
 
@@ -134,7 +121,7 @@ const duplicate = () => {
 
         <label>
           Type
-          <select onchange="{event => changeType(event.target.value)}" value={dataset.type}>
+          <select onchange="{setType}" value={dataset.type}>
             <option value="visits">Visits</option>
             <option value="views">Views</option>
             <option value="events">Events</option>
@@ -143,127 +130,119 @@ const duplicate = () => {
           </select>
         </label>
 
-        <label>
+        <Filter type="boolean" booleanDefault={true} model={dataset} key="visible">
           Show on chart
-          <Switch value={dataset.visible !== false} onToggle={() => toggleFilterBoolean("visible", true)} />
-        </label>
+        </Filter>
 
         {#if dataset.visible !== false}
-          <label>
+          <Filter
+            type="switch"
+            leftLabel="Left"
+            rightLabel="Right"
+            rightValue="right"
+            model={dataset}
+            key="axis"
+          >
             Axis
-            <div class="flex items-center gap-2 font-normal">
-              Left
-              <Switch
-                value={dataset.axis === "right"}
-                onToggle={() => setFilterString("axis", dataset.axis === "right" ? "" : "right")}
-                labelOn=""
-                labelOff=""
-              />
-              Right
-            </div>
-          </label>
+          </Filter>
         {/if}
 
         {#if dataset.type === "views"}
-          <label>
+          <Filter
+            type="select"
+            model={dataset}
+            key="split_by"
+            selectOptions={[
+              "",
+              {label: "Controller", value: "controller"},
+              {label: "Controller and action", value: "controller_action"},
+              {label: "Path", value: "path"},
+              {label: "HTTP Verb", value: "verb"},
+              {label: "Version", value: "version"},
+            ]}
+          >
             Split by
-            <select onchange="{event => setFilterString("split_by", event.target.value)}" value={dataset?.split_by}>
-              <option></option>
-              <option value="controller">Controller</option>
-              <option value="controller_action">Controller and action</option>
-              <option value="path">Path</option>
-              <option value="verb">Verb</option>
-              <option value="version">Version</option>
-            </select>
-          </label>
+          </Filter>
 
-          <label>
+          <Filter model={dataset} key="view_path">
             Path
-            <input type="text" onkeyup={event => setFilterString("view_path", event.target.value)} value={dataset?.view_path} />
-          </label>
+          </Filter>
 
-          <label>
+          <Filter model={dataset} key="view_controller">
             Controller
-            <input type="text" onkeyup={event => setFilterString("view_controller", event.target.value)} value={dataset?.view_controller} />
-          </label>
+          </Filter>
 
-          <label>
+          <Filter model={dataset} key="view_action">
             Action
-            <input type="text" onkeyup={event => setFilterString("view_action", event.target.value)} value={dataset?.view_action} />
-          </label>
+          </Filter>
 
-          <label>
+          <Filter model={dataset} key="view_version">
             Version
-            <input type="text" onkeyup={event => setFilterString("view_version", event.target.value)} value={dataset?.view_version} />
-          </label>
+          </Filter>
 
-          <label>
-            Verb
-            <select onchange="{event => setFilterString("view_verb", event.target.value)}" value={dataset?.view_verb}>
-              <option></option>
-              <option>GET</option>
-              <option>POST</option>
-              <option>PUT</option>
-              <option>PATCH</option>
-              <option>DELETE</option>
-            </select>
-          </label>
+          <Filter
+            type="select"
+            model={dataset}
+            key="view_verb"
+            selectOptions={["", "GET", "POST", "PUT", "PATCH", "DELETE"]}
+            description="Typically, GET requests are page views, and POST, PUT, PATCH and DELETE are form submissions."
+          >
+            HTTP Verb
+          </Filter>
         {/if}
 
         {#if dataset.type === "events"}
           {#if dataset.split_by !== "name"}
-            <label>
+            <Filter model={dataset} key="event_name">
               Event name
-              <input type="text" onkeyup={event => setFilterString("event_name", event.target.value)} value={dataset?.event_name} />
-            </label>
+            </Filter>
           {/if}
 
           {#if !dataset.event_name}
-            <label>
+            <Filter type="switch" rightValue="name" model={dataset} key="split_by">
               Split by name
-              <Switch value={dataset.split_by === "name"} onToggle={() => setFilterString("split_by", dataset.split_by ? "" : "name")} />
-            </label>
+            </Filter>
           {/if}
         {/if}
 
         {#if dataset.type === "percentage"}
-          <label>
+          <Filter
+            type="select"
+            model={dataset}
+            key="numerator"
+            selectOptions={derivedSources}
+            description="The dataset you are using for your target, e.g. a specific page view or event."
+          >
             Numerator
-            <select onchange="{event => setFilterString("numerator", event.target.value)}" value={dataset?.numerator}>
-              {#each derivedSources as source}
-                <option value={source.value}>{source.label}</option>
-              {/each}
-            </select>
-            <span class="help-text">
-              The dataset you are using for your target, e.g. a specific page view or event.
-            </span>
-          </label>
+          </Filter>
 
-          <label>
+          <Filter
+            type="select"
+            model={dataset}
+            key="denominator"
+            selectOptions={derivedSources}
+            description="The dataset you are using for comparison, e.g. the number of visits."
+          >
             Denominator
-            <select onchange="{event => setFilterString("denominator", event.target.value)}" value={dataset?.denominator}>
-              {#each derivedSources as source}
-                <option value={source.value}>{source.label}</option>
-              {/each}
-            </select>
-            <span class="help-text">
-              The dataset you are using for comparison, e.g. the number of visits.
-            </span>
-          </label>
+          </Filter>
         {/if}
 
         {#if dataset.type === "sql"}
-          <label>
+          <Filter
+            type="textarea"
+            model={dataset}
+            key="sql"
+            class="font-mono text-red-800 bg-red-50/50 p-1 border border-red-800"
+            rows="10"
+          >
             SQL Query
-            <textarea
-              class="font-mono text-red-800 bg-red-50/50 p-1 border border-red-800"
-              onchange={e => setFilterString("sql", e.target.value)}
-              rows="10"
-            >{dataset.sql}</textarea>
-            <p class="help-text">
-              Note: to be compatible with the line chart, your query must return four columns: <code>'{dataset.id}' as id</code>; <code>NULL</code> or a string value as <code>split</code>, which will split it into multiple datasets; <code>label</code>; <code>count</code>
-            </p>
-          </label>
+
+            {#snippet description()}
+              <span class="help-text">
+                Note: to be compatible with the line chart, your query must return four columns: <code>'{dataset.id}' as id</code>; <code>NULL</code> or a string value as <code>split</code>, which will split it into multiple datasets; <code>label</code>; <code>count</code>
+              </span>
+            {/snippet}
+          </Filter>
         {/if}
 
         <div class="flex flex-row gap-2 mt-4">

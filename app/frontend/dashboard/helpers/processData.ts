@@ -126,7 +126,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
 }
 
 const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
-  if (!["day", "week", "month"].includes(chart.time_series)) {
+  if (!["daily", "weekly", "monthly"].includes(chart.time_series)) {
     return;
   }
 
@@ -134,13 +134,13 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
     let current = xValues[i];
     let currentDate = new Date(current);
 
-    if (chart.time_series === "day") {
+    if (chart.time_series === "daily") {
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
     }
-    else if (chart.time_series === "week") {
+    else if (chart.time_series === "weekly") {
       currentDate.setUTCDate(currentDate.getUTCDate() + 7);
     }
-    else if (chart.time_series === "month") {
+    else if (chart.time_series === "monthly") {
       currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
     }
 

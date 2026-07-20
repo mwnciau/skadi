@@ -63,6 +63,7 @@
     @apply
       px-4 py-2 max-w-120
       border border-night-100
+      grow
     ;
   }
 

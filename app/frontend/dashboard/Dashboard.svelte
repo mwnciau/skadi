@@ -2,6 +2,8 @@
 import Tabs from "./Tabs.svelte";
 import ChartWrapper from "./dashboardElements/ChartWrapper.svelte";
 import type { DashboardConfig } from "../types.d.ts";
+import ExpandingSection from "./components/ExpandingSection.svelte";
+import Filter from "./components/Filter.svelte";
 
 let dashboards = $state<DashboardConfig[]>(
   JSON.parse(document.querySelector<HTMLElement>("[data-dashboard-config]")?.dataset?.dashboardConfig!),
@@ -9,7 +11,6 @@ let dashboards = $state<DashboardConfig[]>(
 
 let selectedTab = $state<string>(dashboards[0].id);
 let selectedDashboard = $derived(dashboards.find(dashboard => dashboard.id === selectedTab));
-
 
 // Intentionally left state-less because this will be a one-off thing when a chart is added or duplicated
 let chartIdToEdit: string | null = null;
@@ -79,7 +80,31 @@ const moveDown = (index: number) => {
   selectTab={tab => selectedTab = tab}
   newTab={newTab}
 />
-<main class="w-full max-w-256 mx-auto flex flex-col gap-4 pt-8">
+<main class="w-full max-w-256 mx-auto flex flex-col gap-4 pt-4">
+  <ExpandingSection>
+    {#snippet title(open: boolean)}
+      <p class="text-sm font-semibold">Dashboard filters</p>
+      {#if !open}
+        <p class="flex gap-2 text-xs ml-2">
+          {#if selectedDashboard.date_from}
+            <span>from {selectedDashboard.date_from}</span>
+          {/if}
+          {#if selectedDashboard.date_to}
+            <span>to {selectedDashboard.date_to}</span>
+          {/if}
+        </p>
+      {/if}
+    {/snippet}
+
+    <Filter type="date" model={selectedDashboard} key="date_from">
+      Date from
+    </Filter>
+
+    <Filter type="date" model={selectedDashboard} key="date_to">
+      Date to
+    </Filter>
+  </ExpandingSection>
+
   {#each selectedDashboard?.children as chart, index (chart.id)}
     <ChartWrapper
       chartConfig={chart}

@@ -2,13 +2,15 @@
 const ICONS = {
   chevron_down: "M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z",
   chevron_up: "M480-528 296-344l-56-56 240-240 240 240-56 56-184-184Z",
+  delete: "m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z",
   plus: "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z",
 } as const;
 
-const { name, size = null, class: className = "", ...attributes } = $props<{
+const { name, size = null, class: className = "", alt = null, ...attributes } = $props<{
   name: keyof typeof ICONS;
   size?: number | string | null;
   class?: string;
+  alt?: string | null;
 }>();
 
 const sizeStyleString = $derived.by(() => {
@@ -31,4 +33,4 @@ const sizeStyleString = $derived.by(() => {
   style:height={sizeStyleString}
   style:width={sizeStyleString}
   {...attributes}
-><path d={ICONS[name]}/></svg>
+><title>{alt ?? name}</title><path d={ICONS[name]}/></svg>
