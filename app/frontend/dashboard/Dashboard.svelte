@@ -33,7 +33,7 @@ const addChart = () => {
     id: uuid,
     type: "line",
     title: "New chart",
-    group: "week",
+    time_series: "weekly",
     datasets: [{
       id: crypto.randomUUID(),
       type: "visits",

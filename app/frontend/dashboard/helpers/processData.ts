@@ -105,7 +105,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
     return;
   }
 
-  let uniqueXValues = new Set();
+  let uniqueXValues = new Set<string>();
 
   for (const dataPoints of Object.values(data)) {
     for (const dataPoint of dataPoints) {
@@ -113,7 +113,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
     }
   }
 
-  const xValues = Array.from(uniqueXValues).sort();
+  const xValues: string[] = Array.from(uniqueXValues).sort();
   interpolateXValues(chart, xValues);
 
   for (const dataset of Object.keys(data)) {
@@ -126,7 +126,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
 }
 
 const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
-  if (!["daily", "weekly", "monthly"].includes(chart.time_series)) {
+  if (!chart.time_series) {
     return;
   }
 
