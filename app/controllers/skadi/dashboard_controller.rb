@@ -9,7 +9,7 @@ module Skadi
     end
 
     def data
-      query_filters = params.permit(:date_from, :date_to, :verified)
+      query_filters = params.permit(:date_from, :date_to)
 
       dashboard = Skadi::Dashboard.new
 

@@ -10,6 +10,8 @@ export type CommonDataset = {
 
 export type VisitDataset = CommonDataset & {
   type: "visits";
+  date_from?: DateTime;
+  date_to?: DateTime;
 }
 
 export type ViewDataset = CommonDataset & {
@@ -21,6 +23,9 @@ export type ViewDataset = CommonDataset & {
   view_path?: string;
   view_verb?: string;
   view_version?: string;
+
+  date_from?: DateTime;
+  date_to?: DateTime;
 }
 
 export type EventDataset = CommonDataset & {
@@ -28,6 +33,9 @@ export type EventDataset = CommonDataset & {
   split_by?: "name";
 
   event_name?: string;
+
+  date_from?: DateTime;
+  date_to?: DateTime;
 }
 
 export type PercentageDataset = CommonDataset & {

@@ -1,13 +1,14 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { ChartConfig } from "../../types.d.ts";
+  import type { ChartConfig, DashboardConfig } from "../../types.d.ts";
   import ChartEditor from "../editors/ChartEditor.svelte";
   import {fillDataGaps, processDerivedDatasets, processLabels} from "../helpers/processData";
   import BarChart from "./BarChart.svelte";
   import LineChart from "./LineChart.svelte";
   import Icon from "../components/Icon.svelte";
 
-  let { chartConfig, startEditing, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  let { dashboardConfig, chartConfig, startEditing, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  dashboardConfig: DashboardConfig,
   chartConfig: ChartConfig;
   startEditing: boolean;
   onDelete: () => void;
@@ -27,8 +28,16 @@ let data : Record<string, {x: string, y: number}[]> = $state.raw({});
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
   localChartConfig = newChartConfig ?? chartConfig;
 
+  let additionalQueryVars = "";
+  if (dashboardConfig.date_from) {
+    additionalQueryVars += `&date_from=${dashboardConfig.date_from}`
+  }
+  if (dashboardConfig.date_to) {
+    additionalQueryVars += `&date_to=${dashboardConfig.date_to}`
+  }
+
   const chartConfigJSON = encodeURIComponent(JSON.stringify(localChartConfig));
-  return fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}`)
+  return fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}${additionalQueryVars}`)
     .then((response) => {
       if (!response.ok) {
         return response.json().then((body) => {
@@ -42,14 +51,14 @@ const fetchData = (newChartConfig: ChartConfig | null = null) => {
       const newData = {};
 
       for (const item of items) {
-        const key = item.split ? `${item.id} ${item.split}` : item.id;
+        const key: string = item.split ? `${item.id} ${item.split}` : item.id;
         newData[key] ??= [];
         newData[key].push({x: item.label, y: item.count});
       }
 
+      processDerivedDatasets(localChartConfig, newData);
       fillDataGaps(localChartConfig, newData);
       processLabels(localChartConfig, newData)
-      processDerivedDatasets(localChartConfig, newData);
       data = newData;
     });
 }

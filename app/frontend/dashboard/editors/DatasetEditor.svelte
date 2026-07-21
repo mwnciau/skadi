@@ -205,6 +205,27 @@ const duplicate = () => {
           {/if}
         {/if}
 
+
+        {#if dataset.type === "events" || dataset.type === "views" || dataset.type === "visits"}
+          <Filter
+            type="date"
+            model={dataset}
+            key="date_from"
+            description="This is combined with the dashboard and chart's date from, and the later (more restrictive) of the dates is used."
+          >
+            Date from
+          </Filter>
+
+          <Filter
+            type="date"
+            model={dataset}
+            key="date_to"
+            description="This is combined with the dashboard and chart's date to, and the earlier (more restrictive) of the dates is used."
+          >
+            Date to
+          </Filter>
+        {/if}
+
         {#if dataset.type === "percentage"}
           <Filter
             type="select"

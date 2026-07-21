@@ -2,7 +2,6 @@
 import type {ChartConfig} from "../../types";
 import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
-import Switch from "../components/Switch.svelte";
 import Filter from "../components/Filter.svelte";
 
 let { chartConfig, reloadChartData, onClose, onSave }: {
@@ -49,6 +48,7 @@ const previewChanges = () => {
     })
     .catch(error => {
       errorMessage = error.message.trim();
+      console.error(error);
     });
 }
 
@@ -172,6 +172,24 @@ const moveDown = (index: number) => {
     ]}
   >
     Visit tracking
+  </Filter>
+
+  <Filter
+    type="date"
+    model={localChartConfig}
+    key="date_from"
+    description="This is combined with the dashboard's date from, and the later (more restrictive) of the two dates is used."
+  >
+    Date from
+  </Filter>
+
+  <Filter
+    type="date"
+    model={localChartConfig}
+    key="date_to"
+    description="This is combined with the dashboard's date to, and the earlier (more restrictive) of the two dates is used."
+  >
+    Date to
   </Filter>
 
   <div class="flex flex-col gap-4 max-w-160 mt-4">

@@ -21,6 +21,10 @@ module Skadi
       VIEW_SPLIT_BY = ["controller", "controller_action", "path", "verb", "version"]
 
       def chart_query(chart, global_filters)
+        # Overwrite the chart config with the passed in global filters
+        chart["date_from"] = combine_dates(chart["date_from"], global_filters["date_from"], type: :from)
+        chart["date_to"] = combine_dates(chart["date_to"], global_filters["date_to"], type: :to)
+
         queries = chart["datasets"].filter_map do |dataset|
           case dataset["type"]
           when "visits"
@@ -120,17 +124,15 @@ module Skadi
         # General rule throughout this method: if it exists in the query filters, use that. Otherwise, use
         # the dataset filters.
 
-        table = query.arel_table
+        table = query.arel_table.name
 
-        date_filters = if chart.key?("date_from") || chart.key?("date_to")
-          chart
-        elsif dataset.key?("date_from") || dataset.key?("date_to")
-          dataset
-        end
-        from = parse_time(date_filters["date_from"]) if date_filters&.key?("date_from")
-        to = parse_time(date_filters["date_to"]) if date_filters&.key?("date_to")
-        query = query.where("DATE(#{table}.created_at) >= ?", from.to_date) unless from.nil?
-        query = query.where("DATE(#{table}.created_at) <= ?", to.to_date) unless to.nil?
+        date_from = combine_dates(chart["date_from"], dataset["date_from"], type: :from)
+        date_from = parse_time(date_from)&.to_date if date_from
+        query = query.where("DATE(#{table}.created_at) >= ?", date_from) unless date_from.nil?
+
+        date_to = combine_dates(chart["date_to"], dataset["date_to"], type: :to)
+        date_to = parse_time(date_to)&.to_date if date_to
+        query = query.where("DATE(#{table}.created_at) <= ?", date_to) unless date_to.nil?
 
         return query
       end
@@ -202,6 +204,15 @@ module Skadi
 
       private def parse_time(user_supplied_date)
         return Time.zone.parse(user_supplied_date)
+      end
+
+      # Combine dates for the date ranges, being conservative when combining time ranges
+      private def combine_dates(*dates, type:)
+        if type == :from
+          return dates.compact.max
+        end
+
+        return dates.compact.min
       end
     end
   end

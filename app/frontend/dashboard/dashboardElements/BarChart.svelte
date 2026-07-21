@@ -135,7 +135,6 @@ $effect(() => {
             // Make tooltip caret bigger
             caretPadding: 10,
             caretSize: 8,
-            //displayColors: false
           },
         },
         scales: {
@@ -143,7 +142,7 @@ $effect(() => {
           y1: { beginAtZero: true, position: "right", grid: { drawOnChartArea: false } },
         },
         hover: {
-          mode: "x",
+          mode: "index",
           intersect: false,
         },
         onHover: (event, activeElements, chart) => {

@@ -105,11 +105,12 @@ const moveDown = (index: number) => {
     </Filter>
   </ExpandingSection>
 
-  {#each selectedDashboard?.children as chart, index (chart.id)}
+  {#each selectedDashboard?.children as chartConfig, index (chartConfig.id)}
     <ChartWrapper
-      chartConfig={chart}
+      dashboardConfig={selectedDashboard}
+      {chartConfig}
       onDelete={() => deleteChart(index)}
-      startEditing={chartIdToEdit === chart.id}
+      startEditing={chartIdToEdit === chartConfig.id}
       onDuplicate={() => duplicateDataset(index)}
       onMoveUp={index !== 0 ? (() => moveUp(index)) : null}
       onMoveDown={index !== selectedDashboard.children.length - 1 ? (() => moveDown(index)) : null}

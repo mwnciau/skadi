@@ -56,7 +56,7 @@ export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, 
       }
 
       if (chart.time_series) {
-        data[dataset.id] = populatePercentageDate(data, numerator, denominator);
+        data[dataset.id] = populatePercentageData(numerator, denominator);
       } else {
         // If there is no time-series, there is only one item per dataset
         data[dataset.id] = [{x: dataset.label, y: Math.round((numerator[0].y / denominator[0].y) * 1000) / 10}]
@@ -65,7 +65,7 @@ export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, 
   }
 }
 
-const populatePercentageDate = (data: Record<string, {x: string, y: number}[]>, numerator: {x: string, y: number}[], denominator: {x: string, y: number}[]) => {
+const populatePercentageData = (numerator: {x: string, y: number}[], denominator: {x: string, y: number}[]) => {
   let n = 0;
   let d = 0;
   const percentageData = [];
@@ -86,7 +86,7 @@ const populatePercentageDate = (data: Record<string, {x: string, y: number}[]>, 
       n++;
       d++;
     }
-    // If the numerator is behind the denominator, incremenet just it to catch up
+    // If the numerator is behind the denominator, increment just it to catch up
     else if (numerator[n].x < denominator[d].x) {
       n++;
     }
@@ -118,8 +118,8 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
 
   for (const dataset of Object.keys(data)) {
     for (let index = 0; index < xValues.length; index++) {
-      if (data[dataset][index].x > xValues[index]) {
-        data[dataset].splice(index, 0, {x: xValues[index], y: 0});
+      if (!data[dataset][index] || data[dataset][index].x > xValues[index]) {
+        data[dataset].splice(index, 0, {x: xValues[index], y: chart.type === "line" ? null : 0});
       }
     }
   }
