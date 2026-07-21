@@ -11,6 +11,15 @@ type Consent = {
   anonymity_set?: boolean;
   user?: boolean;
 }
+
+interface Window {
+  skadi?: {
+    event: (name: string, properties: Record<string, unknown>) => void;
+    demographic: (name: string, value: string, isPageSpecific: boolean) => void;
+    consent: (newConsent: Consent) => void;
+  };
+}
+
 let consent: Consent = {};
 
 // The minifier doesn't automatically shorten these variables, so we make a local variable to force it to
@@ -45,6 +54,7 @@ type SkadiEvent = {
 }
 
 const options: SkadiOptions = {
+  // @ts-ignore currentScript is not null because we control how this script is included
   ..._document.currentScript.dataset as SkadiOptions,
 }
 
@@ -164,7 +174,7 @@ setTimeout(() => {
 
 // Track clicks to detect when the user leaves the page
 _document.addEventListener('click', (event: MouseEvent) => {
-  let link = event.target?.closest('a');
+  let link = (event.target as Element | null)?.closest('a');
 
   if (link && link.href) {
     let isNewTab = link.target === '_blank' || event.ctrlKey || event.metaKey;
