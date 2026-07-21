@@ -67,7 +67,7 @@
     ;
   }
 
-  button:not(.unstyled) {
+  button:where(:not(.unstyled)) {
     @apply
       flex gap-2 items-center
       px-4 pt-1.5 pb-1 w-max
@@ -121,7 +121,6 @@
     ;
   }
 
-  nav > a,
   nav > button {
     @apply
       pb-2.5 -mb-0.5
