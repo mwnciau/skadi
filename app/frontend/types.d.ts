@@ -1,3 +1,11 @@
+import type { ChartType, DefaultDataPoint } from "chart.js";
+
+declare module "chart.js" {
+  interface Chart<TType extends ChartType = ChartType, TData = DefaultDataPoint<TType>, TLabel = unknown> {
+    hoveredPosition?: number | null;
+  }
+}
+
 export type DateTime = string;
 
 export type CommonDataset = {
@@ -71,3 +79,14 @@ export type DashboardConfig = {
   date_to?: string;
   children: ChartConfig[];
 }
+
+export type DataPoint = {x: string, y: number}
+export type ResponseData = Record<string, DataPoint[]>
+export type ChartDataset = {
+  dataset: string;
+  split: string;
+  label: string;
+  data: DataPoint[];
+  axis: "left" | "right";
+}
+export type ChartData = ChartDataset[]

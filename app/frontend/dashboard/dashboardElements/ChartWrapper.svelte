@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import type { ChartConfig, DashboardConfig } from "../../types.d.ts";
+  import type { ChartConfig, ChartData, DashboardConfig, ResponseData } from "../../types.d.ts";
   import ChartEditor from "../editors/ChartEditor.svelte";
-  import {fillDataGaps, processDerivedDatasets, processLabels} from "../helpers/processData";
+  import { fillDataGaps, processDerivedDatasets, formatDates, createChartData } from "../helpers/processData";
   import BarChart from "./BarChart.svelte";
+  import StaticDataTable from "./StaticDataTable.svelte";
   import LineChart from "./LineChart.svelte";
   import Icon from "../components/Icon.svelte";
 
@@ -19,11 +20,12 @@
 } = $props();
 
 let editing = $state(startEditing);
+let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
 let localChartConfig = $state(chartConfig);
 
 // Make this shallow state using $state.raw. We don't care how the charting library uses it, only that it's notified when the whole dataset is changed
-let data : Record<string, {x: string, y: number}[]> = $state.raw({});
+let data : ChartData = $state.raw([]);
 
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
   localChartConfig = newChartConfig ?? chartConfig;
@@ -48,18 +50,18 @@ const fetchData = (newChartConfig: ChartConfig | null = null) => {
       return response.json();
     })
     .then((items) => {
-      const newData = {};
+      const responseData: ResponseData = {};
 
       for (const item of items) {
         const key: string = item.split ? `${item.id} ${item.split}` : item.id;
-        newData[key] ??= [];
-        newData[key].push({x: item.label, y: item.count});
+        responseData[key] ??= [];
+        responseData[key].push({x: item.label, y: item.count});
       }
 
-      processDerivedDatasets(localChartConfig, newData);
-      fillDataGaps(localChartConfig, newData);
-      processLabels(localChartConfig, newData)
-      data = newData;
+      processDerivedDatasets(localChartConfig, responseData);
+      fillDataGaps(localChartConfig, responseData);
+      formatDates(localChartConfig, responseData)
+      data = createChartData(localChartConfig, responseData);
     });
 }
 
@@ -79,10 +81,14 @@ onMount(() => {
 })
 </script>
 
-{#if localChartConfig.type === "line"}
-  <LineChart chartConfig={localChartConfig} {data} />
-{:else if localChartConfig.type === "bar"}
-  <BarChart chartConfig={localChartConfig} {data} />
+{#if viewData}
+  <StaticDataTable chartConfig={localChartConfig} {data} />
+{:else}
+  {#if localChartConfig.type === "line"}
+    <LineChart chartConfig={localChartConfig} {data} />
+  {:else if localChartConfig.type === "bar"}
+    <BarChart chartConfig={localChartConfig} {data} />
+  {/if}
 {/if}
 
 {#if editing}
@@ -104,9 +110,14 @@ onMount(() => {
     {/if}
 
     {#if confirmDelete}
-      <button type="button" class="bg-dawn-100 ml-auto" onclick={onDelete}>Yes, delete this chart</button>
+      <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
+      <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
     {:else}
-      <button type="button" class="bg-dawn-100 ml-auto" onclick={() => (confirmDelete = true)}>Delete</button>
+      <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
     {/if}
+
+    <div class="ml-auto"></div>
+
+    <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show Graph" : "Show Data"}</button>
   </div>
 {/if}

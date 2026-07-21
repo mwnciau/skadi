@@ -142,4 +142,24 @@
     &:not(.selected) {
     }
   }
+
+  table {
+    @apply min-w-full;
+
+    td, th {
+      @apply
+        pl-2 pr-4 py-1
+        border border-night-100
+        text-left
+      ;
+    }
+
+    th {
+      @apply font-semibold;
+    }
+
+    tr:hover td {
+      @apply bg-night-50/40;
+    }
+  }
 }

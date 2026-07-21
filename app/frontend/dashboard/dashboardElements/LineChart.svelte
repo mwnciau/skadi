@@ -1,11 +1,11 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { Chart } from "chart.js/auto";
-import type { ChartConfig, Dataset } from "../../types.d.ts";
+import type { ChartConfig, ChartData, ChartDataset, Dataset } from "../../types.d.ts";
 
 let { chartConfig, data } = $props<{
   chartConfig: ChartConfig;
-  data: Record<string, {x: string, y: number}[]>;
+  data: ChartData;
 }>();
 
 let canvas = $state<HTMLCanvasElement>();
@@ -23,9 +23,7 @@ onMount(() => {
 });
 
 const updateChartConfig = () => {
-  chart.options.plugins.title.text = chartConfig.title;
-
-  chart.options.scales.y1.display = chartConfig.datasets.some((dataset) => dataset.axis === "right");
+  chart!.options!.plugins!.title!.text = chartConfig.title;
 }
 
 $effect(() => {
@@ -45,37 +43,23 @@ const updateChartData = () => {
   let leftAxis = false;
   let rightAxis = false;
 
-  chart.data.datasets = chartConfig.datasets
-    .filter((dataset: Dataset) => dataset.visible !== false)
-    .flatMap((dataset: Dataset) => {
-      let datasetIds = {}
+  chart.data.datasets = data.map((chartDataset: ChartDataset) => {
+    if (chartDataset.axis === "right") {
+      rightAxis = true;
+    } else {
+      leftAxis = true;
+    }
 
+    return {
+      label: chartDataset.label,
+      data: chartDataset.data,
+      yAxisID: chartDataset.axis === "right" ? "y1" : "y",
+      fill: false,
+    };
+  });
 
-      const splitDatasetIds = Object.keys(data)
-        .filter((id) => id.startsWith(dataset.id))
-
-      for (let splitDatasetId of splitDatasetIds) {
-        const split = splitDatasetId.replace(/^[^ ]+ ?/, "");
-
-        datasetIds[split] = splitDatasetId
-      }
-
-      if (dataset.axis === "right") {
-        rightAxis = true;
-      } else {
-        leftAxis = true;
-      }
-
-      return Object.entries(datasetIds).map(([split, datasetId]) => ({
-        label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
-        data: data[datasetId],
-        yAxisID: dataset.axis === "right" ? "y1" : "y",
-        fill: false,
-      }));
-    });
-
-  chart.options.scales.y.display = leftAxis;
-  chart.options.scales.y1.display = rightAxis;
+  chart!.options!.scales!.y!.display = leftAxis;
+  chart!.options!.scales!.y1!.display = rightAxis;
 }
 
 $effect(() => {

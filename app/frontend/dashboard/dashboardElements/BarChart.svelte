@@ -1,11 +1,11 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { Chart } from "chart.js/auto";
-import type { ChartConfig, Dataset } from "../../types.d.ts";
+import type { ChartConfig, ChartData, ChartDataset } from "../../types.d.ts";
 
 let { chartConfig, data } = $props<{
   chartConfig: ChartConfig;
-  data: Record<string, {x: string, y: number}[]>;
+  data: ChartData;
 }>();
 
 let canvas = $state<HTMLCanvasElement>();
@@ -23,10 +23,10 @@ onMount(() => {
 });
 
 const updateChartConfig = () => {
-  chart.options.plugins.title.text = chartConfig.title;
-  chart.options.plugins.tooltip.mode = chartConfig.time_series ? "index" : "x";
-  chart.options.plugins.tooltip.yAlign = chartConfig.time_series ? undefined : "bottom";
-  chart.options.hover.mode = chartConfig.time_series ? "index" : "x";
+  chart!.options!.plugins!.title!.text = chartConfig.title;
+  chart!.options!.plugins!.tooltip!.mode = chartConfig.time_series ? "index" : "x";
+  chart!.options!.plugins!.tooltip!.yAlign = chartConfig.time_series ? undefined : "bottom";
+  chart!.options!.hover!.mode = chartConfig.time_series ? "index" : "x";
 }
 
 $effect(() => {
@@ -46,59 +46,24 @@ const updateChartData = () => {
   let leftAxis = false;
   let rightAxis = false;
 
-  chart.data.datasets = chartConfig.datasets
-    .filter((dataset: Dataset) => dataset.visible !== false)
-    .flatMap((dataset: Dataset) => {
-      let datasetIds = {}
+  chart.data.datasets = data.map((chartDataset: ChartDataset) => {
+    if (chartDataset.axis === "right") {
+      rightAxis = true;
+    } else {
+      leftAxis = true;
+    }
 
-      const splitDatasetIds = Object.keys(data)
-        .filter((id) => id.startsWith(dataset.id))
+    return {
+      label: chartDataset.label,
+      data: chartDataset.data,
+      yAxisID: chartDataset.axis === "right" ? "y1" : "y",
+      fill: false,
+    };
+  });
 
-      for (let splitDatasetId of splitDatasetIds) {
-        const split = splitDatasetId.replace(/^[^ ]+ ?/, "");
-
-        datasetIds[split] = splitDatasetId
-      }
-
-      if (dataset.axis === "right") {
-        rightAxis = true;
-      } else {
-        leftAxis = true;
-      }
-
-      const isSplit = Object.keys(datasetIds).some((split) => split !== "");
-
-      // Without a time grouping, every row for a split shares the same (constant) label as
-      // its x value, so splitting into separate datasets would plot them all at that one
-      // x position. Instead, collapse into a single dataset and use the split as the x value,
-      // so each split gets its own bar along the x axis.
-      if (!chartConfig.time_series && isSplit) {
-        return [{
-          label: dataset.label,
-          data: Object.entries(datasetIds).map(([split, datasetId]) => ({
-            x: `${dataset.label} ${split}`,
-            y: data[datasetId][0].y,
-          })),
-          yAxisID: dataset.axis === "right" ? "y1" : "y",
-          //backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
-          fill: false,
-          skipNull: true,
-        }];
-      }
-
-      return Object.entries(datasetIds).map(([split, datasetId]) => ({
-        label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
-        data: data[datasetId],
-        yAxisID: dataset.axis === "right" ? "y1" : "y",
-        //backgroundColor: AXIS_COLORS[dataset.axis] ?? AXIS_COLORS["left"],
-        fill: false,
-        skipNull: true,
-      }));
-    });
-
-  chart.options.plugins.legend.display = leftAxis && rightAxis;
-  chart.options.scales.y.display = leftAxis;
-  chart.options.scales.y1.display = rightAxis;
+  chart!.options!.plugins!.legend!.display = leftAxis && rightAxis;
+  chart!.options!.scales!.y!.display = leftAxis;
+  chart!.options!.scales!.y1!.display = rightAxis;
 }
 
 $effect(() => {

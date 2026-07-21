@@ -1,9 +1,9 @@
-import { ChartConfig, Dataset } from "../../types";
+import { ChartConfig, ChartDataset, Dataset, ResponseData } from "../../types";
 
 const months: Record<string, string> = {"01": "January", "02": "February", "03": "March", "04": "April", "05": "May", "06": "June", "07": "July", "08": "August", "09": "September", "10": "October", "11": "November", "12": "December"};
 const shortMonths: Record<string, string> = {"01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun", "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"};
 
-export const processLabels = (chartConfig: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
+export const formatDates = (chartConfig: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
   for (const dataset of chartConfig.datasets) {
     if (!chartConfig.time_series) {
       continue;
@@ -17,13 +17,13 @@ export const processLabels = (chartConfig: ChartConfig, data: Record<string, {x:
     }
     else if (chartConfig.time_series === "weekly") {
       dateFn = (dateParts: string[]) => {
-        return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 2)}`
+        return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`
       }
     }
     // time_series = "daily"
     else {
       dateFn = (dateParts: string[]) => {
-        return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 2)}`
+        return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`
       }
     }
 
@@ -40,6 +40,31 @@ export const processLabels = (chartConfig: ChartConfig, data: Record<string, {x:
       }
     }
   }
+}
+
+export const createChartData = (chart: ChartConfig, responseData: ResponseData): ChartDataset[] => {
+  return chart.datasets
+    .filter((dataset: Dataset) => dataset.visible !== false)
+    .flatMap((dataset: Dataset) => {
+      let datasetIds: Record<string, string> = {}
+
+      const splitDatasetIds = Object.keys(responseData)
+        .filter((id) => id.startsWith(dataset.id))
+
+      for (let splitDatasetId of splitDatasetIds) {
+        const split = splitDatasetId.replace(/^[^ ]+ ?/, "");
+
+        datasetIds[split] = splitDatasetId
+      }
+
+      return Object.entries(datasetIds).map(([split, datasetId]) => ({
+        dataset: datasetId,
+        split: split,
+        label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
+        data: responseData[datasetId],
+        axis: dataset.axis === "right" ? "right" : "left",
+      }));
+    });
 }
 
 export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
@@ -119,7 +144,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
   for (const dataset of Object.keys(data)) {
     for (let index = 0; index < xValues.length; index++) {
       if (!data[dataset][index] || data[dataset][index].x > xValues[index]) {
-        data[dataset].splice(index, 0, {x: xValues[index], y: chart.type === "line" ? null : 0});
+        data[dataset].splice(index, 0, {x: xValues[index], y: null});
       }
     }
   }

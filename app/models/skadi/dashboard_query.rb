@@ -76,17 +76,6 @@ module Skadi
         # Variables named safe_* are using our definitions, or are escaped user input
 
         safe_group = []
-        safe_label = model.connection.quote(dataset["label"])
-
-        if chart["time_series"].present?
-          group_template = (GROUPINGS[chart["time_series"]]).fetch(model.connection.adapter_name) do
-            raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
-          end
-
-          # This is a SQL safe string because it can only contain the values in `GROUPINGS`
-          safe_label = group_template.gsub("<table_name>", model.table_name)
-          safe_group << [safe_label]
-        end
 
         safe_dataset_id = model.connection.quote(dataset["id"])
         safe_split = "NULL"
@@ -103,6 +92,20 @@ module Skadi
 
           safe_split = "CONCAT(#{split_columns.join(", '::', ")})"
           safe_group.push(*split_columns)
+        end
+
+        safe_label = model.connection.quote(dataset["label"])
+
+        if chart["time_series"].present?
+          group_template = (GROUPINGS[chart["time_series"]]).fetch(model.connection.adapter_name) do
+            raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
+          end
+
+          # This is a SQL safe string because it can only contain the values in `GROUPINGS`
+          safe_label = group_template.gsub("<table_name>", model.table_name)
+          safe_group << [safe_label]
+        elsif valid_split_by
+          safe_label = "CONCAT(#{safe_label}, ' ', #{safe_split})"
         end
 
         safe_count = if (model == Skadi::View || model == Skadi::Event) && chart["unique_visits"] == true
