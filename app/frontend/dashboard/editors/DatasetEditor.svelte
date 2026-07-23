@@ -38,7 +38,7 @@ let derivedSources = $derived.by(() => {
 
   return chartConfig.datasets
     .filter((dataset) => {
-      if (dataset.type === "percentage") {
+      if (dataset.type === "percentage" || dataset.type === "sql") {
         return false;
       }
 
@@ -77,18 +77,18 @@ const typeFields: {
   sql: ["sql"],
 }
 const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
-  const newType = event.currentTarget.value;
+  const newType = event.currentTarget.value as typeof dataset.type;
 
-  dataset.type = newType as typeof dataset.type;
+  dataset.type = newType;
 
-  const types = typeFields.common.concat(typeFields[newType]);
+  const types: string[] = [...typeFields.common, ...typeFields[newType]];
   for (const key of Object.keys(dataset)) {
     if (!types.includes(key)) {
-      delete dataset[key];
+      delete (dataset as Record<string, unknown>)[key];
     }
   }
 
-  if (newType === "sql") {
+  if (dataset.type === "sql") {
     dataset.sql = sqlDefault(dataset.id);
   }
 }
