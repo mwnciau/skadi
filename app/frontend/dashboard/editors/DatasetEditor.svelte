@@ -70,7 +70,7 @@ const typeFields: {
   sql: (keyof SqlDataset)[];
 } = {
   common: ["id", "label", "visible", "axis", "type"],
-  visits: ["split_by", "visit_utm_source", "visit_utm_medium", "visit_utm_term", "visit_utm_content", "visit_utm_campaign"],
+  visits: ["split_by", "visit_landing_page", "visit_referrer_domain", "visit_utm_source", "visit_utm_medium", "visit_utm_term", "visit_utm_content", "visit_utm_campaign"],
   views: ["split_by", "view_controller", "view_action", "view_path", "view_verb", "view_version"],
   events: ["event_name"],
   percentage: ["numerator", "denominator"],
