@@ -18,7 +18,12 @@ module Skadi
           "SQLite" => "DATE(<table_name>.created_at, 'start of month')"
         }
       }
-      VIEW_SPLIT_BY = ["controller", "controller_action", "path", "verb", "version"]
+
+      VALID_SPLIT_BY = {
+        Skadi::View => %w[controller controller_action path verb version],
+        Skadi::Visit => %w[referrer landing_page utm_source utm_medium utm_term utm_content utm_campaign],
+        Skadi::Event => %w[name]
+      }
 
       def chart_query(chart, global_filters)
         # Overwrite the chart config with the passed in global filters
@@ -81,17 +86,21 @@ module Skadi
         safe_split = "NULL"
 
         valid_split_by = false
-        valid_split_by ||= model == Skadi::View && dataset["split_by"].present? && VIEW_SPLIT_BY.include?(dataset["split_by"])
-        valid_split_by ||= model == Skadi::Event && dataset["split_by"] == "name"
-        if valid_split_by
-          split_columns = if dataset["split_by"] == "controller_action"
-            ["#{model.table_name}.controller", "#{model.table_name}.action"]
-          else
-            ["#{model.table_name}.#{dataset["split_by"]}"]
-          end
+        if dataset["split_by"].present?
+          if VALID_SPLIT_BY[model]&.include?(dataset["split_by"])
+            valid_split_by = true
 
-          safe_split = "CONCAT(#{split_columns.join(", '::', ")})"
-          safe_group.push(*split_columns)
+            split_columns = if dataset["split_by"] == "controller_action"
+              ["#{model.table_name}.controller", "#{model.table_name}.action"]
+            elsif dataset["split_by"] == "referrer"
+              [sql_referrer_domain(model)]
+            else
+              ["#{model.table_name}.#{dataset["split_by"]}"]
+            end
+
+            safe_split = "CONCAT(#{split_columns.join(", '::', ")})"
+            safe_group.push(*split_columns)
+          end
         end
 
         safe_label = model.connection.quote(dataset["label"])
@@ -105,6 +114,7 @@ module Skadi
           safe_label = group_template.gsub("<table_name>", model.table_name)
           safe_group << [safe_label]
         elsif valid_split_by
+          # If there is no time series, then we include the split in the label so that the x values are all different for the charts
           safe_label = "CONCAT(#{safe_label}, ' ', #{safe_split})"
         end
 
@@ -143,17 +153,28 @@ module Skadi
       private def apply_visit_filters(query, dataset, chart)
         query = query.where(verified: true) if chart["verified"] == true
 
+        visit_filter_fields = %w[utm_source utm_medium utm_term utm_content utm_campaign landing_page]
+        visit_filter_fields.each do |field|
+          key = "visit_#{field}"
+          if dataset.key?(key)
+            query = query.where(field => dataset[key])
+          end
+        end
+
+         if dataset.key?("visit_referrer_domain")
+           query = query.where("#{sql_referrer_domain(Skadi::Visit)} = ?", dataset["visit_referrer_domain"])
+         end
+
         query = apply_common_visit_filters(query, dataset, chart)
 
         return query
       end
 
       private def apply_view_filters(query, dataset, chart)
-        query_filter_fields = ["path", "controller", "action", "verb", "version"]
-
         query = query.where(verified: true) if chart["verified"] == true
 
-        query_filter_fields.each do |field|
+        view_filter_fields = %w[path controller action verb version]
+        view_filter_fields.each do |field|
           key = "view_#{field}"
           if dataset.key?(key)
             query = query.where(field => dataset[key])
@@ -169,7 +190,7 @@ module Skadi
         return query
       end
 
-      private def apply_common_visit_filters(query, _dataset, chart)
+      private def apply_common_visit_filters(query, dataset, chart)
         if chart["visit_tracking"] == "any"
           query = query.where("skadi_visits.tracking_token IS NOT NULL")
         elsif chart["visit_tracking"] == "anonymity_set"
@@ -216,6 +237,19 @@ module Skadi
         end
 
         return dates.compact.min
+      end
+
+      private def sql_referrer_domain(model)
+        case model.connection.adapter_name
+        when "PostgreSQL"
+          "SPLIT_PART(#{model.table_name}.referrer, '/', 1)"
+        when "Mysql2"
+          "SUBSTRING_INDEX(#{model.table_name}.referrer, '/', 1)"
+        when "SQLite"
+          "SUBSTR(#{model.table_name}.referrer, 1, INSTR(#{model.table_name}.referrer, '/') - 1)"
+        else
+          "#{model.table_name}.referrer"
+        end
       end
     end
   end

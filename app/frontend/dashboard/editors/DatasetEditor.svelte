@@ -70,7 +70,7 @@ const typeFields: {
   sql: (keyof SqlDataset)[];
 } = {
   common: ["id", "label", "visible", "axis", "type"],
-  visits: [],
+  visits: ["split_by", "visit_utm_source", "visit_utm_medium", "visit_utm_term", "visit_utm_content", "visit_utm_campaign"],
   views: ["split_by", "view_controller", "view_action", "view_path", "view_verb", "view_version"],
   events: ["event_name"],
   percentage: ["numerator", "denominator"],
@@ -78,8 +78,14 @@ const typeFields: {
 }
 const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
   const newType = event.currentTarget.value as typeof dataset.type;
+  if (newType === dataset.type) {
+    return;
+  }
 
   dataset.type = newType;
+
+  // The split_by field is used by multiple types, but they do not overlap.
+  delete (dataset as {split_by?: string}).split_by;
 
   const types: string[] = [...typeFields.common, ...typeFields[newType]];
   for (const key of Object.keys(dataset)) {
@@ -144,6 +150,54 @@ const duplicate = () => {
             key="axis"
           >
             Axis
+          </Filter>
+        {/if}
+
+        {#if dataset.type === "visits"}
+          <Filter
+            type="select"
+            model={dataset}
+            key="split_by"
+            selectOptions={[
+              "",
+              {label: "Referrer domain", value: "referrer"},
+              {label: "Landing page", value: "landing_page"},
+              {label: "UTM source", value: "utm_source"},
+              {label: "UTM medium", value: "utm_medium"},
+              {label: "UTM term", value: "utm_term"},
+              {label: "UTM content", value: "utm_content"},
+              {label: "UTM campaign", value: "utm_campaign"},
+            ]}
+          >
+            Split by
+          </Filter>
+
+          <Filter model={dataset} key="visit_referrer_domain">
+            Referrer domain
+          </Filter>
+
+          <Filter model={dataset} key="visit_landing_page">
+            Landing page
+          </Filter>
+
+          <Filter model={dataset} key="visit_utm_source">
+            UTM source
+          </Filter>
+
+          <Filter model={dataset} key="visit_utm_medium">
+            UTM medium
+          </Filter>
+
+          <Filter model={dataset} key="visit_utm_term">
+            UTM term
+          </Filter>
+
+          <Filter model={dataset} key="visit_utm_content">
+            UTM content
+          </Filter>
+
+          <Filter model={dataset} key="visit_utm_campaign">
+            UTM campaign
           </Filter>
         {/if}
 

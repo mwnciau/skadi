@@ -20,6 +20,17 @@ export type VisitDataset = CommonDataset & {
   type: "visits";
   date_from?: DateTime;
   date_to?: DateTime;
+
+  split_by?: "referrer" | "landing_page" | "utm_source" | "utm_medium" | "utm_term" | "utm_content" | "utm_campaign";
+
+  visit_landing_page?: string;
+  visit_referrer_domain?: string;
+
+  visit_utm_source?: string;
+  visit_utm_medium?: string;
+  visit_utm_term?: string;
+  visit_utm_content?: string;
+  visit_utm_campaign?: string;
 }
 
 export type ViewDataset = CommonDataset & {
