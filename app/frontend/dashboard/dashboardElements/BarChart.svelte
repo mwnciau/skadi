@@ -58,6 +58,7 @@ const updateChartData = () => {
       data: chartDataset.data,
       yAxisID: chartDataset.axis === "right" ? "y1" : "y",
       fill: false,
+      skipNull: !chartConfig.time_series,
     };
   });
 
