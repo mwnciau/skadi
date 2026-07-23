@@ -22,7 +22,7 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
       # Whether the visit has been verified by the front-end
       t.boolean :verified, null: false, default: false
-      
+
       t.boolean :cookies_enabled, null: false, default: false
 
       t.timestamps
@@ -35,7 +35,7 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
     create_table :skadi_views do |t|
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :visit, foreign_key: { to_table: :skadi_visits, on_delete: :cascade }, index: false
+      t.references :visit, foreign_key: {to_table: :skadi_visits, on_delete: :cascade}, index: false
 
       # A random uuid identifying the view. This will be sent to the front-end to allow updates to the view metrics without exposing details about the site analytics to the user.
       t.string :view_token, limit: 36, null: false
@@ -67,10 +67,10 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
     create_table :skadi_events do |t|
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :visit, foreign_key: { to_table: :skadi_visits, on_delete: :cascade }, index: false
+      t.references :visit, foreign_key: {to_table: :skadi_visits, on_delete: :cascade}, index: false
 
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :view, foreign_key: { to_table: :skadi_views, on_delete: :cascade }, index: false
+      t.references :view, foreign_key: {to_table: :skadi_views, on_delete: :cascade}, index: false
 
       t.string :name, null: false
       t.json :properties

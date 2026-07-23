@@ -5,7 +5,7 @@ module Skadi
     def show
       dashboard = Skadi::Dashboard.new
 
-      render :show, locals: { dashboard_config: dashboard.config }
+      render :show, locals: {dashboard_config: dashboard.config}
     end
 
     def data

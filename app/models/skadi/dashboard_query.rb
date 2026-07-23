@@ -6,7 +6,7 @@ module Skadi
       VALID_SPLIT_BY = {
         Skadi::View => %w[controller controller_action path verb version],
         Skadi::Visit => %w[referrer landing_page utm_source utm_medium utm_term utm_content utm_campaign],
-        Skadi::Event => %w[name]
+        Skadi::Event => %w[name],
       }
 
       def chart_query(chart, global_filters)
@@ -54,8 +54,8 @@ module Skadi
         when "Skadi::View"
           apply_view_filters(query, dataset, chart)
         when "Skadi::Event"
-            apply_event_filters(query, dataset, chart)
-          else query
+          apply_event_filters(query, dataset, chart)
+        else query
         end
 
         return query
@@ -107,7 +107,7 @@ module Skadi
           "#{safe_dataset_id} as id",
           "#{safe_split} as split",
           "#{safe_label} AS label",
-          safe_count
+          safe_count,
         )
           .group(safe_group)
       end
@@ -244,31 +244,31 @@ module Skadi
         end
       end
 
-      private def sql_day_of_date(model, field = "created_at")
-        "DATE(#{model.table_name}.#{field})"
+      private def sql_day_of_date(model)
+        "DATE(#{model.table_name}.created_at)"
       end
 
-      private def sql_week_of_date(model, field = "created_at")
+      private def sql_week_of_date(model)
         case model.connection.adapter_name
         when "PostgreSQL"
-          "DATE_TRUNC('week', #{model.table_name}.#{field})::date"
+          "DATE_TRUNC('week', #{model.table_name}.created_at)::date"
         when "Mysql2"
-          "DATE_SUB(DATE(#{model.table_name}.#{field}), INTERVAL WEEKDAY(#{model.table_name}.#{field}) DAY)"
+          "DATE_SUB(DATE(#{model.table_name}.created_at), INTERVAL WEEKDAY(#{model.table_name}.created_at) DAY)"
         when "SQLite"
-          "DATE(#{model.table_name}.#{field}, '-' || ((CAST(STRFTIME('%w', #{model.table_name}.#{field}) AS INTEGER) + 6) % 7) || ' days')"
+          "DATE(#{model.table_name}.created_at, '-' || ((CAST(STRFTIME('%w', #{model.table_name}.created_at) AS INTEGER) + 6) % 7) || ' days')"
         else
           raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
         end
       end
 
-      private def sql_month_of_date(model, field = "created_at")
+      private def sql_month_of_date(model)
         case model.connection.adapter_name
         when "PostgreSQL"
-          "DATE_TRUNC('month', #{model.table_name}.#{field})::date"
+          "DATE_TRUNC('month', #{model.table_name}.created_at)::date"
         when "Mysql2"
-          "DATE_FORMAT(#{model.table_name}.#{field}, '%Y-%m-01')"
+          "DATE_FORMAT(#{model.table_name}.created_at, '%Y-%m-01')"
         when "SQLite"
-          "DATE(#{model.table_name}.#{field}, 'start of month')"
+          "DATE(#{model.table_name}.created_at, 'start of month')"
         else
           raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
         end
