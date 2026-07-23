@@ -1,24 +1,8 @@
 module Skadi
+  class UnsupportedDatabaseError < StandardError; end
+
   class DashboardQuery
     class << self
-      GROUPINGS = {
-        "daily" => {
-          "PostgreSQL" => "DATE(<table_name>.created_at)",
-          "Mysql2" => "DATE(<table_name>.created_at)",
-          "SQLite" => "DATE(<table_name>.created_at)"
-        },
-        "weekly" => {
-          "PostgreSQL" => "DATE_TRUNC('week', <table_name>.created_at)::date",
-          "Mysql2" => "DATE_SUB(DATE(<table_name>.created_at), INTERVAL WEEKDAY(<table_name>.created_at) DAY)",
-          "SQLite" => "DATE(<table_name>.created_at, '-' || ((CAST(STRFTIME('%w', <table_name>.created_at) AS INTEGER) + 6) % 7) || ' days')"
-        },
-        "monthly" => {
-          "PostgreSQL" => "DATE_TRUNC('month', <table_name>.created_at)::date",
-          "Mysql2" => "DATE_FORMAT(<table_name>.created_at, '%Y-%m-01')",
-          "SQLite" => "DATE(<table_name>.created_at, 'start of month')"
-        }
-      }
-
       VALID_SPLIT_BY = {
         Skadi::View => %w[controller controller_action path verb version],
         Skadi::Visit => %w[referrer landing_page utm_source utm_medium utm_term utm_content utm_campaign],
@@ -65,11 +49,11 @@ module Skadi
         query = apply_global_filters(query, dataset, chart)
 
         query = case model.to_s
-          when "Skadi::Visit"
-            apply_visit_filters(query, dataset, chart)
-          when "Skadi::View"
-            apply_view_filters(query, dataset, chart)
-          when "Skadi::Event"
+        when "Skadi::Visit"
+          apply_visit_filters(query, dataset, chart)
+        when "Skadi::View"
+          apply_view_filters(query, dataset, chart)
+        when "Skadi::Event"
             apply_event_filters(query, dataset, chart)
           else query
         end
@@ -106,12 +90,7 @@ module Skadi
         safe_label = model.connection.quote(dataset["label"])
 
         if chart["time_series"].present?
-          group_template = (GROUPINGS[chart["time_series"]]).fetch(model.connection.adapter_name) do
-            raise "Unsupported database adapter for grouping: #{model.connection.adapter_name}"
-          end
-
-          # This is a SQL safe string because it can only contain the values in `GROUPINGS`
-          safe_label = group_template.gsub("<table_name>", model.table_name)
+          safe_label = sql_time_series(chart["time_series"], model)
           safe_group << [safe_label]
         elsif valid_split_by
           # If there is no time series, then we include the split in the label so that the x values are all different for the charts
@@ -161,9 +140,9 @@ module Skadi
           end
         end
 
-         if dataset.key?("visit_referrer_domain")
-           query = query.where("#{sql_referrer_domain(Skadi::Visit)} = ?", dataset["visit_referrer_domain"])
-         end
+        if dataset.key?("visit_referrer_domain")
+          query = query.where("#{sql_referrer_domain(Skadi::Visit)} = ?", dataset["visit_referrer_domain"])
+        end
 
         query = apply_common_visit_filters(query, dataset, chart)
 
@@ -248,7 +227,50 @@ module Skadi
         when "SQLite"
           "SUBSTR(#{model.table_name}.referrer, 1, INSTR(#{model.table_name}.referrer, '/') - 1)"
         else
-          "#{model.table_name}.referrer"
+          raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+        end
+      end
+
+      private def sql_time_series(time_series, model)
+        case time_series
+        when "daily"
+          sql_day_of_date(model)
+        when "weekly"
+          sql_week_of_date(model)
+        when "monthly"
+          sql_month_of_date(model)
+        else
+          raise ArgumentError.new("The time_series #{time_series} is invalid")
+        end
+      end
+
+      private def sql_day_of_date(model, field = "created_at")
+        "DATE(#{model.table_name}.#{field})"
+      end
+
+      private def sql_week_of_date(model, field = "created_at")
+        case model.connection.adapter_name
+        when "PostgreSQL"
+          "DATE_TRUNC('week', #{model.table_name}.#{field})::date"
+        when "Mysql2"
+          "DATE_SUB(DATE(#{model.table_name}.#{field}), INTERVAL WEEKDAY(#{model.table_name}.#{field}) DAY)"
+        when "SQLite"
+          "DATE(#{model.table_name}.#{field}, '-' || ((CAST(STRFTIME('%w', #{model.table_name}.#{field}) AS INTEGER) + 6) % 7) || ' days')"
+        else
+          raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+        end
+      end
+
+      private def sql_month_of_date(model, field = "created_at")
+        case model.connection.adapter_name
+        when "PostgreSQL"
+          "DATE_TRUNC('month', #{model.table_name}.#{field})::date"
+        when "Mysql2"
+          "DATE_FORMAT(#{model.table_name}.#{field}, '%Y-%m-01')"
+        when "SQLite"
+          "DATE(#{model.table_name}.#{field}, 'start of month')"
+        else
+          raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
         end
       end
     end
