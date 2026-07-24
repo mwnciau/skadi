@@ -1,7 +1,10 @@
 module Skadi
-  class UnsupportedDatabaseError < StandardError; end
 
   class DashboardQuery
+    class Error < StandardError; end
+    class UnsupportedDatabaseError < Error; end
+    class DatasetConfigurationError < Error; end
+
     class << self
       VALID_SPLIT_BY = {
         Skadi::View => %w[controller controller_action path verb version],
@@ -28,7 +31,7 @@ module Skadi
             # Percentage charts are handled by the frontend using other datasets
             next
           else
-            raise dataset.inspect
+            raise DatasetConfigurationError.new("Unknown dataset type #{dataset["type"]}")
           end
         end
 
@@ -240,7 +243,7 @@ module Skadi
         when "monthly"
           sql_month_of_date(model)
         else
-          raise ArgumentError.new("The time_series #{time_series} is invalid")
+          raise DatasetConfigurationError.new("The time_series #{time_series} is invalid")
         end
       end
 

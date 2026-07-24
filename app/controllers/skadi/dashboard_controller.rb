@@ -17,8 +17,8 @@ module Skadi
       chart_data = dashboard.chart_data(JSON.parse(params[:config]), query_filters.to_h)
 
       render json: chart_data
-    rescue ActiveRecord::StatementInvalid => e
-      # Todo: only share the error message if the user has dangerous sql permission
+    rescue Skadi::DashboardQuery::Error, ActiveRecord::StatementInvalid => e
+      # Todo: only share the StatementInvalid error message if the user has dangerous sql permission
       render json: {error: e.message}, status: :unprocessable_content
     end
   end
