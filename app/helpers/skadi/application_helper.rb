@@ -5,7 +5,7 @@ module Skadi
     mattr_accessor :skadi_script_src
 
     def skadi_tag(type = :inline)
-      return if skadi.do_not_track?
+      return if skadi.do_not_track? || skadi.view.nil?
 
       tag_attributes = {
         data: {
