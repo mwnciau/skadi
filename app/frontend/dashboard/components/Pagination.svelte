@@ -1,5 +1,4 @@
 <script lang="ts">
-  //<Pagination page={page} perPage={10} totalItems={dataCount} setPage={(newPage: number) => page = newPage} />
 const { page, perPage, totalItems, setPage, class: className = "" } = $props<{
   page: number;
   perPage: number;
