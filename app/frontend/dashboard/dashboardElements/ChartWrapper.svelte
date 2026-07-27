@@ -1,16 +1,18 @@
 <script lang="ts">
-  import { onMount } from "svelte";
-  import type { ChartConfig, ChartData, DashboardConfig, ResponseData } from "../../types.d.ts";
+  import { untrack } from "svelte";
+  import type { ChartConfig, ChartData, DashboardTabConfig, ResponseData, TabFilters } from "../../types.d.ts";
   import ChartEditor from "../editors/ChartEditor.svelte";
   import { fillDataGaps, processDerivedDatasets, formatDates, createChartData } from "../helpers/processData";
   import BarChart from "./BarChart.svelte";
   import StaticDataTable from "./StaticDataTable.svelte";
   import LineChart from "./LineChart.svelte";
   import Icon from "../components/Icon.svelte";
+  import { fetchChartData } from "../helpers/requestHandler";
 
-  let { dashboardConfig, chartConfig, startEditing, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
-  dashboardConfig: DashboardConfig,
+  let { chartConfig, editingEnabled, startEditing, tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
   chartConfig: ChartConfig;
+  editingEnabled: boolean;
+  tabFilters: TabFilters;
   startEditing: boolean;
   onDelete: () => void;
   onDuplicate: () => void;
@@ -19,7 +21,7 @@
   onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
 
-let editing = $state(startEditing);
+let isEditingChart = $state(startEditing);
 let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
 let localChartConfig = $state(chartConfig);
@@ -30,25 +32,7 @@ let data : ChartData = $state.raw([]);
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
   localChartConfig = newChartConfig ?? chartConfig;
 
-  let additionalQueryVars = "";
-  if (dashboardConfig.date_from) {
-    additionalQueryVars += `&date_from=${dashboardConfig.date_from}`
-  }
-  if (dashboardConfig.date_to) {
-    additionalQueryVars += `&date_to=${dashboardConfig.date_to}`
-  }
-
-  const chartConfigJSON = encodeURIComponent(JSON.stringify(localChartConfig));
-  return fetch(`/skadi/data/${chartConfig.id}?config=${chartConfigJSON}${additionalQueryVars}`)
-    .then((response) => {
-      if (!response.ok) {
-        return response.json().then((body) => {
-          throw new Error(body.error ?? `Request failed with status ${response.status}`);
-        });
-      }
-
-      return response.json();
-    })
+  return fetchChartData(chartConfig.id, tabFilters, localChartConfig)
     .then((items) => {
       const responseData: ResponseData = {};
 
@@ -73,12 +57,17 @@ const saveChartConfig = (newChartConfig: ChartConfig) => {
   onSave(newChartConfig);
   localChartConfig = newChartConfig;
 
-  editing = false;
+  isEditingChart = false;
 }
 
-onMount(() => {
-  fetchData();
-})
+$effect(() => {
+  // Ensure this effect is run when tabFilters changes
+  JSON.stringify(tabFilters);
+
+  untrack(() => {
+    fetchData();
+  });
+});
 </script>
 
 {#if viewData}
@@ -91,29 +80,31 @@ onMount(() => {
   {/if}
 {/if}
 
-{#if editing}
+{#if isEditingChart}
   <ChartEditor
     {chartConfig}
     reloadChartData={reloadChartData}
-    onClose={() => (editing = false)}
+    onClose={() => (isEditingChart = false)}
     onSave={saveChartConfig}
   />
 {:else}
   <div class="flex gap-2">
-    <button onclick={() => (editing = true)}>Edit</button>
-    <button onclick={onDuplicate}>Duplicate</button>
-    {#if onMoveUp !== null }
-      <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
-    {/if}
-    {#if onMoveDown !== null }
-      <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
-    {/if}
+    {#if editingEnabled}
+      <button onclick={() => (isEditingChart = true)}>Edit</button>
+      <button onclick={onDuplicate}>Duplicate</button>
+      {#if onMoveUp !== null }
+        <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
+      {/if}
+      {#if onMoveDown !== null }
+        <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
+      {/if}
 
-    {#if confirmDelete}
-      <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
-      <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
-    {:else}
-      <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
+      {#if confirmDelete}
+        <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
+        <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
+      {:else}
+        <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
+      {/if}
     {/if}
 
     <div class="ml-auto"></div>

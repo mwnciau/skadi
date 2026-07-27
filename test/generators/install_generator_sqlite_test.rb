@@ -19,6 +19,7 @@ module Skadi
 
         assert_match(/t\.json :query_params$/, content)
         assert_match(/t\.json :properties$/, content)
+        assert_match(/t\.json :configuration$/, content)
         refute_match "t.jsonb", content
       end
 

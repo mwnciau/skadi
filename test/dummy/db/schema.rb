@@ -10,11 +10,17 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_08_093230) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_24_135551) do
   create_table "dummy_users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.string "username", null: false
+  end
+
+  create_table "skadi_dashboards", force: :cascade do |t|
+    t.json "configuration", null: false
+    t.text "description"
+    t.string "name", null: false
   end
 
   create_table "skadi_demographics", force: :cascade do |t|

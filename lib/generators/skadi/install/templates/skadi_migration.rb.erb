@@ -100,5 +100,11 @@ class <%= migration_class_name %> < ActiveRecord::Migration[<%= "#{ActiveRecord:
     end
 
     add_index :skadi_demographics, [:uri, :name, :value, :recorded_on], unique: true
+
+    create_table :skadi_dashboards do |t|
+      t.string :name, null: false
+      t.text :description
+      t.<%= json_column_type %> :configuration, null: false
+    end
   end
 end

@@ -83,13 +83,21 @@ export type ChartConfig = {
   datasets: Dataset[];
 }
 
-export type DashboardConfig = {
+export type DashboardTabConfig = {
   id: string;
   title: string;
+  description: string;
   date_from?: string;
   date_to?: string;
   children: ChartConfig[];
 }
+
+export type TabFilters = {
+  date_from?: string;
+  date_to?: string;
+}
+
+export type DashboardConfig = DashboardTabConfig[];
 
 export type DataPoint = {x: string, y: number}
 export type ResponseData = Record<string, DataPoint[]>

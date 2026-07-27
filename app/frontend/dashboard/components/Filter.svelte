@@ -15,9 +15,11 @@ let {
   rightLabel = null,
   leftValue = null,
   rightValue = null,
+  allowEmpty = false,
+  trimOnBlur = false,
   ...attributes
 } = $props<{
-  type?: "boolean" | "date" | "select" | "switch" | "text" | "textarea";
+  type?: "boolean" | "contenteditable" | "date" | "select" | "switch" | "text" | "textarea";
   model: object;
   key: string;
   booleanDefault?: true | false;
@@ -25,6 +27,10 @@ let {
   rightLabel?: string;
   leftValue?: string;
   rightValue?: string;
+
+  allowEmpty?: boolean;
+  trimOnBlur?: boolean;
+
   children: Snippet;
   description?: string | Snippet | null;
   selectOptions?: (string | {label?: string, value: string})[] | Snippet | null;
@@ -35,14 +41,23 @@ type StringEvent = Event & {
   currentTarget: EventTarget & (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
 };
 
-const setString = (event: StringEvent) => {
-  const value = event.currentTarget.value;
-
-  if (value) {
-    model[key] = value;
+let debounceTimeout: number;
+let debounceValue: string;
+let persistValue = () => {
+  if (debounceValue || allowEmpty) {
+    model[key] = debounceValue;
   } else {
     delete model[key];
   }
+}
+
+const setString = (event: StringEvent) => {
+  debounceValue = type === "contenteditable" ? event.currentTarget.innerText : event.currentTarget.value;
+
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+  }
+  debounceTimeout = setTimeout(persistValue, 1000);
 }
 
 const toggleBoolean = () => {
@@ -64,6 +79,30 @@ const toggleSwitch = () => {
     model[key] = rightValue;
   }
 }
+
+const onBlur = () => {
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+    persistValue();
+  }
+
+  if (trimOnBlur) {
+    model[key] = model[key]?.trim();
+  }
+}
+
+const contentEditableSync = (node: HTMLElement, value: string) => {
+  node.innerText = value ?? "";
+
+  return {
+    update(value: string) {
+      // Only update the contenteditable if it's not focused
+      if (document.activeElement !== node) {
+        node.innerText = value ?? "";
+      }
+    }
+  }
+}
 </script>
 
 {#snippet clearButton()}
@@ -82,28 +121,28 @@ const toggleSwitch = () => {
 
   {#if type === "boolean"}
     <Switch value={booleanDefault ? model[key] !== false : model[key] === true} onToggle={toggleBoolean} />
+  {:else if type === "contenteditable"}
+    <p
+      contenteditable
+      onblur={onBlur}
+      oninput={setString}
+      use:contentEditableSync={model[key]}
+      class="mt-1 whitespace-pre"
+      {...attributes}
+    >{model[key]}</p>
   {:else if type === "date"}
     <div class="flex gap-1 items-center">
       <input
         type="date"
-        onchange={setString}
+        oninput={setString}
         value={model[key]}
         class="w-max"
       >
       {@render clearButton()}
     </div>
-  {:else if type === "text"}
-    <div class="flex gap-1 items-center">
-      <input
-        type="text"
-        onchange={setString}
-        value={model[key]}
-      >
-      {@render clearButton()}
-    </div>
   {:else if type === "select"}
     <select
-      onchange={setString}
+      oninput={setString}
       value={model[key] ?? ""}
     >
       {#if Array.isArray(selectOptions)}
@@ -124,9 +163,20 @@ const toggleSwitch = () => {
       <Switch value={model[key] === rightValue} onToggle={toggleSwitch} />
       {rightLabel}
     </div>
+  {:else if type === "text"}
+    <div class="flex gap-1 items-center">
+      <input
+        type="text"
+        onblur={onBlur}
+        oninput={setString}
+        value={model[key]}
+      >
+      {@render clearButton()}
+    </div>
   {:else if type === "textarea"}
     <textarea
-      onchange={setString}
+      onblur={onBlur}
+      oninput={setString}
       {...attributes}
     >{model[key]}</textarea>
   {/if}

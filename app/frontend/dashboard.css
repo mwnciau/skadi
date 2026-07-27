@@ -41,6 +41,8 @@
   --color-night-800: oklch(0.401 0.23 287.69);
   --color-night-900: oklch(0.271 0.162 282.12);
   --color-night-950: oklch(0.214 0.135 274.82);
+
+  --spacing-prose: min(100%, 48rem);
 }
 
 @layer base {
@@ -61,7 +63,7 @@
 
   input, select {
     @apply
-      px-4 py-2 max-w-120
+      px-2.5 py-2 max-w-120
       border border-night-100
       grow
     ;
@@ -107,6 +109,14 @@
         @apply py-1;
       }
     }
+  }
+
+  [contenteditable=true] {
+    @apply cursor-text border-l border-dashed border-gray-500 pl-3 w-prose;
+  }
+  [contenteditable][placeholder]:empty:after {
+    @apply inline text-gray-500;
+    content: attr(placeholder);
   }
 
   header {
