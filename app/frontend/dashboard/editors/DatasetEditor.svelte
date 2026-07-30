@@ -3,10 +3,10 @@
     ChartConfig,
     CommonDataset,
     Dataset,
-    EventDataset,
+    EventsDataset,
     PercentageDataset, SqlDataset,
-    ViewDataset,
-    VisitDataset
+    ViewsDataset,
+    VisitsDataset
   } from "../../types";
 import Icon from "../components/Icon.svelte";
 import Switch from "../components/Switch.svelte";
@@ -63,9 +63,9 @@ const toggleOpen = () => {
 
 const typeFields: {
   common: (keyof CommonDataset)[]
-  visits: (keyof VisitDataset)[];
-  views: (keyof ViewDataset)[];
-  events: (keyof EventDataset)[];
+  visits: (keyof VisitsDataset)[];
+  views: (keyof ViewsDataset)[];
+  events: (keyof EventsDataset)[];
   percentage: (keyof PercentageDataset)[];
   sql: (keyof SqlDataset)[];
 } = {

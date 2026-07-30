@@ -6,7 +6,7 @@ declare module "chart.js" {
   }
 }
 
-export type DateTime = string;
+export type DateFilter = string;
 
 export type CommonDataset = {
   id: string;
@@ -16,10 +16,10 @@ export type CommonDataset = {
   type: "visits" | "views" | "events" | "percentage" | "sql";
 }
 
-export type VisitDataset = CommonDataset & {
+export type VisitsDataset = CommonDataset & {
   type: "visits";
-  date_from?: DateTime;
-  date_to?: DateTime;
+  date_from?: DateFilter;
+  date_to?: DateFilter;
 
   split_by?: "referrer" | "landing_page" | "utm_source" | "utm_medium" | "utm_term" | "utm_content" | "utm_campaign";
 
@@ -33,8 +33,11 @@ export type VisitDataset = CommonDataset & {
   visit_utm_campaign?: string;
 }
 
-export type ViewDataset = CommonDataset & {
+export type ViewsDataset = CommonDataset & {
   type: "views";
+  date_from?: DateFilter;
+  date_to?: DateFilter;
+
   split_by?: "controller" | "controller_action" | "path" | "verb" | "version";
 
   view_action?: string;
@@ -42,19 +45,16 @@ export type ViewDataset = CommonDataset & {
   view_path?: string;
   view_verb?: string;
   view_version?: string;
-
-  date_from?: DateTime;
-  date_to?: DateTime;
 }
 
-export type EventDataset = CommonDataset & {
+export type EventsDataset = CommonDataset & {
   type: "events";
+  date_from?: DateFilter;
+  date_to?: DateFilter;
+
   split_by?: "name";
 
   event_name?: string;
-
-  date_from?: DateTime;
-  date_to?: DateTime;
 }
 
 export type PercentageDataset = CommonDataset & {
@@ -68,15 +68,15 @@ export type SqlDataset = CommonDataset & {
   sql: string;
 }
 
-export type Dataset = VisitDataset | ViewDataset | EventDataset | PercentageDataset | SqlDataset;
+export type Dataset = VisitsDataset | ViewsDataset | EventsDataset | PercentageDataset | SqlDataset;
 
 export type ChartConfig = {
   id: string;
   type: "bar" | "line";
   title: string;
   time_series?: "daily" | "weekly" | "monthly";
-  date_from?: DateTime;
-  date_to?: DateTime;
+  date_from?: DateFilter;
+  date_to?: DateFilter;
   verified?: boolean;
   unique_visits?: boolean;
   visit_tracking?: "any" | "anonymity_set" | "cookie";
@@ -86,7 +86,7 @@ export type ChartConfig = {
 export type DashboardTabConfig = {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   date_from?: string;
   date_to?: string;
   children: ChartConfig[];
@@ -97,6 +97,7 @@ export type TabFilters = {
   date_to?: string;
 }
 
+// Note: any changes to this type need to be mirrored in the backend validator app/models/skadi/dashboard_validator.rb
 export type DashboardConfig = DashboardTabConfig[];
 
 export type DataPoint = {x: string, y: number}
