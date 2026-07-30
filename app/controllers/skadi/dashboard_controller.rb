@@ -27,7 +27,7 @@ module Skadi
       if @dashboard.save
         head :ok
       else
-        render json: {error: "Dashboard validation failed. #{@dashboard.errors.join("\n")}"}, status: :unprocessable_content
+        render json: {error: "Dashboard validation failed. #{@dashboard.errors.full_messages.join("\n")}"}, status: :unprocessable_content
       end
     end
 

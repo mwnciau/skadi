@@ -1,5 +1,10 @@
 module Skadi
   class Dashboard < ApplicationRecord
+    validates_with DashboardValidator
+
+    # Used by the validator to prevent the unauthorised use of SQL, while allowing existing charts that use SQL to be duplicated.
+    attr_accessor :can_dangerously_use_sql
+
     DEFAULT_CONFIG = [
       {
         "id" => "7cec5a7a-7bf7-403f-b15e-b2e45944182c",
