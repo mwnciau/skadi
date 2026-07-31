@@ -70,7 +70,7 @@ module Skadi
       return @can_view if defined?(@can_view)
 
       return false if Skadi.configuration.dashboard_view_controller_method.nil?
-      return false unless respond_to?(Skadi.configuration.dashboard_view_controller_method)
+      return false unless respond_to?(Skadi.configuration.dashboard_view_controller_method, true)
 
       return @can_view = send(Skadi.configuration.dashboard_view_controller_method)
     end
@@ -79,7 +79,7 @@ module Skadi
       return @can_edit if defined?(@can_edit)
 
       return false if Skadi.configuration.dashboard_edit_controller_method.nil?
-      return false unless respond_to?(Skadi.configuration.dashboard_edit_controller_method)
+      return false unless respond_to?(Skadi.configuration.dashboard_edit_controller_method, true)
 
       return @can_edit = send(Skadi.configuration.dashboard_edit_controller_method)
     end
@@ -88,7 +88,7 @@ module Skadi
       return @can_dangerously_use_sql if defined?(@can_dangerously_use_sql)
 
       return false if Skadi.configuration.dashboard_dangerously_use_sql_controller_method.nil?
-      return false unless respond_to?(Skadi.configuration.dashboard_dangerously_use_sql_controller_method)
+      return false unless respond_to?(Skadi.configuration.dashboard_dangerously_use_sql_controller_method, true)
 
       return @can_dangerously_use_sql = send(Skadi.configuration.dashboard_dangerously_use_sql_controller_method)
     end
