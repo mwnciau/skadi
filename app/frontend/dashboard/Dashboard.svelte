@@ -6,9 +6,13 @@ import TabEditor from "./editors/TabEditor.svelte";
 import Tabs from "./Tabs.svelte";
 import { saveDashboard } from "./helpers/requestHandler";
 
+const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]")!;
+
 let tabs = $state<DashboardTabConfig[]>(
-  JSON.parse(document.querySelector<HTMLElement>("[data-dashboard-config]")?.dataset?.dashboardConfig!),
+  JSON.parse(callingScript.dataset.dashboardConfig!),
 );
+const canEdit = callingScript.dataset.canEdit === "true";
+const canDangerouslyUseSql = callingScript.dataset.canDangerouslyUseSql === "true";
 
 let selectedTab = $state<string>(tabs[0].id);
 let selectedTabConfig = $derived(tabs.find(dashboard => dashboard.id === selectedTab) as DashboardTabConfig);
@@ -147,13 +151,16 @@ $effect(() => {
       {/if}
     </div>
 
-    <button onclick={() => (editingEnabled = !editingEnabled)}>
-      {editingEnabled ? "Finish" : "Enable"} editing
-    </button>
+    {#if canEdit}
+      <button onclick={() => (editingEnabled = !editingEnabled)}>
+        {editingEnabled ? "Finish" : "Enable"} editing
+      </button>
+    {/if}
   </div>
 
   {#each selectedTabConfig?.children as chartConfig, index (chartConfig.id)}
     <ChartWrapper
+      {canDangerouslyUseSql}
       {chartConfig}
       {editingEnabled}
       {tabFilters}

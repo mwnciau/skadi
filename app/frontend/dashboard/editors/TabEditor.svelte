@@ -1,6 +1,6 @@
 <script lang="ts">
 import Filter from "../components/Filter.svelte";
-import { DashboardTabConfig } from "../../types";
+import type { DashboardTabConfig } from "../../types.d.ts";
 
 const {tabConfig, onDelete} = $props<{
   tabConfig: DashboardTabConfig;

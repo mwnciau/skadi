@@ -60,10 +60,28 @@ module Skadi::Unit
       assert_values_are_invalid(:user_model, Class.new, "Class", :DummyUser, true, false)
     end
 
-    test "user_method validates" do
-      assert_values_are_valid(:user_method, nil, :current_user, :current_user_method)
+    test "user_controller_method validates" do
+      assert_values_are_valid(:user_controller_method, nil, :current_user, :current_user_controller_method)
 
-      assert_values_are_invalid(:user_method, "Current.user", "current_user", true, false)
+      assert_values_are_invalid(:user_controller_method, "Current.user", "current_user", true, false)
+    end
+
+    test "dashboard_view_controller_method validates" do
+      assert_values_are_valid(:dashboard_view_controller_method, nil, :current_user, :current_user_controller_method)
+
+      assert_values_are_invalid(:dashboard_view_controller_method, "Current.user", "current_user", true, false)
+    end
+
+    test "dashboard_edit_controller_method validates" do
+      assert_values_are_valid(:dashboard_edit_controller_method, nil, :current_user, :current_user_controller_method)
+
+      assert_values_are_invalid(:dashboard_edit_controller_method, "Current.user", "current_user", true, false)
+    end
+
+    test "dashboard_dangerously_use_sql_controller_method validates" do
+      assert_values_are_valid(:dashboard_dangerously_use_sql_controller_method, nil, :current_user, :current_user_controller_method)
+
+      assert_values_are_invalid(:dashboard_dangerously_use_sql_controller_method, "Current.user", "current_user", true, false)
     end
 
     test "use_query_param_whitelist validates" do

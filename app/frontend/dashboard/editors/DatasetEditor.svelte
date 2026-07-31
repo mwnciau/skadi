@@ -20,7 +20,8 @@ const sqlDefault = (datasetId: string) => `SELECT
 FROM skadi_events
 GROUP BY DATE(skadi_events.created_at)`;
 
-const { chartConfig, dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
+const { canDangerouslyUseSql, chartConfig, dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
+  canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig,
   dataset: Dataset;
   index: number;
@@ -309,6 +310,7 @@ const duplicate = () => {
             key="sql"
             class="font-mono text-red-800 bg-red-50/50 p-1 border border-red-800"
             rows="10"
+            readonly={!canDangerouslyUseSql}
           >
             SQL Query
 
@@ -321,7 +323,9 @@ const duplicate = () => {
         {/if}
 
         <div class="flex flex-row gap-2 mt-4">
-          <button type="button" class="sm" onclick={duplicate}>Duplicate</button>
+          {#if canDangerouslyUseSql}
+            <button type="button" class="sm" onclick={duplicate}>Duplicate</button>
+          {/if}
           {#if onMoveUp !== null }
             <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
           {/if}

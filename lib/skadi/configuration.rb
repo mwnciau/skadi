@@ -24,7 +24,7 @@ module Skadi
     attr_accessor :use_anonymity_sets
     validates(:use_anonymity_sets, "boolean", default: false) { |it| it == true || it == false }
 
-    # When enabled, visits will be tracked by using the logged in user. See the :user_model and :user_method configuration options.
+    # When enabled, visits will be tracked by using the logged in user. See the :user_model and :user_controller_method configuration options.
     # When disabled, users will not be saved to visits without explicit consent.
     # This option defined the default behaviour for tracking users, but the consent cookie, if it exists, will always take precedence over this configuration option.
     # Defaults to false.
@@ -71,10 +71,25 @@ module Skadi
       true
     end
 
-    # Method to call within controllers to get the current user.
+    # Method in the host application's ApplicationController that returns the current logged-in user. An AR Model or nil should be returned. Used to track users; if this is nil or set to a non-existent method, user tracking is disabled. Defaults to nil (disabled).
     # @return [Symbol, nil]
-    attr_accessor :user_method
-    validates(:user_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+    attr_accessor :user_controller_method
+    validates(:user_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+
+    # Method in the host application's ApplicationController that returns true if the current request is allowed to view the Skadi dashboard. Defaults to nil (disabled).
+    # @return [Symbol, nil]
+    attr_accessor :dashboard_view_controller_method
+    validates(:dashboard_view_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+
+    # Method in the host application's ApplicationController that returns true if the current request is allowed to edit Skadi dashboards. Defaults to nil (disabled).
+    # @return [Symbol, nil]
+    attr_accessor :dashboard_edit_controller_method
+    validates(:dashboard_edit_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+
+    # Method in the host application's ApplicationController that returns true if the current request is allowed to edit raw SQL in the Skadi dashboard. Note that exposing SQL to users is dangerous and could lead to data loss. Defaults to nil (disabled).
+    # @return [Symbol, nil]
+    attr_accessor :dashboard_dangerously_use_sql_controller_method
+    validates(:dashboard_dangerously_use_sql_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
 
     # Enable filtering of query parameters to prevent sensitive data being exposed. Defaults to true.
     # @return [Boolean]

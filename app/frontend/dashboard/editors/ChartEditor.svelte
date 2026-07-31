@@ -4,7 +4,8 @@ import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
 import Filter from "../components/Filter.svelte";
 
-let { chartConfig, reloadChartData, onClose, onSave }: {
+let { canDangerouslyUseSql, chartConfig, reloadChartData, onClose, onSave }: {
+  canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
   reloadChartData: (chartConfig?: ChartConfig) => Promise<any>;
   onClose: () => void;
@@ -85,9 +86,15 @@ const deleteDataset = (index: number) => {
 
 const duplicateDataset = (index: number) => {
   const newDataset = $state.snapshot(localChartConfig.datasets[index]);
+  const oldDatasetId = newDataset.id;
   newDataset.id = crypto.randomUUID();
   datasetIdToOpen = newDataset.id;
   newDataset.label = `Copy of ${newDataset.label}`
+
+  if (newDataset.type === "sql") {
+    // Ensure the ID is updated in the SQL dataset
+    newDataset.sql = newDataset.sql.replace(oldDatasetId, newDataset.id);
+  }
 
   localChartConfig.datasets.splice(index + 1, 0, newDataset);
 }
@@ -195,6 +202,7 @@ const moveDown = (index: number) => {
   <div class="flex flex-col gap-4 max-w-160 mt-4">
     {#each localChartConfig.datasets as dataset, index (dataset.id)}
       <DatasetEditor
+        {canDangerouslyUseSql}
         chartConfig={localChartConfig}
         {dataset}
         {index}

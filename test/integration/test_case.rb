@@ -13,8 +13,11 @@ module Skadi
         # Reset the configuration
         Skadi.configuration = Skadi::Configuration.new
 
-        # Ensure the current user is reset
+        # Ensure the application state is reset
         ::ApplicationController.current_user = nil
+        ::ApplicationController.skadi_dashboard_view = true
+        ::ApplicationController.skadi_dashboard_edit = true
+        ::ApplicationController.skadi_dashboard_use_sql = true
 
         Rails.cache.clear
       end
@@ -33,9 +36,18 @@ module Skadi
       def log_in_as(user)
         # Ensure user config is setup
         Skadi.configuration.user_model = "DummyUser"
-        Skadi.configuration.user_method = :current_user
+        Skadi.configuration.user_controller_method = :current_user
 
         ::ApplicationController.current_user = user
+      end
+
+      def assert_see(pattern) = assert _see_in_response?(pattern), "Expected to see \"#{pattern}\" in:\n#{@response.body.inspect}"
+
+      def refute_see(pattern) = refute _see_in_response?(pattern), "Expected not to see \"#{pattern}\" in:\n#{@response.body.inspect}"
+
+      private def _see_in_response?(pattern)
+        regex = pattern.is_a?(String) ? Regexp.escape(pattern) : pattern
+        return @response.body.to_s.match?(regex)
       end
     end
   end

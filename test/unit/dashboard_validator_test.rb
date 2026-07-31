@@ -7,7 +7,7 @@ module Skadi::Unit
     ##############################
 
     test "the app's default configuration is valid" do
-      assert dashboard(Skadi::Dashboard::DEFAULT_CONFIG).valid?
+      assert dashboard(Skadi::Dashboard.default_configuration).valid?
     end
 
     test "valid visits dataset" do

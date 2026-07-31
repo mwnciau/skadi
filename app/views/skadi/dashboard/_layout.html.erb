@@ -1,4 +1,4 @@
-<%# locals: (dashboard_config:) %>
+<%# locals: () %>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -6,10 +6,9 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
-
-    <%= stylesheet_link_tag "#{Skadi::Engine.routes.url_helpers.dashboard_css_path}?#{Skadi::VERSION}", media: "all" %>
-    <%= javascript_include_tag "#{Skadi::Engine.routes.url_helpers.dashboard_js_path}?#{Skadi::VERSION}", data: {"dashboard-config": dashboard_config.to_json} %>
     <%= csrf_meta_tags %>
+
+    <%= yield :head %>
   </head>
 
   <body class="flex flex-col gap-4 min-h-screen">

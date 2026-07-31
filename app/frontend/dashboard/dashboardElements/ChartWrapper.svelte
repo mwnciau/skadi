@@ -9,7 +9,8 @@
   import Icon from "../components/Icon.svelte";
   import { fetchChartData } from "../helpers/requestHandler";
 
-  let { chartConfig, editingEnabled, startEditing, tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  let { canDangerouslyUseSql, chartConfig, editingEnabled, startEditing, tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
   editingEnabled: boolean;
   tabFilters: TabFilters;
@@ -82,6 +83,7 @@ $effect(() => {
 
 {#if isEditingChart}
   <ChartEditor
+    {canDangerouslyUseSql}
     {chartConfig}
     reloadChartData={reloadChartData}
     onClose={() => (isEditingChart = false)}

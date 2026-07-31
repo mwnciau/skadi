@@ -194,21 +194,10 @@ module Skadi
     end
 
     private def allowed_sql_strings(context:)
+      # Return the cached SQL strings if already calculated
       return context.allowed_sql_strings if context.allowed_sql_strings.is_a? Array
 
-      return context.allowed_sql_strings = [] unless context.record.configuration_was.is_a?(Array)
-
-      charts = context.record.configuration_was.flat_map do |tab|
-        tab.is_a?(Hash) && tab["children"].is_a?(Array) ? tab["children"] : []
-      end
-      datasets = charts.flat_map do |chart|
-        chart.is_a?(Hash) && chart["datasets"].is_a?(Array) ? chart["datasets"] : []
-      end
-      context.allowed_sql_strings = datasets.flat_map do |dataset|
-        next [] unless dataset.is_a?(Hash) && dataset["type"] == "sql" && dataset["sql"].is_a?(String)
-
-        [dataset["sql"]]
-      end
+      return context.allowed_sql_strings = context.record.sql_strings
     end
   end
 end

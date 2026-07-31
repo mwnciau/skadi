@@ -312,10 +312,10 @@ module Skadi
     private def logged_in_user
       return @logged_in_user if defined?(@logged_in_user)
 
-      return nil if Skadi.configuration.user_method.nil?
-      return nil unless controller.respond_to?(Skadi.configuration.user_method)
+      return nil if Skadi.configuration.user_controller_method.nil?
+      return nil unless controller.respond_to?(Skadi.configuration.user_controller_method)
 
-      @logged_in_user = controller.send(Skadi.configuration.user_method)
+      @logged_in_user = controller.send(Skadi.configuration.user_controller_method)
 
       return @logged_in_user
     end
