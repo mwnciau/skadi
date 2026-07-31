@@ -33,6 +33,14 @@ module Skadi::Integration
         assert_response :forbidden
       end
 
+      test "cannot view without controller method" do
+        Skadi.configuration.dashboard_view_controller_method = nil
+
+        get skadi.dashboard_path
+
+        assert_response :forbidden
+      end
+
       test "can fetch data with permission" do
         ApplicationController.skadi_dashboard_view = true
 
@@ -46,6 +54,17 @@ module Skadi::Integration
 
       test "cannot fetch data without permission" do
         ApplicationController.skadi_dashboard_view = false
+
+        dashboard = create :dashboard
+        chart_id = dashboard.configuration[0]["children"][0]["id"]
+
+        get skadi.dashboard_data_path(chart_id)
+
+        assert_response :forbidden
+      end
+
+      test "cannot fetch data without controller method" do
+        Skadi.configuration.dashboard_view_controller_method = nil
 
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
@@ -167,6 +186,14 @@ module Skadi::Integration
 
       test "cannot update without permission" do
         ApplicationController.skadi_dashboard_edit = false
+
+        post skadi.dashboard_update_path, params: {configuration: Skadi::Dashboard.default_configuration}, as: :json
+
+        assert_response :forbidden
+      end
+
+      test "cannot update without controller method" do
+        Skadi.configuration.dashboard_edit_controller_method = nil
 
         post skadi.dashboard_update_path, params: {configuration: Skadi::Dashboard.default_configuration}, as: :json
 
