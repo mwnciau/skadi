@@ -2,14 +2,14 @@ require "integration/test_case"
 
 module Skadi::Integration
   module DashboardController
-    SQL_DATASET = {
-      "id" => "sql-dataset",
-      "label" => "SQL",
-      "type" => "sql",
-      "sql" => "SELECT * FROM skadi_visits",
-    }.freeze
-
     class PermissionsTest < TestCase
+      SQL_DATASET = {
+        "id" => "sql-dataset",
+        "label" => "SQL",
+        "type" => "sql",
+        "sql" => "SELECT * FROM skadi_visits",
+      }.freeze
+
       setup do
         Skadi.configuration.dashboard_view_controller_method = :skadi_dashboard_view
         Skadi.configuration.dashboard_edit_controller_method = :skadi_dashboard_edit
