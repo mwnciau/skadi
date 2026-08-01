@@ -8,7 +8,7 @@ module Skadi
     def show
       return head :forbidden unless can_view
 
-      render :show, locals: {dashboard_config: @dashboard.configuration, can_edit: can_edit, can_dangerously_use_sql: can_dangerously_use_sql}
+      render :show, locals: {dashboard_configuration: @dashboard.configuration, can_edit: can_edit, can_dangerously_use_sql: can_dangerously_use_sql}
     end
 
     def data
@@ -16,12 +16,16 @@ module Skadi
 
       query_filters = params.permit(:date_from, :date_to)
 
-      if can_edit && params[:config].present?
+      if can_edit && params[:configuration].present?
         return custom_chart_data(query_filters)
       end
 
-      return render json: @dashboard.chart_data(params["chart_id"], query_filters.to_h)
-    rescue Skadi::DashboardQuery::Error => e
+      unless params[:chart_id].present?
+        return render json: {error: "The chart_id parameter must be specified"}, status: :unprocessable_content
+      end
+
+      return render json: @dashboard.chart_data(params[:chart_id], query_filters.to_h)
+    rescue Skadi::DashboardQuery::Error, Skadi::Dashboard::Error => e
       render json: {error: e.message}, status: :unprocessable_content
     rescue ActiveRecord::StatementInvalid => e
       message = can_dangerously_use_sql ? e.message : "Something went wrong fetching the data. Please contact a site admin."
@@ -42,20 +46,22 @@ module Skadi
     end
 
     private def custom_chart_data(query_filters)
-      config_override = begin
-        JSON.parse(params[:config])
+      chart_configuration = begin
+        JSON.parse(params[:configuration])
       rescue
-        return render json: {error: "Unable to parse chart config"}, status: :unprocessable_content
+        return render json: {error: "Unable to parse chart configuration"}, status: :unprocessable_content
       end
 
-      config_override["id"] = "chart-with-config-override"
-      @dashboard.configuration[0]["children"] << config_override
+      # Temporarily add the chart to the current dashboard so we can validate it, ensuring it's in the right format and that no illegal SQL has been added.
+      chart_configuration["id"] = "temporary-chart"
+      @dashboard.configuration[0]["children"] << chart_configuration
 
       unless @dashboard.valid?
         return render json: {error: "Invalid chart configuration"}, status: :unprocessable_content
       end
 
-      return render json: @dashboard.chart_data("chart-with-config-override", query_filters.to_h)
+      DashboardQuery.chart_query(chart_configuration, query_filters)
+      return render json: @dashboard.chart_data("temporary-chart", query_filters.to_h)
     end
 
     private def set_dashboard

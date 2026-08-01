@@ -1,17 +1,20 @@
 require_relative "test_case"
+require "helpers/dashboard_configuration_helper"
 
 module Skadi::Unit
   class DashboardValidatorTest < TestCase
+    include Helpers::DashboardConfigurationHelper
+
     ##############################
     #        Happy paths         #
     ##############################
 
     test "the app's default configuration is valid" do
-      assert dashboard(Skadi::Dashboard.default_configuration).valid?
+      assert build_dashboard(Skadi::Dashboard.default_configuration).valid?
     end
 
     test "valid visits dataset" do
-      views_dataset = dataset(
+      views_dataset = build_dataset(
         type: "visits",
         visible: false,
         axis: "right",
@@ -31,17 +34,17 @@ module Skadi::Unit
         visit_utm_campaign: "utm_campaign",
       )
 
-      assert dashboard([tab(children: [chart(datasets: [views_dataset])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).valid?
     end
 
     test "valid minimal visits dataset" do
-      visits_dataset = dataset(type: "visits")
+      visits_dataset = build_dataset(type: "visits")
 
-      assert dashboard([tab(children: [chart(datasets: [visits_dataset])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [visits_dataset])])]).valid?
     end
 
     test "valid views dataset" do
-      views_dataset = dataset(
+      views_dataset = build_dataset(
         type: "views",
         visible: false,
         axis: "right",
@@ -58,17 +61,17 @@ module Skadi::Unit
         view_version: "version",
       )
 
-      assert dashboard([tab(children: [chart(datasets: [views_dataset])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).valid?
     end
 
     test "valid minimal views dataset" do
-      views_dataset = dataset(type: "views")
+      views_dataset = build_dataset(type: "views")
 
-      assert dashboard([tab(children: [chart(datasets: [views_dataset])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).valid?
     end
 
     test "valid events dataset" do
-      events_dataset = dataset(
+      events_dataset = build_dataset(
         type: "events",
         visible: false,
         axis: "right",
@@ -81,20 +84,20 @@ module Skadi::Unit
         event_name: "name"
       )
 
-      assert dashboard([tab(children: [chart(datasets: [events_dataset])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [events_dataset])])]).valid?
     end
 
     test "valid minimal events dataset" do
-      views_dataset = dataset(type: "events")
+      views_dataset = build_dataset(type: "events")
 
-      assert dashboard([tab(children: [chart(datasets: [views_dataset])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).valid?
     end
 
     test "valid percentage dataset" do
-      dataset_1 = dataset(id: "id1")
-      dataset_2 = dataset(id: "id2")
+      dataset_1 = build_dataset(id: "id1")
+      dataset_2 = build_dataset(id: "id2")
 
-      percentage_dataset = dataset(
+      percentage_dataset = build_dataset(
         type: "percentage",
         visible: false,
         axis: "right",
@@ -103,18 +106,18 @@ module Skadi::Unit
         denominator: "id2",
       )
 
-      assert dashboard([tab(children: [chart(datasets: [dataset_1, percentage_dataset, dataset_2])])]).valid?
+      assert build_dashboard([build_tab(children: [build_chart(datasets: [dataset_1, percentage_dataset, dataset_2])])]).valid?
     end
 
     test "valid sql dataset" do
-      sql_dataset = dataset(
+      sql_dataset = build_dataset(
         type: "sql",
         visible: false,
         axis: "right",
 
         sql: "SELECT * FROM skadi_visits",
       )
-      d = dashboard([tab(children: [chart(datasets: [sql_dataset])])])
+      d = build_dashboard([build_tab(children: [build_chart(datasets: [sql_dataset])])])
       d.can_dangerously_use_sql = true
 
       assert d.valid?
@@ -318,8 +321,8 @@ module Skadi::Unit
     ##############################
 
     test "validates sql when use is permitted" do
-      d = dashboard([tab(children: [chart(
-        datasets: [dataset(type: "sql", sql: 123)],
+      d = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: 123)],
       )])])
       d.can_dangerously_use_sql = true
 
@@ -328,8 +331,8 @@ module Skadi::Unit
     end
 
     test "validates sql when use is not permitted" do
-      d = dashboard([tab(children: [chart(
-        datasets: [dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
+      d = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
       )])])
 
       refute d.valid?
@@ -337,8 +340,8 @@ module Skadi::Unit
     end
 
     test "allows sql when use is not permitted after save" do
-      d = dashboard([tab(children: [chart(
-        datasets: [dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
+      d = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
       )])])
 
       refute d.valid?
@@ -349,14 +352,14 @@ module Skadi::Unit
     end
 
     test "validates sql may be copied when use is not permitted" do
-      d = dashboard([tab(children: [chart(
-        datasets: [dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
+      d = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
       )])])
       d.can_dangerously_use_sql = true
       d.save!
 
       # Insert a duplicate dataset with the same SQL
-      d.configuration[0]["children"][0]["datasets"] << dataset(type: "sql", "sql" => "SELECT * FROM skadi_visits")
+      d.configuration[0]["children"][0]["datasets"] << build_dataset(type: "sql", "sql" => "SELECT * FROM skadi_visits")
       d.can_dangerously_use_sql = false
 
       valid = d.valid?
@@ -381,12 +384,12 @@ module Skadi::Unit
     end
 
     test "validates percentage dataset numerator/denominator only match datasets within the same chart" do
-      other_chart_datasets = [dataset(id: "a", type: "visits")]
-      this_chart_datasets = [dataset(id: "pct", type: "percentage", numerator: "a", denominator: "a")]
+      other_chart_datasets = [build_dataset(id: "a", type: "visits")]
+      this_chart_datasets = [build_dataset(id: "pct", type: "percentage", numerator: "a", denominator: "a")]
 
-      d = dashboard([tab(children: [
-        chart(id: "chart-1", datasets: other_chart_datasets),
-        chart(id: "chart-2", datasets: this_chart_datasets),
+      d = build_dashboard([build_tab(children: [
+        build_chart(id: "chart-1", datasets: other_chart_datasets),
+        build_chart(id: "chart-2", datasets: this_chart_datasets),
       ])])
 
       refute d.valid?
@@ -403,39 +406,23 @@ module Skadi::Unit
     #       Helper methods       #
     ##############################
 
-    private def dataset(type: "visits", id: "dataset-1", label: "Dataset", **attrs)
-      {"id" => id, "label" => label, "type" => type, **attrs}
-    end
-
-    private def chart(id: "chart-1", type: "bar", title: "Chart", datasets: [dataset], **attrs)
-      {"id" => id, "type" => type, "title" => title, "datasets" => datasets, **attrs}
-    end
-
-    private def tab(id: "tab-1", title: "Tab", children: [chart], **attrs)
-      {"id" => id, "title" => title, "children" => children, **attrs}
-    end
-
-    private def dashboard(configuration)
-      Skadi::Dashboard.new(name: "Test dashboard", configuration: configuration)
-    end
-
     private def assert_configuration_error(error, configuration)
-      d = dashboard(configuration)
+      d = build_dashboard(configuration)
 
       refute d.valid?, "Expected the dashboard configuration to be invalid"
       assert_match error, d.errors[:configuration].join
     end
 
     private def assert_tab_error(error, **tab_config)
-      assert_configuration_error("configuration[0].#{error}", [tab(**tab_config)])
+      assert_configuration_error("configuration[0].#{error}", [build_tab(**tab_config)])
     end
 
     private def assert_chart_error(error, **chart_config)
-      assert_tab_error("children[0].#{error}", children: [chart(**chart_config)])
+      assert_tab_error("children[0].#{error}", children: [build_chart(**chart_config)])
     end
 
     private def assert_dataset_error(error, **dataset_config)
-      assert_chart_error("datasets[0].#{error}", datasets: [dataset(**dataset_config)])
+      assert_chart_error("datasets[0].#{error}", datasets: [build_dataset(**dataset_config)])
     end
   end
 end

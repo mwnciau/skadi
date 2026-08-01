@@ -1,4 +1,4 @@
-require "integration/test_case"
+require_relative "test_case"
 
 module Skadi::Integration
   module DashboardController
@@ -9,12 +9,6 @@ module Skadi::Integration
         "type" => "sql",
         "sql" => "SELECT * FROM skadi_visits",
       }.freeze
-
-      setup do
-        Skadi.configuration.dashboard_view_controller_method = :skadi_dashboard_view
-        Skadi.configuration.dashboard_edit_controller_method = :skadi_dashboard_edit
-        Skadi.configuration.dashboard_dangerously_use_sql_controller_method = :skadi_dashboard_use_sql
-      end
 
       test "can view with permission" do
         ApplicationController.skadi_dashboard_view = true
@@ -47,7 +41,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        get skadi.dashboard_data_path(chart_id)
+        get skadi.dashboard_data_path, params: { chart_id: }
 
         assert_response :ok
       end
@@ -58,7 +52,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        get skadi.dashboard_data_path(chart_id)
+        get skadi.dashboard_data_path, params: { chart_id: }
 
         assert_response :forbidden
       end
@@ -69,7 +63,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        get skadi.dashboard_data_path(chart_id)
+        get skadi.dashboard_data_path, params: { chart_id: }
 
         assert_response :forbidden
       end
@@ -80,15 +74,9 @@ module Skadi::Integration
 
         create :view
 
-        dashboard = create :dashboard
-        chart_id = dashboard.configuration[0]["children"][0]["id"]
-        override = {id: "preview", type: "line", title: "Preview", datasets: [{id: "123", label: "123", type: "views"}]}
-
-        get skadi.dashboard_data_path(chart_id), params: {config: override.to_json}
+        get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: build_dataset(type: "views")).to_json}
 
         assert_response :ok
-
-        # By default, the chart should return visits data, which doesn't exist. Returning a count of 1 signals that the override config is used.
         assert_see '"count":1'
       end
 
@@ -96,18 +84,10 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_view = true
         ApplicationController.skadi_dashboard_edit = false
 
-        create :view
+        get skadi.dashboard_data_path, params: {configuration: build_chart.to_json}
 
-        dashboard = create :dashboard
-        chart_id = dashboard.configuration[0]["children"][0]["id"]
-        override = {id: "preview", type: "line", title: "Preview", datasets: [{id: "123", label: "123", type: "views"}]}
-
-        get skadi.dashboard_data_path(chart_id), params: {config: override.to_json}
-
-        assert_response :ok
-
-        # By default, the chart should return visits data, which doesn't exist. Returning an empty array signals that the override config is ignored.
-        assert_equal "[]", response.body
+        assert_response :unprocessable_content
+        assert_see "The chart_id parameter must be specified"
       end
 
       test "can preview a new sql dataset with sql permission" do
@@ -115,11 +95,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = true
 
-        dashboard = create :dashboard
-        chart_id = dashboard.configuration[0]["children"][0]["id"]
-        override = {"id" => "preview", "type" => "line", "title" => "Preview", "datasets" => [SQL_DATASET]}
-
-        get skadi.dashboard_data_path(chart_id), params: {config: override.to_json}
+        get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}
 
         assert_response :ok
       end
@@ -129,51 +105,39 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = false
 
-        dashboard = create :dashboard
-        chart_id = dashboard.configuration[0]["children"][0]["id"]
-        override = {"id" => "preview", "type" => "line", "title" => "Preview", "datasets" => [SQL_DATASET]}
-
-        get skadi.dashboard_data_path(chart_id), params: {config: override.to_json}
+        get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}
 
         assert_response :unprocessable_content
         assert_see "Invalid chart configuration"
       end
 
-      test "can see sql errors dataset with sql permission" do
+      test "can see sql dataset errors with sql permission" do
         ApplicationController.skadi_dashboard_view = true
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = true
 
-        sql_dataset = SQL_DATASET.dup
-        sql_dataset["sql"] = "SELECT '"
+        chart = build_chart(dataset: build_dataset(type: "sql", sql: "SELECT '"))
+        build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        dashboard = create :dashboard
-        chart_id = dashboard.configuration[0]["children"][0]["id"]
-        override = {"id" => "preview", "type" => "line", "title" => "Preview", "datasets" => [sql_dataset]}
-
-        get skadi.dashboard_data_path(chart_id), params: {config: override.to_json}
+        get skadi.dashboard_data_path, params: {chart_id: chart["id"]}
 
         assert_response :unprocessable_content
         assert_see "SQLException: unrecognized token"
       end
 
-      test "cannot see sql errors dataset without sql permission" do
+      test "cannot see sql dataset errors without sql permission" do
         ApplicationController.skadi_dashboard_view = true
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = false
 
-        sql_dataset = SQL_DATASET.dup
-        sql_dataset["sql"] = "SELECT '"
+        chart = build_chart(dataset: build_dataset(type: "sql", sql: "SELECT '"))
+        build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        dashboard = create :dashboard
-        chart_id = dashboard.configuration[0]["children"][0]["id"]
-        override = {"id" => "preview", "type" => "line", "title" => "Preview", "datasets" => [sql_dataset]}
-
-        get skadi.dashboard_data_path(chart_id), params: {config: override.to_json}
+        get skadi.dashboard_data_path, params: {chart_id: chart["id"]}
 
         assert_response :unprocessable_content
         refute_see "SQLException: unrecognized token"
-        assert_see "Invalid chart configuration"
+        assert_see "Something went wrong fetching the data. Please contact a site admin."
       end
 
       test "can update with permission" do
@@ -200,18 +164,33 @@ module Skadi::Integration
         assert_response :forbidden
       end
 
-      test "can update SQL with permission" do
+      test "can add a SQL dataset with permission" do
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = true
 
         dashboard = create :dashboard
-        configuration = Skadi::Dashboard.default_configuration
+        configuration = dashboard.configuration.deep_dup
         configuration[0]["children"][0]["datasets"] << SQL_DATASET
 
         post skadi.dashboard_update_path, params: {configuration:}, as: :json
 
         assert_response :ok
         assert_equal configuration, dashboard.reload.configuration
+      end
+
+      test "cannot add a SQL dataset without permission" do
+        ApplicationController.skadi_dashboard_edit = true
+        ApplicationController.skadi_dashboard_use_sql = false
+
+        dashboard = create :dashboard
+        configuration = dashboard.configuration.deep_dup
+        configuration[0]["children"][0]["datasets"] << SQL_DATASET
+
+        post skadi.dashboard_update_path, params: {configuration:}, as: :json
+
+        assert_response :unprocessable_content
+        assert_see "configuration[0].children[0].datasets[1].sql cannot be modified"
+        assert_equal Skadi::Dashboard.default_configuration, dashboard.reload.configuration
       end
 
       test "can duplicate a SQL dataset without permission" do
@@ -228,21 +207,6 @@ module Skadi::Integration
 
         assert_response :ok
         assert_equal configuration, dashboard.reload.configuration
-      end
-
-      test "cannot add a SQL dataset without permission" do
-        ApplicationController.skadi_dashboard_edit = true
-        ApplicationController.skadi_dashboard_use_sql = false
-
-        dashboard = create :dashboard
-        configuration = Skadi::Dashboard.default_configuration
-        configuration[0]["children"][0]["datasets"] << SQL_DATASET
-
-        post skadi.dashboard_update_path, params: {configuration:}, as: :json
-
-        assert_response :unprocessable_content
-        assert_see "configuration[0].children[0].datasets[1].sql cannot be modified"
-        assert_equal Skadi::Dashboard.default_configuration, dashboard.reload.configuration
       end
 
       test "cannot edit a SQL dataset without permission" do

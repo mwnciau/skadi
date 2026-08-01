@@ -1,5 +1,8 @@
 module Skadi
   class Dashboard < ApplicationRecord
+    class Error < StandardError; end
+    class ChartNotFoundError < Error; end
+
     validates_with DashboardValidator
 
     # Used by the validator to prevent the unauthorised use of SQL, while allowing existing charts that use SQL to be duplicated.
@@ -35,9 +38,11 @@ module Skadi
     def self.default_configuration = DEFAULT_CONFIGURATION.deep_dup
 
     def chart_data(chart_id, filters)
-      saved_chart_config = find_chart_by_id(chart_id) unless chart_id.nil?
+      chart_configuration = find_chart_by_id(chart_id) unless chart_id.nil?
 
-      return DashboardQuery.chart_query(saved_chart_config, filters)
+      raise ChartNotFoundError.new("Unable to find chart with id #{chart_id.inspect}") unless chart_configuration
+
+      return DashboardQuery.chart_query(chart_configuration, filters)
     end
 
     # Returns an array containing the SQL queries in the _persisted_ record - i.e. those that non-permitted users can use/run

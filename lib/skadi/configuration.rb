@@ -3,8 +3,8 @@ module Skadi
     class Error < StandardError; end
 
     def initialize
-      validators.each do |attribute, validator_config|
-        send("#{attribute}=", validator_config[:default])
+      validators.each do |attribute, validator_configuration|
+        send("#{attribute}=", validator_configuration[:default])
       end
     end
 
@@ -57,7 +57,7 @@ module Skadi
     # The parent app's User class, used to link visits to users
     # @return [Class, nil]
     attr_accessor :user_model
-    validates(:user_model, "string or nil", default: nil) do |it, config|
+    validates(:user_model, "string or nil", default: nil) do |it, configuration|
       next true if it.nil?
       next false unless it.is_a?(String)
 
@@ -66,7 +66,7 @@ module Skadi
       next false unless klass.is_a?(Class) && klass < ActiveRecord::Base
 
       # Update the user_model ref to the actual class rather than the string
-      config.user_model = klass
+      configuration.user_model = klass
 
       true
     end
@@ -140,9 +140,9 @@ module Skadi
     def do_not_track_bots? = !@track_bots
 
     def validate!
-      validators.each do |attribute, validator_config|
-        validator = validator_config[:validator]
-        expecting = validator_config[:expecting]
+      validators.each do |attribute, validator_configuration|
+        validator = validator_configuration[:validator]
+        expecting = validator_configuration[:expecting]
         value = send(attribute)
 
         if validator.call(value, self)

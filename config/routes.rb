@@ -10,5 +10,5 @@ Skadi::Engine.routes.draw do
   get "/dashboard", to: "dashboard#show", as: :dashboard
   post "/dashboard/update", to: "dashboard#update"
 
-  get "/data/:chart_id", to: "dashboard#data", as: :dashboard_data
+  get "/data", to: "dashboard#data", as: :dashboard_data
 end
