@@ -3,6 +3,7 @@ import type {ChartConfig} from "../../types";
 import DatasetEditor from "./DatasetEditor.svelte";
 import Icon from "../components/Icon.svelte";
 import Filter from "../components/Filter.svelte";
+import { untrack } from "svelte";
 
 let { canDangerouslyUseSql, chartConfig, reloadChartData, onClose, onSave }: {
   canDangerouslyUseSql: boolean;
@@ -12,20 +13,20 @@ let { canDangerouslyUseSql, chartConfig, reloadChartData, onClose, onSave }: {
   onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
 
-let localChartConfig = $state($state.snapshot(chartConfig));
+// untrack: this is just sets the default value whereupon this component controls the state
+let localChartConfig = $state($state.snapshot(untrack(() => chartConfig)));
 
 let chartConfigString = $derived(JSON.stringify(chartConfig));
 let localChartConfigString = $derived(JSON.stringify(localChartConfig));
 
-let displayedChartConfigString = $state(chartConfigString);
+// untrack: this is manually updated when the preview changes
+let displayedChartConfigString = $state(untrack(() => chartConfigString));
 
 let unsavedChanges = $derived(chartConfigString !== localChartConfigString);
 let unpreviewedChanges = $derived(localChartConfigString !== displayedChartConfigString);
 
 let errorMessage: string | null = $state(null);
-
-// Intentionally left state-less because this will be a one-off thing when a dataset is added or duplicated
-let datasetIdToOpen: string | null = null;
+let datasetIdToOpen: string | null = $state(null);
 
 const saveChanges = () => {
   onSave(localChartConfig);
@@ -90,11 +91,6 @@ const duplicateDataset = (index: number) => {
   newDataset.id = crypto.randomUUID();
   datasetIdToOpen = newDataset.id;
   newDataset.label = `Copy of ${newDataset.label}`
-
-  if (newDataset.type === "sql") {
-    // Ensure the ID is updated in the SQL dataset
-    newDataset.sql = newDataset.sql.replace(oldDatasetId, newDataset.id);
-  }
 
   localChartConfig.datasets.splice(index + 1, 0, newDataset);
 }

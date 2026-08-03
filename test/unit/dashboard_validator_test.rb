@@ -5,6 +5,8 @@ module Skadi::Unit
   class DashboardValidatorTest < TestCase
     include Helpers::DashboardConfigurationHelper
 
+    VALID_SQL = "SELECT created_at as date, NULL as split, 1 as count FROM skadi_visits"
+
     ##############################
     #        Happy paths         #
     ##############################
@@ -22,16 +24,16 @@ module Skadi::Unit
         date_from: "2020-01-01",
         date_to: "2020-12-31",
 
-        split_by: "referrer",
+        split_by: "referrer_domain",
 
-        visit_landing_page: "landing_page",
-        visit_referrer_domain: "referrer_domain",
+        landing_page: "landing_page",
+        referrer_domain: "referrer_domain",
 
-        visit_utm_source: "utm_source",
-        visit_utm_medium: "utm_medium",
-        visit_utm_term: "utm_term",
-        visit_utm_content: "utm_content",
-        visit_utm_campaign: "utm_campaign",
+        utm_source: "utm_source",
+        utm_medium: "utm_medium",
+        utm_term: "utm_term",
+        utm_content: "utm_content",
+        utm_campaign: "utm_campaign",
       )
 
       assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).valid?
@@ -54,11 +56,11 @@ module Skadi::Unit
 
         split_by: "controller",
 
-        view_action: "action",
-        view_controller: "controller",
-        view_path: "path",
-        view_verb: "verb",
-        view_version: "version",
+        action: "action",
+        controller: "controller",
+        path: "path",
+        verb: "GET",
+        version: "version",
       )
 
       assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).valid?
@@ -81,7 +83,7 @@ module Skadi::Unit
 
         split_by: "name",
 
-        event_name: "name"
+        name: "name"
       )
 
       assert build_dashboard([build_tab(children: [build_chart(datasets: [events_dataset])])]).valid?
@@ -115,14 +117,13 @@ module Skadi::Unit
         visible: false,
         axis: "right",
 
-        sql: "SELECT * FROM skadi_visits",
+        sql: VALID_SQL,
       )
-      d = build_dashboard([build_tab(children: [build_chart(datasets: [sql_dataset])])])
-      d.can_dangerously_use_sql = true
+      dashboard = build_dashboard([build_tab(children: [build_chart(datasets: [sql_dataset])])])
+      dashboard.can_dangerously_use_sql = true
 
-      assert d.valid?
+      assert dashboard.valid?
     end
-
 
     ##############################
     #       Tab validation       #
@@ -230,90 +231,36 @@ module Skadi::Unit
     end
 
     test "validates dataset type" do
-      assert_dataset_error("type must be one of", type: "custom")
+      assert_dataset_error("type is not a valid dataset type", type: "custom")
     end
 
     test "validates dataset unknown key" do
       assert_dataset_error("bogus is not a valid key", bogus: :value)
     end
 
-    ###############################
-    #  Visits dataset validation  #
-    ###############################
-
-    VISITS_DATASET_FIELDS = {
-      date_from: :date,
-      date_to: :date,
-      visit_landing_page: :string,
-      visit_referrer_domain: :string,
-      visit_utm_source: :string,
-      visit_utm_medium: :string,
-      visit_utm_term: :string,
-      visit_utm_content: :string,
-      visit_utm_campaign: :string,
-    }
-    VISITS_DATASET_FIELDS.each do |field, type|
-      test "validates visits dataset #{field}" do
-        assert_dataset_error("#{field} must be a #{type}", field => 1, type: "visits")
+    test "validates dataset string" do
+      [1, 3.14, true, {}, [], false].each do |value|
+        assert_dataset_error("utm_source must be a string", utm_source: value)
       end
     end
 
-    test "validates visits dataset split_by" do
-      assert_dataset_error("split_by must be one of", split_by: "controller", type: "visits")
-    end
-
-    test "validates visits dataset unknown key" do
-      assert_dataset_error("event_name is not a valid key", event_name: "name", type: "visits")
-    end
-
-    ##############################
-    #  Views dataset validation  #
-    ##############################
-
-    VIEWS_DATASET_FIELDS = {
-      date_from: :date,
-      date_to: :date,
-      view_action: :string,
-      view_controller: :string,
-      view_path: :string,
-      view_verb: :string,
-      view_version: :string,
-    }
-    VIEWS_DATASET_FIELDS.each do |field, type|
-      test "validates views dataset #{field}" do
-        assert_dataset_error("#{field} must be a #{type}", field => 1, type: "views")
+    test "validates dataset string with options" do
+      [1, 3.14, "true", {}, [], false].each do |value|
+        assert_dataset_error("verb must be one of", type: "views", verb: value)
       end
     end
 
-    test "validates views dataset split_by" do
-      assert_dataset_error("split_by must be one of", split_by: "referrer", type: "views")
-    end
-
-    test "validates views dataset unknown key" do
-      assert_dataset_error("visit_utm_source is not a valid key", visit_utm_source: "source", type: "views")
-    end
-
-    ###############################
-    #  Events dataset validation  #
-    ###############################
-
-    EVENTS_DATASET_FIELDS = {
-      date_from: :date,
-      date_to: :date,
-      event_name: :string,
-    }
-    EVENTS_DATASET_FIELDS.each do |field, type|
-      test "validates events dataset #{field}" do
-        assert_dataset_error("#{field} must be a #{type}", field => 1, type: "events")
+    test "validates dataset boolean" do
+      [1, 3.14, "true", {}, [], "false"].each do |value|
+        assert_dataset_error("verified must be a boolean", type: "views", verified: value)
       end
     end
 
-    test "validates events dataset split_by" do
-      assert_dataset_error("split_by must be one of", split_by: "version", type: "events")
-    end
-
-    test "validates events dataset unknown key" do
-      assert_dataset_error("view_action is not a valid key", view_action: "action", type: "events")
+    test "validates dataset date" do
+      [1, 3.14, "true", {}, [], false, "9999-99-99"].each do |value|
+        assert_dataset_error("date_from must be a date", date_from: value)
+        assert_dataset_error("date_to must be a date", date_to: value)
+      end
     end
 
     ##############################
@@ -321,50 +268,62 @@ module Skadi::Unit
     ##############################
 
     test "validates sql when use is permitted" do
-      d = build_dashboard([build_tab(children: [build_chart(
+      dashboard = build_dashboard([build_tab(children: [build_chart(
         datasets: [build_dataset(type: "sql", sql: 123)],
       )])])
-      d.can_dangerously_use_sql = true
+      dashboard.can_dangerously_use_sql = true
 
-      refute d.valid?
-      assert_match "sql must be a string", d.errors.full_messages.join
+      refute dashboard.valid?
+      assert_match "sql must be a string", dashboard.errors.full_messages.join
+    end
+
+    test "validates sql required fields are in sql" do
+      dashboard = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: "invalid sql")],
+      )])])
+      dashboard.can_dangerously_use_sql = true
+
+      refute dashboard.valid?
+      assert_match "sql must include the fields date, split and count", dashboard.errors.full_messages.join
+
+      dashboard.configuration[0]["children"][0]["datasets"][0]["sql"] = "date split count"
+
+      assert dashboard.valid?
     end
 
     test "validates sql when use is not permitted" do
-      d = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
+      dashboard = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: VALID_SQL)],
       )])])
 
-      refute d.valid?
-      assert_match "sql cannot be modified", d.errors.full_messages.join
+      refute dashboard.valid?
+      assert_match "sql cannot be modified", dashboard.errors.full_messages.join
     end
 
     test "allows sql when use is not permitted after save" do
-      d = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
+      dashboard = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: VALID_SQL)],
       )])])
 
-      refute d.valid?
+      refute dashboard.valid?
 
-      d.save(validate: false)
+      dashboard.save(validate: false)
 
-      assert d.valid?
+      assert dashboard.valid?
     end
 
     test "validates sql may be copied when use is not permitted" do
-      d = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: "SELECT * FROM skadi_visits")],
+      dashboard = build_dashboard([build_tab(children: [build_chart(
+        datasets: [build_dataset(type: "sql", sql: VALID_SQL)],
       )])])
-      d.can_dangerously_use_sql = true
-      d.save!
+      dashboard.can_dangerously_use_sql = true
+      dashboard.save!
 
       # Insert a duplicate dataset with the same SQL
-      d.configuration[0]["children"][0]["datasets"] << build_dataset(type: "sql", "sql" => "SELECT * FROM skadi_visits")
-      d.can_dangerously_use_sql = false
+      dashboard.configuration[0]["children"][0]["datasets"] << build_dataset(type: "sql", "sql" => VALID_SQL)
+      dashboard.can_dangerously_use_sql = false
 
-      valid = d.valid?
-      assert_equal "", d.errors.full_messages.join
-      assert d.valid?
+      assert dashboard.valid?
     end
 
     test "validates sql dataset unknown key" do
@@ -387,13 +346,13 @@ module Skadi::Unit
       other_chart_datasets = [build_dataset(id: "a", type: "visits")]
       this_chart_datasets = [build_dataset(id: "pct", type: "percentage", numerator: "a", denominator: "a")]
 
-      d = build_dashboard([build_tab(children: [
+      dashboard = build_dashboard([build_tab(children: [
         build_chart(id: "chart-1", datasets: other_chart_datasets),
         build_chart(id: "chart-2", datasets: this_chart_datasets),
       ])])
 
-      refute d.valid?
-      errors = d.errors[:configuration].join
+      refute dashboard.valid?
+      errors = dashboard.errors[:configuration].join
       assert_match "configuration[0].children[1].datasets[0].numerator must be a dataset id", errors
       assert_match "configuration[0].children[1].datasets[0].denominator must be a dataset id", errors
     end
@@ -407,10 +366,10 @@ module Skadi::Unit
     ##############################
 
     private def assert_configuration_error(error, configuration)
-      d = build_dashboard(configuration)
+      dashboard = build_dashboard(configuration)
 
-      refute d.valid?, "Expected the dashboard configuration to be invalid"
-      assert_match error, d.errors[:configuration].join
+      refute dashboard.valid?, "Expected the dashboard configuration to be invalid"
+      assert_match error, dashboard.errors[:configuration].join
     end
 
     private def assert_tab_error(error, **tab_config)

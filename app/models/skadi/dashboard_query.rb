@@ -1,216 +1,211 @@
 module Skadi
-
   class DashboardQuery
-    class Error < StandardError; end
-    class UnsupportedDatabaseError < Error; end
-    class DatasetConfigurationError < Error; end
-
     class << self
-      VALID_SPLIT_BY = {
-        Skadi::View => %w[controller controller_action path verb version],
-        Skadi::Visit => %w[referrer landing_page utm_source utm_medium utm_term utm_content utm_campaign],
-        Skadi::Event => %w[name],
-      }
-
-      def chart_query(chart, global_filters)
-        # Overwrite the chart config with the passed in global filters
-        chart["date_from"] = combine_dates(chart["date_from"], global_filters["date_from"], type: :from)
-        chart["date_to"] = combine_dates(chart["date_to"], global_filters["date_to"], type: :to)
-
+      def chart_query(chart, untrusted_url_filters)
         queries = chart["datasets"].filter_map do |dataset|
-          case dataset["type"]
-          when "visits"
-            build_query(Skadi::Visit, dataset, chart)
-          when "views"
-            build_query(Skadi::View, dataset, chart)
-          when "events"
-            build_query(Skadi::Event, dataset, chart)
-          when "sql"
-            dataset["sql"]
-          when "percentage"
+          if dataset["type"] == "sql"
+            build_sql_query(dataset, chart, untrusted_url_filters)
+          elsif dataset["type"] == "percentage"
             # Percentage charts are handled by the frontend using other datasets
             next
+          elsif Schema.database_schema.keys.include?(dataset["type"].to_sym)
+            schema = Schema.database_schema[dataset["type"].to_sym]
+
+            build_query_from_schema(dataset, chart, schema, untrusted_url_filters)
           else
-            raise DatasetConfigurationError.new("Unknown dataset type #{dataset["type"]}")
+            raise ::Skadi::Dashboard::DatasetConfigurationError.new("Unknown dataset type #{dataset["type"]}")
           end
         end
 
-        return Skadi::ApplicationRecord.connection.unprepared_statement do
-          queries.map! do |query|
-            next query if query.is_a?(String)
-
-            next query.to_sql
+        result = nil
+        Skadi::ApplicationRecord.connection.transaction do
+          result = Skadi::ApplicationRecord.connection.unprepared_statement do
+            Skadi::Visit.connection.select_all(queries.join(" UNION ALL "))
           end
 
-          Skadi::Visit.connection.select_all(queries.join(" UNION ALL "))
+          # Rollback after the SQL is run, preventing some side effects
+          raise ActiveRecord::Rollback
         end
+
+        return result
       end
 
-      private def build_query(model, dataset, chart)
-        query = model.all
-        query = add_query_select(query, model, dataset, chart)
-        query = apply_global_filters(query, dataset, chart)
+      private def build_sql_query(dataset, chart, untrusted_url_filters)
+        model = Skadi::Visit
 
-        query = case model.to_s
-        when "Skadi::Visit"
-          apply_visit_filters(query, dataset, chart)
-        when "Skadi::View"
-          apply_view_filters(query, dataset, chart)
-        when "Skadi::Event"
-          apply_event_filters(query, dataset, chart)
-        else query
+        safe_group = ["t.split"]
+        safe_id = model.connection.quote(dataset["id"])
+
+        safe_aggregated_date = if chart["time_series"].present?
+          Helpers::Sql.time_series(chart["time_series"], model, "t.date")
+        else
+          "t.date"
+        end
+        safe_group << safe_aggregated_date
+
+        safe_where = build_sql_where(chart, model, untrusted_url_filters)
+
+        return "
+            SELECT
+              #{safe_id} as id,
+              #{safe_aggregated_date} as date,
+              t.split as split,
+              SUM(t.count) as count
+            FROM
+              (#{dataset["sql"]}) AS t
+            #{safe_where}
+            GROUP BY
+                #{safe_group.join(", ")}
+          "
+      end
+
+      private def build_sql_where(chart, model, untrusted_url_filters)
+        safe_where = []
+
+        url_date_from = untrusted_url_filters["date_from"] if valid_date_string?(untrusted_url_filters["date_from"])
+        date_from = combine_dates(chart["date_from"], url_date_from, type: :from)
+        safe_where << "DATE(t.date) >= #{model.connection.quote(date_from)}" unless date_from.nil?
+
+        url_date_to = untrusted_url_filters["date_to"] if valid_date_string?(untrusted_url_filters["date_to"])
+        date_to = combine_dates(chart["date_to"], url_date_to, type: :to)
+        safe_where << "DATE(t.date) <= #{model.connection.quote(date_to)}" unless date_to.nil?
+
+        return safe_where.any? ? "WHERE #{safe_where.join(" AND ")}" : ""
+      end
+
+      private def build_query_from_schema(dataset, chart, schema, untrusted_url_filters)
+        query = schema[:model].all
+
+        query = apply_schema_filters(dataset, schema, query)
+        query = apply_chart_filters(dataset, chart, schema, query, untrusted_url_filters)
+        query = select_split_and_group(dataset, chart, schema, query)
+
+        return query.to_sql
+      end
+
+      private def apply_schema_filters(dataset, schema, query)
+        table_name = schema[:model].table_name
+
+        schema[:fields].each do |field, field_config|
+          next unless field_config[:filter]
+
+          # The date field is handled separately (combined with the chart filters)
+          next if field == :date
+
+          if field_config[:type] == :date
+            if dataset.key?("#{field}_from")
+              query = query.where("DATE(#{table_name}.#{field}) >= ?", dataset["date_from"])
+            end
+            if dataset.key?("#{field}_to")
+              query = query.where("DATE(#{table_name}.#{field}) <= ?", dataset["date_to"])
+            end
+          elsif dataset.key?(field.to_s)
+            if field_config[:sql]
+              query = query.where("#{field_config[:sql]} = ?", dataset[field.to_s])
+            else
+              query = query.where(field => dataset[field.to_s])
+            end
+          end
         end
 
         return query
       end
 
-      private def add_query_select(query, model, dataset, chart)
-        # Variables named safe_* are using our definitions, or are escaped user input
+      private def apply_chart_filters(dataset, chart, schema, query, untrusted_url_filters)
+        date_config = schema[:fields][:date]
 
-        safe_group = []
+        if date_config
+          url_date_from = untrusted_url_filters["date_from"] if valid_date_string?(untrusted_url_filters["date_from"])
+          date_from = combine_dates(chart["date_from"], dataset["date_from"], url_date_from, type: :from)
+          query = query.where("DATE(#{date_config[:sql]}) >= ?", date_from) unless date_from.nil?
 
-        safe_dataset_id = model.connection.quote(dataset["id"])
-        safe_split = "NULL"
+          url_date_to = untrusted_url_filters["date_to"] if valid_date_string?(untrusted_url_filters["date_to"])
+          date_to = combine_dates(chart["date_to"], dataset["date_to"], url_date_to, type: :to)
+          query = query.where("DATE(#{date_config[:sql]}) <= ?", date_to) unless date_to.nil?
+        end
 
-        valid_split_by = false
-        if dataset["split_by"].present?
-          if VALID_SPLIT_BY[model]&.include?(dataset["split_by"])
-            valid_split_by = true
-
-            split_columns = if dataset["split_by"] == "controller_action"
-              ["#{model.table_name}.controller", "#{model.table_name}.action"]
-            elsif dataset["split_by"] == "referrer"
-              [sql_referrer_domain(model)]
-            else
-              ["#{model.table_name}.#{dataset["split_by"]}"]
+        if schema[:visit_key]
+          # Join the visits if we need to
+          if chart["verified_visits"] == true || chart["visit_tracking"]
+            if schema[:model] != Skadi::Visit
+              query = query.joins(%(INNER JOIN skadi_visits ON skadi_visits.id = #{schema[:model].table_name}.#{schema[:visit_key]}))
             end
+          end
 
-            safe_split = "CONCAT(#{split_columns.join(", '::', ")})"
-            safe_group.push(*split_columns)
+          if chart["verified_visits"] == true
+            # Either this visit is linked to a verified visit, or it is not linked at all
+            query = query.where("skadi_visits.verified = TRUE")
+          end
+
+          if chart["visit_tracking"] == "any"
+            query = query.where("skadi_visits.tracking_token IS NOT NULL")
+          elsif chart["visit_tracking"] == "anonymity_set"
+            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
+          elsif chart["visit_tracking"] == "cookie"
+            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
           end
         end
 
-        safe_label = model.connection.quote(dataset["label"])
+        return query
+      end
 
-        if chart["time_series"].present?
-          safe_label = sql_time_series(chart["time_series"], model)
-          safe_group << [safe_label]
-        elsif valid_split_by
-          # If there is no time series, then we include the split in the label so that the x values are all different for the charts
-          safe_label = "CONCAT(#{safe_label}, ' ', #{safe_split})"
+      private def select_split_and_group(dataset, chart, schema, query)
+        model = schema[:model]
+        split_columns = safe_split_columns(dataset, schema)
+
+        safe_id = model.connection.quote(dataset["id"])
+        safe_date = "NULL"
+        safe_split = "NULL"
+        safe_count = "COUNT(*)"
+        safe_group = split_columns.dup
+
+        if chart["time_series"].present? && schema[:fields][:date]
+          safe_date = Helpers::Sql.time_series(chart["time_series"], model, schema[:fields][:date][:sql])
+          safe_group << safe_date
         end
 
-        safe_count = if (model == Skadi::View || model == Skadi::Event) && chart["unique_visits"] == true
-          "COUNT(DISTINCT #{model.table_name}.visit_id) AS count"
-        else
-          "COUNT(*) AS count"
+        # If there are split columns, we override the default value of split using them
+        if split_columns.length == 1
+          safe_split = split_columns.first
+        elsif split_columns.length > 1
+          # Concatenate the split columns, separating the columns with commas
+          safe_split = "CONCAT(#{split_columns.join(", ', ', ")})"
+          #                                            0_0
         end
 
-        query.select(
-          "#{safe_dataset_id} as id",
-          "#{safe_split} as split",
-          "#{safe_label} AS label",
-          safe_count,
-        )
+        if schema[:count_sql]
+          safe_count = schema[:count_sql]
+        elsif chart["unique_visits"] == true && schema[:visit_key]
+          safe_count = "COUNT(DISTINCT #{schema[:model].table_name}.#{schema[:visit_key]})"
+        end
+
+        return query
+          .select(
+            "#{safe_id} AS id",
+            "#{safe_date} AS date",
+            "#{safe_split} AS split",
+            "#{safe_count} AS count",
+          )
           .group(safe_group)
       end
 
-      private def apply_global_filters(query, dataset, chart)
-        # General rule throughout this method: if it exists in the query filters, use that. Otherwise, use
-        # the dataset filters.
+      private def safe_split_columns(dataset, schema)
+        safe_split = []
 
-        table = query.arel_table.name
-
-        date_from = combine_dates(chart["date_from"], dataset["date_from"], type: :from)
-        date_from = parse_time(date_from)&.to_date if date_from
-        query = query.where("DATE(#{table}.created_at) >= ?", date_from) unless date_from.nil?
-
-        date_to = combine_dates(chart["date_to"], dataset["date_to"], type: :to)
-        date_to = parse_time(date_to)&.to_date if date_to
-        query = query.where("DATE(#{table}.created_at) <= ?", date_to) unless date_to.nil?
-
-        return query
-      end
-
-      private def apply_visit_filters(query, dataset, chart)
-        query = query.where(verified: true) if chart["verified"] == true
-
-        visit_filter_fields = %w[utm_source utm_medium utm_term utm_content utm_campaign landing_page]
-        visit_filter_fields.each do |field|
-          key = "visit_#{field}"
-          if dataset.key?(key)
-            query = query.where(field => dataset[key])
+        if dataset["split_by"].is_a?(Array)
+          dataset["split_by"].each do |field|
+            field_config = schema[:fields][field.to_sym]
+            if field_config && field_config[:split]
+              # These are safe because either we define the SQL used, or the field name exists in the schema
+              safe_split << (field_config[:sql] || %(#{schema[:model].table_name}."#{field}"))
+            end
           end
         end
 
-        if dataset.key?("visit_referrer_domain")
-          query = query.where("#{sql_referrer_domain(Skadi::Visit)} = ?", dataset["visit_referrer_domain"])
-        end
-
-        query = apply_common_visit_filters(query, dataset, chart)
-
-        return query
+        return safe_split
       end
 
-      private def apply_view_filters(query, dataset, chart)
-        query = query.where(verified: true) if chart["verified"] == true
-
-        view_filter_fields = %w[path controller action verb version]
-        view_filter_fields.each do |field|
-          key = "view_#{field}"
-          if dataset.key?(key)
-            query = query.where(field => dataset[key])
-          end
-        end
-
-        if chart["visit_tracking"].present?
-          query = query.joins(:visit)
-
-          query = apply_common_visit_filters(query, dataset, chart)
-        end
-
-        return query
-      end
-
-      private def apply_common_visit_filters(query, dataset, chart)
-        if chart["visit_tracking"] == "any"
-          query = query.where("skadi_visits.tracking_token IS NOT NULL")
-        elsif chart["visit_tracking"] == "anonymity_set"
-          query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
-        elsif chart["visit_tracking"] == "cookie"
-          query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
-        end
-
-        return query
-      end
-
-      private def apply_event_filters(query, dataset, chart)
-        if dataset.key?("event_name")
-          query = query.where(name: dataset["event_name"])
-        end
-
-        if chart["visit_tracking"] || chart["verified"] == true || chart["unique_visits"] == true
-          query = query.left_joins(:visit)
-
-          query = apply_common_visit_filters(query, dataset, chart)
-
-          if chart["verified"] == true
-            # Either this visit is linked to a verified visit, or it is not linked at all
-            query = query.where("skadi_visits.id IS NULL OR skadi_visits.verified = TRUE")
-          end
-
-          if chart["unique_visits"] == true
-            # If we are looking for unique visits, then we need to be linked to a visit
-            query = query.where("skadi_visits.id IS NOT NULL")
-          end
-        end
-
-        return query
-      end
-
-      private def parse_time(user_supplied_date)
-        return Time.zone.parse(user_supplied_date)
-      end
+      private def valid_date_string?(date) = date.is_a?(String) && date.match(/\A\d{4}-[01]\d-[0-3]\d\z/)
 
       # Combine dates for the date ranges, being conservative when combining time ranges
       private def combine_dates(*dates, type:)
@@ -219,62 +214,6 @@ module Skadi
         end
 
         return dates.compact.min
-      end
-
-      private def sql_referrer_domain(model)
-        case model.connection.adapter_name
-        when "PostgreSQL"
-          "SPLIT_PART(#{model.table_name}.referrer, '/', 1)"
-        when "Mysql2"
-          "SUBSTRING_INDEX(#{model.table_name}.referrer, '/', 1)"
-        when "SQLite"
-          "SUBSTR(#{model.table_name}.referrer, 1, INSTR(#{model.table_name}.referrer, '/') - 1)"
-        else
-          raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
-        end
-      end
-
-      private def sql_time_series(time_series, model)
-        case time_series
-        when "daily"
-          sql_day_of_date(model)
-        when "weekly"
-          sql_week_of_date(model)
-        when "monthly"
-          sql_month_of_date(model)
-        else
-          raise DatasetConfigurationError.new("The time_series #{time_series} is invalid")
-        end
-      end
-
-      private def sql_day_of_date(model)
-        "DATE(#{model.table_name}.created_at)"
-      end
-
-      private def sql_week_of_date(model)
-        case model.connection.adapter_name
-        when "PostgreSQL"
-          "DATE_TRUNC('week', #{model.table_name}.created_at)::date"
-        when "Mysql2"
-          "DATE_SUB(DATE(#{model.table_name}.created_at), INTERVAL WEEKDAY(#{model.table_name}.created_at) DAY)"
-        when "SQLite"
-          "DATE(#{model.table_name}.created_at, '-' || ((CAST(STRFTIME('%w', #{model.table_name}.created_at) AS INTEGER) + 6) % 7) || ' days')"
-        else
-          raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
-        end
-      end
-
-      private def sql_month_of_date(model)
-        case model.connection.adapter_name
-        when "PostgreSQL"
-          "DATE_TRUNC('month', #{model.table_name}.created_at)::date"
-        when "Mysql2"
-          "DATE_FORMAT(#{model.table_name}.created_at, '%Y-%m-01')"
-        when "SQLite"
-          "DATE(#{model.table_name}.created_at, 'start of month')"
-        else
-          raise UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
-        end
       end
     end
   end

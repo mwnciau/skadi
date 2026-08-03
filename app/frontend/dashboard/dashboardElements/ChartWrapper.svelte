@@ -22,10 +22,13 @@
   onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
 
-let isEditingChart = $state(startEditing);
+// untrack: this is a one-time default that lets the parent control the default state
+let isEditingChart = $state(untrack(() => startEditing));
 let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
-let localChartConfig = $state(chartConfig);
+
+// untrack: this is manually updated by fetchData
+let localChartConfig = $state(untrack(() => chartConfig));
 
 // Make this shallow state using $state.raw. We don't care how the charting library uses it, only that it's notified when the whole dataset is changed
 let data : ChartData = $state.raw([]);
@@ -33,14 +36,14 @@ let data : ChartData = $state.raw([]);
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
   localChartConfig = newChartConfig ?? chartConfig;
 
-  return fetchChartData(chartConfig.id, tabFilters, localChartConfig)
+  return fetchChartData(chartConfig.id, tabFilters, newChartConfig)
     .then((items) => {
       const responseData: ResponseData = {};
 
       for (const item of items) {
         const key: string = item.split ? `${item.id} ${item.split}` : item.id;
         responseData[key] ??= [];
-        responseData[key].push({x: item.label, y: item.count});
+        responseData[key].push({x: item.date, y: item.count});
       }
 
       processDerivedDatasets(localChartConfig, responseData);

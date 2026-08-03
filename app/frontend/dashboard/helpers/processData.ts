@@ -70,8 +70,8 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
 export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
   for (const dataset of chart.datasets) {
     if (dataset.type === "percentage") {
-      const numerator = data[dataset.numerator];
-      const denominator = data[dataset.denominator];
+      const numerator = data[dataset.numerator as string];
+      const denominator = data[dataset.denominator as string];
 
       if (!numerator || !denominator) {
         console.error(`Could not find numerator or denominator for percentage dataset ${dataset.id}`);

@@ -1,92 +1,79 @@
 module Skadi
   # Validates that a Dashboard's configuration matches the DashboardConfig type in app/frontend/types.d.ts
   class DashboardValidator < ActiveModel::Validator
-    DATASET_TYPES = %w[visits views events percentage sql]
-
-    COMMON_DATASET_TYPE = {
+    COMMON_DATASET_FIELDS = {
       id: :string,
       label: :string,
       visible: :boolean?,
-      axis: ["left", "right", nil],
+      axis: ["left", "right", nil].freeze,
     }
 
-    # These types closely match the frontend types app/frontend/types.d.ts
-    TYPES = {
-      DashboardTabConfig: {
-        id: :string,
-        title: :string,
-        description: :string?,
-        date_from: :date?,
-        date_to: :date?,
-        children: :ChartConfigArray
-      },
-      ChartConfig: {
-        id: :string,
-        type: %w[bar line],
-        title: :string,
-        time_series: ["daily", "weekly", "monthly", nil].freeze,
-        date_from: :date?,
-        date_to: :date?,
-        verified: :boolean?,
-        unique_visits: :boolean?,
-        visit_tracking: ["any", "anonymity_set", "cookie", nil].freeze,
-        datasets: :DatasetArray,
-      },
-      VisitsDataset: {
-        **COMMON_DATASET_TYPE,
-        type: ["visits"].freeze,
-        date_from: :date?,
-        date_to: :date?,
+    def self.types
+      return @types if defined?(@types)
 
-        split_by: ["referrer", "landing_page", "utm_source", "utm_medium", "utm_term", "utm_content", "utm_campaign", nil].freeze,
+      @types = {
+        DashboardTabConfig: {
+          id: :string,
+          title: :string,
+          description: :string?,
+          date_from: :date?,
+          date_to: :date?,
+          children: :ChartConfigArray
+        },
+        ChartConfig: {
+          id: :string,
+          type: %w[bar line],
+          title: :string,
+          time_series: ["daily", "weekly", "monthly", nil].freeze,
+          date_from: :date?,
+          date_to: :date?,
+          verified: :boolean?,
+          unique_visits: :boolean?,
+          visit_tracking: ["any", "anonymity_set", "cookie", nil].freeze,
+          datasets: :DatasetArray,
+        },
+        percentageDataset: {
+          **COMMON_DATASET_FIELDS,
+          type: ["percentage"].freeze,
 
-        visit_landing_page: :string?,
-        visit_referrer_domain: :string?,
+          numerator: :dataset_id,
+          denominator: :dataset_id,
+        },
+        sqlDataset: {
+          **COMMON_DATASET_FIELDS,
+          type: ["sql"].freeze,
 
-        visit_utm_source: :string?,
-        visit_utm_medium: :string?,
-        visit_utm_term: :string?,
-        visit_utm_content: :string?,
-        visit_utm_campaign: :string?,
-      },
-      ViewsDataset: {
-        **COMMON_DATASET_TYPE,
-        type: ["views"].freeze,
-        date_from: :date?,
-        date_to: :date?,
+          sql: :sql,
+        },
+      }
 
-        split_by: ["controller", "controller_action", "path", "verb", "version", nil].freeze,
+      Schema.database_schema.each do |dataset_name, schema|
+        dataset_type = COMMON_DATASET_FIELDS.dup
+        dataset_type[:type] = [dataset_name.to_s].freeze
 
-        view_action: :string?,
-        view_controller: :string?,
-        view_path: :string?,
-        view_verb: :string?,
-        view_version: :string?,
-      },
-      EventsDataset: {
-        **COMMON_DATASET_TYPE,
-        type: ["events"].freeze,
-        date_from: :date?,
-        date_to: :date?,
+        split_by_fields = [nil]
 
-        split_by: ["name", nil].freeze,
+        schema[:fields].each do |field, field_config|
+          split_by_fields << field.to_s if field_config[:split]
+          next unless field_config[:filter]
 
-        event_name: :string?,
-      },
-      PercentageDataset: {
-        **COMMON_DATASET_TYPE,
-        type: ["percentage"].freeze,
+          if field_config[:type] == :date
+            dataset_type[:"#{field}_from"] = :date?
+            dataset_type[:"#{field}_to"] = :date?
+          elsif field_config[:options].is_a?(Array)
+            dataset_type[field] = [nil, *field_config[:options]]
+          else
+            dataset_type[field] = :"#{field_config[:type] || :string}?"
+          end
+        end
 
-        numerator: :dataset_id,
-        denominator: :dataset_id,
-      },
-      SqlDataset: {
-        **COMMON_DATASET_TYPE,
-        type: ["sql"].freeze,
+        dataset_type[:split_by] = split_by_fields if split_by_fields.length > 1
 
-        sql: :sql,
-      },
-    }
+        @types[:"#{dataset_name}Dataset"] = dataset_type
+      end
+
+      return @types
+    end
 
     Context = Struct.new(:record, :allowed_sql_strings, :dataset_ids)
 
@@ -148,22 +135,30 @@ module Skadi
     end
 
     private def validate_sql(value, path, context:)
-      return validate_type(:string, value, path, context:) if context.record.can_dangerously_use_sql
+      unless context.record.can_dangerously_use_sql
+        return add_error(path, "cannot be modified", context:) unless allowed_sql_strings(context:).include?(value)
+      end
 
-      add_error(path, "cannot be modified", context:) unless allowed_sql_strings(context:).include?(value)
+      unless value.is_a? String
+        return add_error(path, "must be a string", context:)
+      end
+
+      unless ["date", "split", "count"].all? { |it| value.include?(it) }
+        add_error(path, "must include the fields date, split and count", context:)
+      end
     end
 
     private def validate_dataset(value, path, context:)
       return add_error(path, "must be a hash", context:) unless value.is_a? Hash
 
-      type = value["type"]
-      return add_error("#{path}.type", "must be one of #{DATASET_TYPES.map(&:inspect).join(", ")}", context:) unless DATASET_TYPES.include?(type)
+      type = :"#{value["type"]}Dataset"
+      return add_error("#{path}.type", "is not a valid dataset type", context:) unless self.class.types.include?(type)
 
-      validate_type(:"#{type.upcase_first}Dataset", value, path, context:)
+      validate_type(type, value, path, context:)
     end
 
     private def validate_custom_type(type, value, path, context:)
-      return add_error(path, "Unknown type #{type.inspect}", context:) unless TYPES.key?(type)
+      return add_error(path, "Unknown type #{type.inspect}", context:) unless self.class.types.key?(type)
 
       # Store dataset ids for the current chart for the :dataset_id type
       if type == :ChartConfig && value.is_a?(Hash)
@@ -175,7 +170,7 @@ module Skadi
         end
       end
 
-      return validate_type(TYPES[type], value, path, context:)
+      return validate_type(self.class.types[type], value, path, context:)
     end
 
     private def validate_hash_type(type, value, path, context:)

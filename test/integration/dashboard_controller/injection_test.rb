@@ -9,6 +9,8 @@ module Skadi::Integration
         Skadi.configuration.dashboard_dangerously_use_sql_controller_method = :skadi_dashboard_use_sql
       end
 
+      CHART_ID = "chart"
+
       INJECTION_STRINGS = [
         "'",
         '"',
@@ -20,8 +22,6 @@ module Skadi::Integration
         "' OR 1=1",
         "' OR 1=1",
         "\\'",
-        # null byte
-        #"\u0000",
         # False apostrophes
         "＇",
         "’",
@@ -29,54 +29,223 @@ module Skadi::Integration
       ]
 
       test "null byte handling" do
-        chart_configuration = chart(id: "\u0000")
+        # The SQLite driver treats null bytes as the end of string, so we just check that the error is caught
+        chart_configuration = build_chart(dataset: build_dataset(id: "\u0000"))
 
         get skadi.dashboard_data_path, params: {configuration: chart_configuration.to_json}
+
+        assert_response :unprocessable_content
+        assert_equal %({"error":"SQLite3::SQLException: unrecognized token: \\"'\\":\\nSELECT '\\n       ^"}), response.body
       end
 
-      test "visit sql injection" do
+      test "url date field" do
         create :visit
 
-        base_configuration = {
-          "id" => "id",
-          "label" => "label",
-          "type" => "visits"
-        }
+        [:date_from, :date_to].each do |field|
+          INJECTION_STRINGS.each do |value|
+            dashboard_with_chart(id: CHART_ID)
 
-        fields = ["id", "label", "visible", "axis", "date_from", "date_to", "split_by", "visit_landing_page", "visit_referrer_domain", "visit_utm_source", "visit_utm_medium", "visit_utm_term", "visit_utm_content", "visit_utm_campaign"]
+            get skadi.dashboard_data_path, params: {chart_id: CHART_ID, field => value}
 
-        assert_nothing_raised do
-          fields.each do |field|
-            configuration = base_configuration.dup
-            configuration[field] = "barometer"
+            # The dashboard should be valid and no exception returned
+            assert_response :ok
 
-            get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: configuration).to_json}
-
-            expected_status = response.status
-            expected_kernel = response_kernel
-
-            INJECTION_STRINGS.each do |value|
-              configuration = base_configuration.dup
-              configuration[field] = value
-
-              get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: configuration).to_json}
-
-              assert_response expected_status
-
-              assert_equal expected_kernel, response_kernel
-            end
+            # Setting the date fields should return no rows
+            assert_equal '[{"id":"dataset-1","date":null,"split":null,"count":1}]', response.body
           end
         end
       end
 
-      private def response_kernel
-        if response.status === 200 && response.body.length > 2
-          response_data = JSON.parse(response.body)
+      test "chart time_series" do
+        create :visit
 
-          return response_data[0]["count"]
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_chart(id: CHART_ID, time_series: value)
+
+          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+          assert_response :unprocessable_content
+          assert_see /The time_series .* is invalid/
         end
+      end
 
-        return response.body
+      test "chart booleans" do
+        create :visit
+
+        [:visit_tracking, :verified_visits, :unique_visits].each do |field|
+          INJECTION_STRINGS.each do |value|
+            dashboard_with_chart(id: CHART_ID, field => value)
+
+            get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+            # The dashboard should be valid and no exception returned
+            assert_response :ok
+
+            # Setting the visit_tracking field to a non-boolean value should be ignored
+            assert_equal '[{"id":"dataset-1","date":null,"split":null,"count":1}]', response.body
+          end
+        end
+      end
+
+      test "chart date field" do
+        create :visit
+
+        [:date_from, :date_to].each do |field|
+          INJECTION_STRINGS.each do |value|
+            dashboard_with_chart(id: CHART_ID, field => value)
+
+            get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+            # The dashboard should be valid and no exception returned
+            assert_response :ok
+
+            # This is a bit of a weird state, but the important thing is there are no SQL errors
+            assert_see /\A\[\{"id":"dataset-1","date":null,"split":null,"count":[01]\}\]\z/
+          end
+        end
+      end
+
+      test "dataset id" do
+        create :event, created_at: "2020-01-06"
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "events", id: value)
+
+          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+          # The dashboard should be valid and no exception returned
+          assert_response :ok
+
+          # Setting the id shouldn't affect the rows being returned
+          assert_see '"date":"2020-01-06","split":null,"count":1}]'
+        end
+      end
+
+      test "dataset split_by" do
+        create :event, created_at: "2020-01-06"
+
+        dashboard_with_dataset(type: "events", split_by: INJECTION_STRINGS)
+
+        get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+        # The dashboard should be valid and no exception returned
+        assert_response :ok
+
+        # Setting the split_by shouldn't affect the rows being returned
+        assert_see '"date":"2020-01-06","split":null,"count":1}]'
+      end
+
+      test "dataset string field" do
+        create :visit
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "visits", utm_source: value)
+
+          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+          # The dashboard should be valid and no exception returned
+          assert_response :ok
+
+          # Setting the utm_source field should return no rows
+          assert_equal "[]", response.body
+        end
+      end
+
+      test "dataset field with sql" do
+        create :visit
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "visits", referrer_domain: value)
+
+          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+          # The dashboard should be valid and no exception returned
+          assert_response :ok
+
+          # Setting the referrer_domain field should return no rows
+          assert_equal "[]", response.body
+        end
+      end
+
+      test "dataset string with options field" do
+        create :view
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "views", verb: value)
+
+          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+          # The dashboard should be valid and no exception returned
+          assert_response :ok
+
+          # Setting the verb field should return no rows
+          assert_equal "[]", response.body
+        end
+      end
+
+      test "dataset boolean field" do
+        create :view
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "views", verified: value)
+
+          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+          # The dashboard should be valid and no exception returned
+          assert_response :ok
+
+          # Setting the verified field should return no rows
+          assert_equal "[]", response.body
+        end
+      end
+
+      test "dataset date field" do
+        [:date_from, :date_to].each do |field|
+          INJECTION_STRINGS.each do |value|
+            dashboard_with_dataset(type: "events", field => value)
+
+            get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+            # The dashboard should be valid and no exception returned
+            assert_response :ok
+
+            # Setting the date fields should return no rows
+            assert_equal "[]", response.body
+          end
+        end
+      end
+
+      test "sql dataset with obvious side effects" do
+        # We are just testing that obvious SQL with side effects is blocked, e.g. UPDATE or DELETE statements. The reason the sql dataset type is dangerous is because functions can have real side-effects and it's not feasible to detect and block them without writing a full SQL parser, which we're not going to do. The risk is on the developer who dangerously enabled SQL.
+        create :visit
+
+        dashboard_with_dataset(type: "sql", sql: "DELETE FROM skadi_visits WHERE 1=1 OR 1='date split count'")
+
+        get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+
+        # The side effect should not have run
+        assert_equal 1, Skadi::Visit.count
+
+        assert_response :unprocessable_content
+        assert_see "SQLException"
+      end
+
+      # This method bypasses validation thus allowing us to test the worst case scenario (something we didn't account for in validation) being executed
+      private def dashboard_with_dataset(**dataset_options)
+        Skadi::Dashboard.delete_all
+        dashboard = build_dashboard(tab: build_tab(chart: build_chart(id: CHART_ID, time_series: "weekly", dataset: build_dataset(**dataset_options))))
+        dashboard.save!(validate: false)
+
+        return dashboard
+      end
+
+      # This method bypasses validation thus allowing us to test the worst case scenario (something we didn't account for in validation) being executed
+      private def dashboard_with_chart(**chart_options)
+        Skadi::Dashboard.delete_all
+        dashboard = build_dashboard(tab: build_tab(chart: build_chart(**chart_options)))
+        dashboard.save!(validate: false)
+
+        return dashboard
       end
     end
   end

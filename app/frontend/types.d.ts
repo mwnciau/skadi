@@ -13,48 +13,13 @@ export type CommonDataset = {
   label: string;
   visible?: boolean;
   axis?: "right" | "left";
-  type: "visits" | "views" | "events" | "percentage" | "sql";
+  type: string;
 }
 
-export type VisitsDataset = CommonDataset & {
-  type: "visits";
-  date_from?: DateFilter;
-  date_to?: DateFilter;
-
-  split_by?: "referrer" | "landing_page" | "utm_source" | "utm_medium" | "utm_term" | "utm_content" | "utm_campaign";
-
-  visit_landing_page?: string;
-  visit_referrer_domain?: string;
-
-  visit_utm_source?: string;
-  visit_utm_medium?: string;
-  visit_utm_term?: string;
-  visit_utm_content?: string;
-  visit_utm_campaign?: string;
-}
-
-export type ViewsDataset = CommonDataset & {
-  type: "views";
-  date_from?: DateFilter;
-  date_to?: DateFilter;
-
-  split_by?: "controller" | "controller_action" | "path" | "verb" | "version";
-
-  view_action?: string;
-  view_controller?: string;
-  view_path?: string;
-  view_verb?: string;
-  view_version?: string;
-}
-
-export type EventsDataset = CommonDataset & {
-  type: "events";
-  date_from?: DateFilter;
-  date_to?: DateFilter;
-
-  split_by?: "name";
-
-  event_name?: string;
+export type SchemaDataset = CommonDataset & {
+  type: string;
+  split_by?: string;
+  [key: string]: string | boolean | number | DateFilter;
 }
 
 export type PercentageDataset = CommonDataset & {
@@ -68,7 +33,7 @@ export type SqlDataset = CommonDataset & {
   sql: string;
 }
 
-export type Dataset = VisitsDataset | ViewsDataset | EventsDataset | PercentageDataset | SqlDataset;
+export type Dataset = SchemaDataset| PercentageDataset | SqlDataset;
 
 export type ChartConfig = {
   id: string;

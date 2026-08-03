@@ -1,24 +1,29 @@
 <script lang="ts">
-  import type {
-    ChartConfig,
-    CommonDataset,
-    Dataset,
-    EventsDataset,
-    PercentageDataset, SqlDataset,
-    ViewsDataset,
-    VisitsDataset
-  } from "../../types";
+import type {
+  ChartConfig,
+  Dataset,
+} from "../../types";
 import Icon from "../components/Icon.svelte";
-import Switch from "../components/Switch.svelte";
-  import Filter from "../components/Filter.svelte";
+import Filter from "../components/Filter.svelte";
+import { datasetSchema } from "../helpers/datasetSchema";
+import { untrack } from "svelte";
 
-const sqlDefault = (datasetId: string) => `SELECT
-  '${datasetId}' as "id",
+const SQL_DEFAULT = `SELECT
+  skadi_views.created_at as "date",
   NULL as "split",
-  DATE(skadi_events.created_at) as "label",
-  COUNT(*) as "count"
-FROM skadi_events
-GROUP BY DATE(skadi_events.created_at)`;
+  1 as "count"
+FROM skadi_views`;
+
+const formatString = (string: string) => {
+  return string
+    // Replace underscores with spaces
+    .replace(/_/g, " ")
+    // Capitalise the first letter
+    .replace(/^[a-z]/, (letter) => letter.toLocaleUpperCase())
+    // A few QoL replacements
+    .replace(/^Sql/, "SQL")
+    .replace(/^Utm/, "UTM");
+}
 
 const { canDangerouslyUseSql, chartConfig, dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
   canDangerouslyUseSql: boolean;
@@ -32,14 +37,14 @@ const { canDangerouslyUseSql, chartConfig, dataset, index, startOpen = false, on
   onMoveDown?: null | (() => void);
 } = $props();
 
-let derivedSources = $derived.by(() => {
+const datasetIdOptions = $derived.by(() => {
   if (dataset.type !== "percentage") {
     return [];
   }
 
-  return chartConfig.datasets
+  const datasetsOptions = chartConfig.datasets
     .filter((dataset) => {
-      if (dataset.type === "percentage" || dataset.type === "sql") {
+      if (dataset.type === "percentage") {
         return false;
       }
 
@@ -53,30 +58,92 @@ let derivedSources = $derived.by(() => {
     value: dataset.id,
     label: dataset.label,
   }))
+
+  return [
+    "",
+    ...datasetsOptions,
+  ];
 })
 
-let open = $state(startOpen);
+const types = $derived(Object.keys(datasetSchema));
+const fields = $derived<Record<string,unknown> | undefined>(datasetSchema[dataset.type]?.fields);
+const filterFields = $derived.by(() => {
+  if (dataset.type == "sql") {
+    return {
+      sql: {type: "sql"},
+    };
+  }
+
+  if (dataset.type == "percentage") {
+    return {
+      numerator: {
+        description: "The dataset you are using for your target, e.g. a specific page view or event.",
+        options: datasetIdOptions,
+      },
+      denominator: {
+        description: "The dataset you are using for comparison, e.g. the number of visits.",
+        options: datasetIdOptions,
+      },
+    };
+  }
+
+  if (fields) {
+    return Object.fromEntries(
+      Object.entries(fields)
+        .filter(([_field, config]) => config.filter),
+    );
+  }
+
+  return {};
+});
+let splitFields = $derived.by(() => {
+  if (dataset.type == "sql" || dataset.type == "percentage") {
+    return [];
+  }
+
+  if (fields) {
+    return Object.entries(fields)
+        .flatMap(([field, config]) => config.split ? [field] : []);
+  }
+
+  return [];
+});
+
+const calculateActiveFields = (type: string) => {
+  if (type === "sql" || type === "percentage") {
+    return [];
+  }
+
+  return Object.entries(fields ?? {}).flatMap(([field, fieldConfig]) => {
+    if (!fieldConfig.filter) {
+      return [];
+    }
+
+    if (field in dataset) {
+      return [field];
+    }
+
+    if (fieldConfig.type === "date" && (`${field}_from` in dataset || `${field}_to` in dataset)) {
+      return [field];
+    }
+
+    return [];
+  });
+}
+
+// untrack: this is manually updated by setType
+let activeFields = $state(untrack(() => calculateActiveFields(dataset.type)));
+
+const inactiveFields = $derived(Object.keys(filterFields).filter((field) => !activeFields.includes(field)));
+
+// untrack: this just allows the parent to control the default
+let open = $state(untrack(() => startOpen));
 let confirmDelete: boolean = $state(false);
 
 const toggleOpen = () => {
   open = !open;
 }
 
-const typeFields: {
-  common: (keyof CommonDataset)[]
-  visits: (keyof VisitsDataset)[];
-  views: (keyof ViewsDataset)[];
-  events: (keyof EventsDataset)[];
-  percentage: (keyof PercentageDataset)[];
-  sql: (keyof SqlDataset)[];
-} = {
-  common: ["id", "label", "visible", "axis", "type"],
-  visits: ["split_by", "visit_landing_page", "visit_referrer_domain", "visit_utm_source", "visit_utm_medium", "visit_utm_term", "visit_utm_content", "visit_utm_campaign"],
-  views: ["split_by", "view_controller", "view_action", "view_path", "view_verb", "view_version"],
-  events: ["event_name"],
-  percentage: ["numerator", "denominator"],
-  sql: ["sql"],
-}
 const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
   const newType = event.currentTarget.value as typeof dataset.type;
   if (newType === dataset.type) {
@@ -85,19 +152,52 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
 
   dataset.type = newType;
 
-  // The split_by field is used by multiple types, but they do not overlap.
-  delete (dataset as {split_by?: string}).split_by;
+  const allowedKeys = [
+    "id",
+    "label",
+    "visible",
+    "axis",
+    ...Object.keys(filterFields),
+  ];
 
-  const types: string[] = [...typeFields.common, ...typeFields[newType]];
   for (const key of Object.keys(dataset)) {
-    if (!types.includes(key)) {
-      delete (dataset as Record<string, unknown>)[key];
+    if (!allowedKeys.includes(key)) {
+      delete dataset[key];
     }
   }
 
   if (dataset.type === "sql") {
-    dataset.sql = sqlDefault(dataset.id);
+    dataset.sql = SQL_DEFAULT;
   }
+
+  activeFields = calculateActiveFields(newType);
+}
+
+const addFilter = (e: Event) => {
+  activeFields.push(e.currentTarget.value);
+  e.currentTarget.value = "";
+}
+
+const addSplit = (e: Event) => {
+  if (dataset.split_by) {
+    dataset.split_by.push(e.currentTarget.value);
+  } else {
+    dataset.split_by = [e.currentTarget.value];
+  }
+
+  e.currentTarget.value = "";
+}
+
+const removeSplit = (split: string) => {
+  // We assume that dataset.split_by is an array and it contains split
+  if (dataset.split_by.length === 1) {
+    delete dataset.split_by;
+
+    return;
+  }
+
+  const index = dataset.split_by.indexOf(split);
+  dataset.split_by.splice(index, 1);
 }
 
 const duplicate = () => {
@@ -129,11 +229,9 @@ const duplicate = () => {
         <label>
           Type
           <select onchange="{setType}" value={dataset.type}>
-            <option value="visits">Visits</option>
-            <option value="views">Views</option>
-            <option value="events">Events</option>
-            <option value="percentage">Percentage</option>
-            <option value="sql">SQL</option>
+            {#each types as type (type)}
+              <option value={type}>{formatString(type)}</option>
+            {/each}
           </select>
         </label>
 
@@ -154,176 +252,142 @@ const duplicate = () => {
           </Filter>
         {/if}
 
-        {#if dataset.type === "visits"}
-          <Filter
-            type="select"
-            model={dataset}
-            key="split_by"
-            selectOptions={[
-              "",
-              {label: "Referrer domain", value: "referrer"},
-              {label: "Landing page", value: "landing_page"},
-              {label: "UTM source", value: "utm_source"},
-              {label: "UTM medium", value: "utm_medium"},
-              {label: "UTM term", value: "utm_term"},
-              {label: "UTM content", value: "utm_content"},
-              {label: "UTM campaign", value: "utm_campaign"},
-            ]}
-          >
-            Split by
-          </Filter>
+        {#if splitFields.length > 0}
+          <div class="border-l-2 border-ice-600 pl-4 mt-4 py-0.5 flex flex-col gap-3">
+            <p class="text-sm font-medium text-ice-600">
+              Splits
+            </p>
+            <p class="text-xs text-grey-600">
+              Shows a separate chart series for each unique value of the given fields
+            </p>
+            {#if dataset.split_by}
+              <div class="flex flex-wrap gap-2">
+                {#each dataset.split_by as splitField}
+                  <div class="flex items-center gap-1">
+                    <div class="font-medium">
+                      {fields[splitField].label ?? formatString(splitField)}
+                    </div>
+                    <button
+                      type="button"
+                      class="unstyled text-night-800 hover:text-black hover:bg-night-50 p-1 cursor-pointer"
+                      onclick={() => removeSplit(splitField)}>
+                      <Icon size=16 name="delete" />
+                    </button>
+                  </div>
+                {/each}
+              </div>
+            {/if}
 
-          <Filter model={dataset} key="visit_referrer_domain">
-            Referrer domain
-          </Filter>
-
-          <Filter model={dataset} key="visit_landing_page">
-            Landing page
-          </Filter>
-
-          <Filter model={dataset} key="visit_utm_source">
-            UTM source
-          </Filter>
-
-          <Filter model={dataset} key="visit_utm_medium">
-            UTM medium
-          </Filter>
-
-          <Filter model={dataset} key="visit_utm_term">
-            UTM term
-          </Filter>
-
-          <Filter model={dataset} key="visit_utm_content">
-            UTM content
-          </Filter>
-
-          <Filter model={dataset} key="visit_utm_campaign">
-            UTM campaign
-          </Filter>
+            <label>
+              <span class="sr-only">Add a split</span>
+              <select
+                onchange={addSplit}
+                class="text-gray-600"
+              >
+                <option selected value="">Add a split</option>
+                {#each splitFields as field}
+                  {#if !dataset.split_by?.includes(field)}
+                    <option value={field}>{filterFields[field].label ?? formatString(field)}</option>
+                  {/if}
+                {/each}
+              </select>
+            </label>
+          </div>
         {/if}
 
-        {#if dataset.type === "views"}
-          <Filter
-            type="select"
-            model={dataset}
-            key="split_by"
-            selectOptions={[
-              "",
-              {label: "Controller", value: "controller"},
-              {label: "Controller and action", value: "controller_action"},
-              {label: "Path", value: "path"},
-              {label: "HTTP Verb", value: "verb"},
-              {label: "Version", value: "version"},
-            ]}
-          >
-            Split by
-          </Filter>
+        <div class="border-l-2 border-ice-600 pl-4 mt-4 py-0.5 flex flex-col gap-3">
+          <p class="text-sm font-medium text-ice-600">
+            Filters
+          </p>
 
-          <Filter model={dataset} key="view_path">
-            Path
-          </Filter>
+          {#each Object.entries(filterFields) as [field, fieldConfig] (field)}
+            {#if activeFields.includes(field)}
+              {@const fieldLabel = fieldConfig.label ?? formatString(field)}
 
-          <Filter model={dataset} key="view_controller">
-            Controller
-          </Filter>
+              {#if fieldConfig.type === "boolean"}
+                <Filter
+                  type="switch"
+                  model={dataset}
+                  leftLabel={fieldConfig.leftLabel}
+                  leftValue={fieldConfig.leftValue}
+                  rightLabel={fieldConfig.rightLabel}
+                  rightValue={fieldConfig.rightValue}
+                  key={field}
+                >
+                  {fieldLabel}
+                </Filter>
+              {:else if fieldConfig.type === "date"}
+                <Filter
+                  type="date"
+                  model={dataset}
+                  key={`${field}_from`}
+                  description={fieldConfig.description}
+                >
+                  {fieldLabel} from
+                </Filter>
 
-          <Filter model={dataset} key="view_action">
-            Action
-          </Filter>
+                <Filter
+                  type="date"
+                  model={dataset}
+                  key={`${field}_to`}
+                  description={fieldConfig.description}
+                >
+                  {fieldLabel} to
+                </Filter>
+              {:else if fieldConfig.type === "sql"}
+                <Filter
+                  type="textarea"
+                  model={dataset}
+                  key={field}
+                  class="font-mono text-red-800 bg-red-50/50 p-1 border border-red-800"
+                  rows="10"
+                  readonly={!canDangerouslyUseSql}
+                >
+                  SQL Query
 
-          <Filter model={dataset} key="view_version">
-            Version
-          </Filter>
+                  {#snippet description()}
+                    <span class="help-text">
+                      Note: your query must return three columns: <code>date</code>, <code>split</code>, and <code>count</code>. <code>split</code> can be <code>NULL</code>
+                    </span>
+                  {/snippet}
+                </Filter>
+              {:else if fieldConfig.options}
+                <Filter
+                  type="select"
+                  model={dataset}
+                  key={field}
+                  selectOptions={fieldConfig.options}
+                  description={fieldConfig.description}
+                >
+                  {fieldLabel}
+                </Filter>
+              {:else}
+                <Filter model={dataset} key={field} description={fieldConfig.description}>
+                  {fieldLabel}
+                </Filter>
+              {/if}
+            {/if}
+          {/each}
 
-          <Filter
-            type="select"
-            model={dataset}
-            key="view_verb"
-            selectOptions={["", "GET", "POST", "PUT", "PATCH", "DELETE"]}
-            description="Typically, GET requests are page views, and POST, PUT, PATCH and DELETE are form submissions."
-          >
-            HTTP Verb
-          </Filter>
-        {/if}
-
-        {#if dataset.type === "events"}
-          {#if dataset.split_by !== "name"}
-            <Filter model={dataset} key="event_name">
-              Event name
-            </Filter>
+          {#if inactiveFields.length > 0}
+            <label class="{activeFields.length > 0 ? "mt-4" : ""}">
+              <span class="sr-only">Add a filter</span>
+              <select
+                onchange={addFilter}
+                class="text-gray-600"
+              >
+                <option selected value="">Add a filter</option>
+                {#each inactiveFields as field}
+                  <option value={field}>{filterFields[field].label ?? formatString(field)}</option>
+                {/each}
+              </select>
+            </label>
           {/if}
-
-          {#if !dataset.event_name}
-            <Filter type="switch" rightValue="name" model={dataset} key="split_by">
-              Split by name
-            </Filter>
-          {/if}
-        {/if}
-
-
-        {#if dataset.type === "events" || dataset.type === "views" || dataset.type === "visits"}
-          <Filter
-            type="date"
-            model={dataset}
-            key="date_from"
-            description="This is combined with the dashboard and chart's date from, and the later (more restrictive) of the dates is used."
-          >
-            Date from
-          </Filter>
-
-          <Filter
-            type="date"
-            model={dataset}
-            key="date_to"
-            description="This is combined with the dashboard and chart's date to, and the earlier (more restrictive) of the dates is used."
-          >
-            Date to
-          </Filter>
-        {/if}
-
-        {#if dataset.type === "percentage"}
-          <Filter
-            type="select"
-            model={dataset}
-            key="numerator"
-            selectOptions={derivedSources}
-            description="The dataset you are using for your target, e.g. a specific page view or event."
-          >
-            Numerator
-          </Filter>
-
-          <Filter
-            type="select"
-            model={dataset}
-            key="denominator"
-            selectOptions={derivedSources}
-            description="The dataset you are using for comparison, e.g. the number of visits."
-          >
-            Denominator
-          </Filter>
-        {/if}
-
-        {#if dataset.type === "sql"}
-          <Filter
-            type="textarea"
-            model={dataset}
-            key="sql"
-            class="font-mono text-red-800 bg-red-50/50 p-1 border border-red-800"
-            rows="10"
-            readonly={!canDangerouslyUseSql}
-          >
-            SQL Query
-
-            {#snippet description()}
-              <span class="help-text">
-                Note: to be compatible with the line chart, your query must return four columns: <code>'{dataset.id}' as id</code>; <code>NULL</code> or a string value as <code>split</code>, which will split it into multiple datasets; <code>label</code>; <code>count</code>
-              </span>
-            {/snippet}
-          </Filter>
-        {/if}
+        </div>
 
         <div class="flex flex-row gap-2 mt-4">
-          {#if canDangerouslyUseSql}
+          {#if dataset.type !== "sql" || canDangerouslyUseSql}
+            <!-- While technically allowed by the validation, there's no point in duplicating the dataset because it cannot be changed -->
             <button type="button" class="sm" onclick={duplicate}>Duplicate</button>
           {/if}
           {#if onMoveUp !== null }

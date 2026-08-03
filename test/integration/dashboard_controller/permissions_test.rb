@@ -7,7 +7,7 @@ module Skadi::Integration
         "id" => "sql-dataset",
         "label" => "SQL",
         "type" => "sql",
-        "sql" => "SELECT * FROM skadi_visits",
+        "sql" => "SELECT created_at as date, NULL as split, 1 as count FROM skadi_visits",
       }.freeze
 
       test "can view with permission" do

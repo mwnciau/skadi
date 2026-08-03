@@ -2,6 +2,8 @@ module Skadi
   class Dashboard < ApplicationRecord
     class Error < StandardError; end
     class ChartNotFoundError < Error; end
+    class UnsupportedDatabaseError < Error; end
+    class DatasetConfigurationError < Error; end
 
     validates_with DashboardValidator
 

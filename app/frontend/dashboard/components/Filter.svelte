@@ -160,7 +160,12 @@ const contentEditableSync = (node: HTMLElement, value: string) => {
   {:else if type === "switch"}
     <div class="flex items-center gap-2 font-normal">
       {leftLabel}
-      <Switch value={model[key] === rightValue} onToggle={toggleSwitch} />
+      <Switch
+        value={model[key] === rightValue}
+        onToggle={toggleSwitch}
+        labelOff={leftLabel ? "" : null}
+        labelOn={rightLabel ? "" : null}
+      />
       {rightLabel}
     </div>
   {:else if type === "text"}

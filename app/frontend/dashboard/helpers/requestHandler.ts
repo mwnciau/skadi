@@ -26,10 +26,12 @@ export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartCon
     queryVars.push(`date_to=${tabFilters.date_to}`)
   }
   if (chartConfig) {
-    queryVars.push(`config=${encodeURIComponent(JSON.stringify(chartConfig))}`);
+    queryVars.push(`configuration=${encodeURIComponent(JSON.stringify(chartConfig))}`);
+  } else {
+    queryVars.push(`chart_id=${chartId}`);
   }
 
-  return fetch(`${baseUrl}data/${chartId}?${queryVars.join("&")}`)
+  return fetch(`${baseUrl}data?${queryVars.join("&")}`)
     .then(handleResponseError);
 }
 

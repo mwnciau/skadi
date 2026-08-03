@@ -1,10 +1,11 @@
-<%# locals: (dashboard_configuration:, can_edit:, can_dangerously_use_sql:) %>
+<%# locals: (dashboard_configuration:, dataset_schema:, can_edit:, can_dangerously_use_sql:) %>
 
 <% content_for :head do %>
   <%= stylesheet_link_tag "#{Skadi::Engine.routes.url_helpers.dashboard_css_path}?#{Skadi::VERSION}", media: "all" %>
   <%= javascript_include_tag "#{Skadi::Engine.routes.url_helpers.dashboard_js_path}?#{Skadi::VERSION}",
     data: {
       "dashboard-config": dashboard_configuration.to_json,
+      "dataset-schema": dataset_schema.to_json,
       "can-edit": can_edit ? "true" : "false",
       "can-dangerously-use-sql": can_dangerously_use_sql ? "true" : "false",
     } %>

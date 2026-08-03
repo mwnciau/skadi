@@ -1,10 +1,11 @@
 <script lang="ts">
-  import type { DashboardTabConfig, TabFilters } from "../types.d.ts";
+import type { DashboardTabConfig, TabFilters } from "../types.d.ts";
 import ChartWrapper from "./dashboardElements/ChartWrapper.svelte";
 import Filter from "./components/Filter.svelte";
 import TabEditor from "./editors/TabEditor.svelte";
 import Tabs from "./Tabs.svelte";
 import { saveDashboard } from "./helpers/requestHandler";
+import { untrack } from "svelte";
 
 const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]")!;
 
@@ -16,14 +17,15 @@ const canDangerouslyUseSql = callingScript.dataset.canDangerouslyUseSql === "tru
 
 let selectedTab = $state<string>(tabs[0].id);
 let selectedTabConfig = $derived(tabs.find(dashboard => dashboard.id === selectedTab) as DashboardTabConfig);
-let tabFilters: TabFilters = $state({
+
+// untrack: these just define the default state and aren't meant to be tracked
+let tabFilters: TabFilters = $state(untrack(() => ({
   date_from: selectedTabConfig.date_from,
   date_to: selectedTabConfig.date_to,
-});
+})));
 
-// Intentionally left state-less because this will be a one-off thing when a chart is added or duplicated
-let chartIdToEdit: string | null = null;
-let editingEnabled: boolean = $state(false);
+let chartIdToEdit: string | null = $state(null);
+let editingEnabled: boolean = $state(true);
 
 const selectTab = (tab: string) => {
   selectedTab = tab;
