@@ -17,6 +17,8 @@ module Skadi
           end
         end
 
+        return [] unless queries.any?
+
         result = nil
         Skadi::ApplicationRecord.connection.transaction do
           result = Skadi::ApplicationRecord.connection.unprepared_statement do

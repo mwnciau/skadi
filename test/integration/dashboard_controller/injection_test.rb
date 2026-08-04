@@ -69,10 +69,10 @@ module Skadi::Integration
         end
       end
 
-      test "chart booleans" do
+      test "chart filters" do
         create :visit
 
-        [:visit_tracking, :verified_visits, :unique_visits].each do |field|
+        [:visit_tracking, :verified_visits, :unique_by].each do |field|
           INJECTION_STRINGS.each do |value|
             dashboard_with_chart(id: CHART_ID, field => value)
 
@@ -230,7 +230,7 @@ module Skadi::Integration
         assert_see "SQLException"
       end
 
-      # This method bypasses validation thus allowing us to test the worst case scenario (something we didn't account for in validation) being executed
+      # This method bypasses validation allowing us to test dashboard data endpoint, not the validation
       private def dashboard_with_dataset(**dataset_options)
         Skadi::Dashboard.delete_all
         dashboard = build_dashboard(tab: build_tab(chart: build_chart(id: CHART_ID, time_series: "weekly", dataset: build_dataset(**dataset_options))))
@@ -239,7 +239,7 @@ module Skadi::Integration
         return dashboard
       end
 
-      # This method bypasses validation thus allowing us to test the worst case scenario (something we didn't account for in validation) being executed
+      # This method bypasses validation allowing us to test dashboard data endpoint, not the validation
       private def dashboard_with_chart(**chart_options)
         Skadi::Dashboard.delete_all
         dashboard = build_dashboard(tab: build_tab(chart: build_chart(**chart_options)))

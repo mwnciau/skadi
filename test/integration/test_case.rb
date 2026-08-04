@@ -7,6 +7,8 @@ module Skadi
       include FactoryBot::Syntax::Methods
 
       TRACKING_TOKEN = "8cec5a7a-7bf7-403f-b15e-b2e45944182c"
+      TRACKING_TOKEN_2 = "8cec5a7a-7bf7-403f-b15e-b2e45944182d"
+      TRACKING_TOKEN_3 = "8cec5a7a-7bf7-403f-b15e-b2e45944182e"
       UUID_REGEX = Skadi::CookieManager::UUID_REGEX
 
       setup do

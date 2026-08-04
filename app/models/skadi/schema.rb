@@ -93,7 +93,7 @@ module Skadi
           },
           demographics: {
             model: Demographic,
-            count_sql: "SUM(skadi_demographics.count)",
+            count_sql: "COALESCE(SUM(skadi_demographics.count), 0)",
             fields: {
               date: {
                 type: :date,
