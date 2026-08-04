@@ -4,6 +4,10 @@ const baseUrl = window.location.toString().endsWith("/")
     ? window.location
     : window.location.toString() + "/";
 
+const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]")!;
+const fetchDataPath = callingScript.dataset.fetchDataPath!;
+const updateDashboardPath = callingScript.dataset.updateDashboardPath!;
+
 const csrfParam = (document.querySelector("meta[name=csrf-param]") as HTMLMetaElement)?.content;
 const csrfToken = (document.querySelector("meta[name=csrf-token]") as HTMLMetaElement)?.content;
 
@@ -36,7 +40,7 @@ export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartCon
     queryVars.chart_id = chartId;
   }
 
-  return fetch(`${baseUrl}data`, {
+  return fetch(fetchDataPath, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -47,7 +51,7 @@ export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartCon
 }
 
 export const saveDashboard = (dashboardConfig: DashboardConfig) => {
-  return fetch(`${baseUrl}dashboard/update`, {
+  return fetch(updateDashboardPath, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

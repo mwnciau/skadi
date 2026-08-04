@@ -8,7 +8,7 @@ Skadi::Engine.routes.draw do
   get "/dashboard.js", to: "asset#dashboard_js", as: :dashboard_js
 
   get "/dashboard", to: "dashboard#show", as: :dashboard
-  post "/dashboard/update", to: "dashboard#update"
+  post "/dashboard/update", to: "dashboard#update", as: :dashboard_update
 
   post "/data", to: "dashboard#data", as: :dashboard_data
 end
