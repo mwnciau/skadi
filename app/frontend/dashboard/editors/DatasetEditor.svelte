@@ -209,13 +209,14 @@ const removeSplit = (split: string) => {
   dataset.split_by.splice(index, 1);
 }
 
+let expandingSection: ReturnType<typeof ExpandingSection>;
 const duplicate = () => {
   onDuplicate();
-  open = false;
+  expandingSection?.close();
 }
 </script>
 
-<ExpandingSection wrapperClass="border-night-700" {startOpen}>
+<ExpandingSection bind:this={expandingSection} wrapperClass="border-night-700" {startOpen}>
   {#snippet title(open)}
     <p class="text-sm font-semibold text-night-700 group-hover:text-night-800">
       {#if open}

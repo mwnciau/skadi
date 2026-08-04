@@ -13,6 +13,10 @@ const {
 
 // untrack: this is a one-time default that lets the parent control the state
 let open = $state(untrack(() => startOpen));
+
+export function close() {
+  open = false;
+}
 </script>
 
 
