@@ -21,8 +21,8 @@ module Skadi
             "title" => "Visits and Checkouts",
             "time_series" => "weekly",
 
-            "verified" => true,
-            "unique_visits" => true,
+            "verified_visits" => true,
+            "unique_by" => "visit",
             "visit_tracking" => "any",
 
             "datasets" => [

@@ -149,16 +149,22 @@ const moveDown = (index: number) => {
   <Filter
     type="boolean"
     model={localChartConfig}
-    key="verified"
+    key="verified_visits"
     description="Visits and views are created by the backend, and verified by a frontend request. Enabling this will filter out some bots and prevent page pre-fetching being tracked."
   >
-    Show only verified visits and views
+    Show only verified visits and their connected views and events
   </Filter>
 
   <Filter
-    type="boolean"
+    type="select"
     model={localChartConfig}
-    key="unique_visits"
+    selectOptions={[
+      {label: "Show all views and events", value: ""},
+      {label: "Show one view or event per visit", value: "visit"},
+      {label: "Show one view or event per visitor", value: "visitor"},
+    ]}
+    key="unique_by"
+    description="When tracking views and events by visitor, anonymous views and events will be excluded. For more consistent results, set the visit tracking to track by cookie."
   >
     Deduplicate views and events per visit
   </Filter>

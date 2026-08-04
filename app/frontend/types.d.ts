@@ -42,8 +42,8 @@ export type ChartConfig = {
   time_series?: "daily" | "weekly" | "monthly";
   date_from?: DateFilter;
   date_to?: DateFilter;
-  verified?: boolean;
-  unique_visits?: boolean;
+  verified_visits?: boolean;
+  unique_by?: "visit" | "visitor";
   visit_tracking?: "any" | "anonymity_set" | "cookie";
   datasets: Dataset[];
 }

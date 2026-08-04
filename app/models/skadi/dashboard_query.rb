@@ -126,7 +126,7 @@ module Skadi
 
         if schema[:visit_key]
           # Join the visits if we need to
-          if chart["verified_visits"] == true || chart["visit_tracking"]
+          if chart["verified_visits"] == true || chart["visit_tracking"] || chart["unique_by"] == "visitor"
             if schema[:model] != Skadi::Visit
               query = query.joins(%(INNER JOIN skadi_visits ON skadi_visits.id = #{schema[:model].table_name}.#{schema[:visit_key]}))
             end
@@ -175,8 +175,10 @@ module Skadi
 
         if schema[:count_sql]
           safe_count = schema[:count_sql]
-        elsif chart["unique_visits"] == true && schema[:visit_key]
+        elsif chart["unique_by"] == "visit" && schema[:visit_key]
           safe_count = "COUNT(DISTINCT #{schema[:model].table_name}.#{schema[:visit_key]})"
+        elsif chart["unique_by"] == "visitor" && schema[:visit_key]
+          safe_count = "COUNT(DISTINCT skadi_visits.tracking_token)"
         end
 
         return query
