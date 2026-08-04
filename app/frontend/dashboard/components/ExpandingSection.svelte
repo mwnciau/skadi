@@ -1,5 +1,6 @@
 <script lang="ts">
 import Icon from "./Icon.svelte";
+import { untrack } from "svelte";
 
 const {
   startOpen = false,
@@ -10,7 +11,8 @@ const {
   startOpen?: boolean;
 }>();
 
-let open = $state(startOpen);
+// untrack: this is a one-time default that lets the parent control the state
+let open = $state(untrack(() => startOpen));
 </script>
 
 

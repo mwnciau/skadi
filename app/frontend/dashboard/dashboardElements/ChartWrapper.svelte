@@ -9,12 +9,12 @@
   import Icon from "../components/Icon.svelte";
   import { fetchChartData } from "../helpers/requestHandler";
 
-  let { canDangerouslyUseSql, chartConfig, editingEnabled, startEditing, tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  let { canDangerouslyUseSql, chartConfig, editingEnabled, isNew = $bindable(), tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
   canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
   editingEnabled: boolean;
   tabFilters: TabFilters;
-  startEditing: boolean;
+  isNew: boolean;
   onDelete: () => void;
   onDuplicate: () => void;
   onMoveUp?: null | (() => void);
@@ -22,8 +22,8 @@
   onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
 
-// untrack: this is a one-time default that lets the parent control the default state
-let isEditingChart = $state(untrack(() => startEditing));
+// untrack: this is a one-time default that lets the parent control the state
+let isEditingChart = $state(untrack(() => isNew));
 let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
 
@@ -35,6 +35,12 @@ let data : ChartData = $state.raw([]);
 
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
   localChartConfig = newChartConfig ?? chartConfig;
+
+  if (newChartConfig === null && isNew) {
+    // For new charts, send the configuration on the first load
+    newChartConfig = chartConfig;
+    isNew = false;
+  }
 
   return fetchChartData(chartConfig.id, tabFilters, newChartConfig)
     .then((items) => {
@@ -74,46 +80,54 @@ $effect(() => {
 });
 </script>
 
-{#if viewData}
-  <StaticDataTable chartConfig={localChartConfig} {data} />
-{:else}
-  {#if localChartConfig.type === "line"}
-    <LineChart chartConfig={localChartConfig} {data} />
-  {:else if localChartConfig.type === "bar"}
-    <BarChart chartConfig={localChartConfig} {data} />
+<div class="flex flex-col {isEditingChart && "xl:full-width xl:flex-row xl:justify-center xl:items-start"} gap-4">
+  {#if isEditingChart}
+    <div class="mt-12">
+      <ChartEditor
+        {canDangerouslyUseSql}
+        {chartConfig}
+        reloadChartData={reloadChartData}
+        onClose={() => (isEditingChart = false)}
+        onSave={saveChartConfig}
+      />
+    </div>
   {/if}
-{/if}
 
-{#if isEditingChart}
-  <ChartEditor
-    {canDangerouslyUseSql}
-    {chartConfig}
-    reloadChartData={reloadChartData}
-    onClose={() => (isEditingChart = false)}
-    onSave={saveChartConfig}
-  />
-{:else}
-  <div class="flex gap-2">
-    {#if editingEnabled}
-      <button onclick={() => (isEditingChart = true)}>Edit</button>
-      <button onclick={onDuplicate}>Duplicate</button>
-      {#if onMoveUp !== null }
-        <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
-      {/if}
-      {#if onMoveDown !== null }
-        <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
-      {/if}
-
-      {#if confirmDelete}
-        <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
-        <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
-      {:else}
-        <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
+  <div class={isEditingChart && "flex-1 min-w-0 max-w-256"}>
+    {#if viewData}
+      <StaticDataTable chartConfig={localChartConfig} {data} />
+    {:else}
+      {#if localChartConfig.type === "line"}
+        <LineChart chartConfig={localChartConfig} {data} />
+      {:else if localChartConfig.type === "bar"}
+        <BarChart chartConfig={localChartConfig} {data} />
       {/if}
     {/if}
-
-    <div class="ml-auto"></div>
-
-    <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show Graph" : "Show Data"}</button>
   </div>
-{/if}
+
+  {#if !isEditingChart}
+    <div class="flex gap-2">
+      {#if editingEnabled}
+        <button onclick={() => (isEditingChart = true)}>Edit</button>
+        <button onclick={onDuplicate}>Duplicate</button>
+        {#if onMoveUp !== null }
+          <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
+        {/if}
+        {#if onMoveDown !== null }
+          <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
+        {/if}
+
+        {#if confirmDelete}
+          <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
+          <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
+        {:else}
+          <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
+        {/if}
+      {/if}
+
+      <div class="ml-auto"></div>
+
+      <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show Graph" : "Show Data"}</button>
+    </div>
+  {/if}
+</div>

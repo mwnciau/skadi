@@ -47,7 +47,7 @@
 
 @layer base {
   body {
-    @apply bg-linear-to-t from-dawn-100/5 via-night-400/5 to-ice-600/5;
+    @apply bg-linear-to-t from-dawn-100/5 via-night-400/5 to-ice-600/5 pb-64;
   }
 
   p {
@@ -171,4 +171,15 @@
       @apply bg-night-50/40;
     }
   }
+}
+
+@utility full-width {
+  position: relative;
+  left: 50%;
+  right: 50%;
+
+  width: calc(100vw - calc(2 * var(--full-width-margin, 2rem)));
+  max-width: none;
+  margin-left: calc(-50vw + (var(--full-width-margin, 2rem)));
+  margin-right: calc(-50vw + (var(--full-width-margin, 2rem)));
 }

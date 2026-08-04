@@ -166,7 +166,7 @@ $effect(() => {
       {chartConfig}
       {editingEnabled}
       {tabFilters}
-      startEditing={chartIdToEdit === chartConfig.id}
+      isNew={chartIdToEdit === chartConfig.id}
       onDelete={() => deleteChart(index)}
       onDuplicate={() => duplicateDataset(index)}
       onMoveUp={index !== 0 ? (() => moveChartUp(index)) : null}

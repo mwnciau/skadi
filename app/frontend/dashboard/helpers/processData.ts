@@ -60,7 +60,7 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
       return Object.entries(datasetIds).map(([split, datasetId]) => ({
         dataset: datasetId,
         split: split,
-        label: split ? `${dataset.label} ${split}`.trim() : dataset.label,
+        label: split ? `${dataset.label ? `${dataset.label}: ` : ""}${split}` : dataset.label,
         data: responseData[datasetId],
         axis: dataset.axis === "right" ? "right" : "left",
       }));
