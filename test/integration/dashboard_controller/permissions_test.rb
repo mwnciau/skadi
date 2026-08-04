@@ -41,7 +41,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        get skadi.dashboard_data_path, params: { chart_id: }
+        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
 
         assert_response :ok
       end
@@ -52,7 +52,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        get skadi.dashboard_data_path, params: { chart_id: }
+        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
 
         assert_response :forbidden
       end
@@ -63,7 +63,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        get skadi.dashboard_data_path, params: { chart_id: }
+        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
 
         assert_response :forbidden
       end
@@ -74,7 +74,7 @@ module Skadi::Integration
 
         create :view
 
-        get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: build_dataset(type: "views")).to_json}
+        post skadi.dashboard_data_path, params: {configuration: build_chart(dataset: build_dataset(type: "views")).to_json}, as: :json
 
         assert_response :ok
         assert_see '"count":1'
@@ -84,7 +84,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_view = true
         ApplicationController.skadi_dashboard_edit = false
 
-        get skadi.dashboard_data_path, params: {configuration: build_chart.to_json}
+        post skadi.dashboard_data_path, params: {configuration: build_chart.to_json}, as: :json
 
         assert_response :unprocessable_content
         assert_see "The chart_id parameter must be specified"
@@ -95,7 +95,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = true
 
-        get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}
+        post skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}, as: :json
 
         assert_response :ok
       end
@@ -105,7 +105,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = false
 
-        get skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}
+        post skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}, as: :json
 
         assert_response :unprocessable_content
         assert_see "Invalid chart configuration"
@@ -119,7 +119,7 @@ module Skadi::Integration
         chart = build_chart(dataset: build_dataset(type: "sql", sql: "SELECT '"))
         build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        get skadi.dashboard_data_path, params: {chart_id: chart["id"]}
+        post skadi.dashboard_data_path, params: {chart_id: chart["id"]}, as: :json
 
         assert_response :unprocessable_content
         assert_see "SQLException: unrecognized token"
@@ -133,7 +133,7 @@ module Skadi::Integration
         chart = build_chart(dataset: build_dataset(type: "sql", sql: "SELECT '"))
         build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        get skadi.dashboard_data_path, params: {chart_id: chart["id"]}
+        post skadi.dashboard_data_path, params: {chart_id: chart["id"]}, as: :json
 
         assert_response :unprocessable_content
         refute_see "SQLException: unrecognized token"

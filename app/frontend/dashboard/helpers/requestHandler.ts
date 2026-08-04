@@ -1,8 +1,11 @@
-import { ChartConfig, DashboardConfig, DashboardTabConfig, TabFilters } from "../../types";
+import { ChartConfig, DashboardConfig, TabFilters } from "../../types";
 
 const baseUrl = window.location.toString().endsWith("/")
     ? window.location
     : window.location.toString() + "/";
+
+const csrfParam = (document.querySelector("meta[name=csrf-param]") as HTMLMetaElement)?.content;
+const csrfToken = (document.querySelector("meta[name=csrf-token]") as HTMLMetaElement)?.content;
 
 const handleResponseError = (response: Response) => {
   return response.text().then((text) => {
@@ -17,28 +20,33 @@ const handleResponseError = (response: Response) => {
 }
 
 export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartConfig: ChartConfig | null) => {
-  let queryVars = [];
+  let queryVars: Record<string, unknown> = {
+      [csrfParam]: csrfToken,
+  };
 
   if (tabFilters.date_from) {
-    queryVars.push(`date_from=${tabFilters.date_from}`)
+    queryVars.date_from = tabFilters.date_from
   }
   if (tabFilters.date_to) {
-    queryVars.push(`date_to=${tabFilters.date_to}`)
+    queryVars.date_to = tabFilters.date_to
   }
   if (chartConfig) {
-    queryVars.push(`configuration=${encodeURIComponent(JSON.stringify(chartConfig))}`);
+    queryVars.configuration = chartConfig;
   } else {
-    queryVars.push(`chart_id=${chartId}`);
+    queryVars.chart_id = chartId;
   }
 
-  return fetch(`${baseUrl}data?${queryVars.join("&")}`)
+  return fetch(`${baseUrl}data`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(queryVars),
+  })
     .then(handleResponseError);
 }
 
 export const saveDashboard = (dashboardConfig: DashboardConfig) => {
-  let csrfParam = (document.querySelector("meta[name=csrf-param]") as HTMLMetaElement)?.content;
-  let csrfToken = (document.querySelector("meta[name=csrf-token]") as HTMLMetaElement)?.content;
-
   return fetch(`${baseUrl}dashboard/update`, {
     method: "POST",
     headers: {

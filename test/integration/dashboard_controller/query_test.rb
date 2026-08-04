@@ -336,14 +336,14 @@ module Skadi::Integration
       end
 
       def results_for_chart(chart)
-        get skadi.dashboard_data_path, params: {configuration: chart.to_json}
+        post skadi.dashboard_data_path, params: {configuration: chart.to_json}, as: :json
 
         assert_response :ok
         return JSON.parse(response.body)
       end
 
       def assert_results(count, **params)
-        get skadi.dashboard_data_path, params: {**params}
+        post skadi.dashboard_data_path, params: {**params}, as: :json
 
         assert_response :ok
         results = JSON.parse(response.body)

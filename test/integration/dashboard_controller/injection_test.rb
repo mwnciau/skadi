@@ -32,7 +32,7 @@ module Skadi::Integration
         # The SQLite driver treats null bytes as the end of string, so we just check that the error is caught
         chart_configuration = build_chart(dataset: build_dataset(id: "\u0000"))
 
-        get skadi.dashboard_data_path, params: {configuration: chart_configuration.to_json}
+        post skadi.dashboard_data_path, params: {configuration: chart_configuration.to_json}, as: :json
 
         assert_response :unprocessable_content
         assert_equal %({"error":"SQLite3::SQLException: unrecognized token: \\"'\\":\\nSELECT '\\n       ^"}), response.body
@@ -45,7 +45,7 @@ module Skadi::Integration
           INJECTION_STRINGS.each do |value|
             dashboard_with_chart(id: CHART_ID)
 
-            get skadi.dashboard_data_path, params: {chart_id: CHART_ID, field => value}
+            post skadi.dashboard_data_path, params: {chart_id: CHART_ID, field => value}, as: :json
 
             # The dashboard should be valid and no exception returned
             assert_response :ok
@@ -62,7 +62,7 @@ module Skadi::Integration
         INJECTION_STRINGS.each do |value|
           dashboard_with_chart(id: CHART_ID, time_series: value)
 
-          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+          post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           assert_response :unprocessable_content
           assert_see /The time_series .* is invalid/
@@ -76,7 +76,7 @@ module Skadi::Integration
           INJECTION_STRINGS.each do |value|
             dashboard_with_chart(id: CHART_ID, field => value)
 
-            get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+            post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
             # The dashboard should be valid and no exception returned
             assert_response :ok
@@ -94,7 +94,7 @@ module Skadi::Integration
           INJECTION_STRINGS.each do |value|
             dashboard_with_chart(id: CHART_ID, field => value)
 
-            get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+            post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
             # The dashboard should be valid and no exception returned
             assert_response :ok
@@ -111,7 +111,7 @@ module Skadi::Integration
         INJECTION_STRINGS.each do |value|
           dashboard_with_dataset(type: "events", id: value)
 
-          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+          post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           # The dashboard should be valid and no exception returned
           assert_response :ok
@@ -126,7 +126,7 @@ module Skadi::Integration
 
         dashboard_with_dataset(type: "events", split_by: INJECTION_STRINGS)
 
-        get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+        post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
         # The dashboard should be valid and no exception returned
         assert_response :ok
@@ -141,7 +141,7 @@ module Skadi::Integration
         INJECTION_STRINGS.each do |value|
           dashboard_with_dataset(type: "visits", utm_source: value)
 
-          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+          post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           # The dashboard should be valid and no exception returned
           assert_response :ok
@@ -157,7 +157,7 @@ module Skadi::Integration
         INJECTION_STRINGS.each do |value|
           dashboard_with_dataset(type: "visits", referrer_domain: value)
 
-          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+          post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           # The dashboard should be valid and no exception returned
           assert_response :ok
@@ -173,7 +173,7 @@ module Skadi::Integration
         INJECTION_STRINGS.each do |value|
           dashboard_with_dataset(type: "views", verb: value)
 
-          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+          post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           # The dashboard should be valid and no exception returned
           assert_response :ok
@@ -189,7 +189,7 @@ module Skadi::Integration
         INJECTION_STRINGS.each do |value|
           dashboard_with_dataset(type: "views", verified: value)
 
-          get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+          post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           # The dashboard should be valid and no exception returned
           assert_response :ok
@@ -204,7 +204,7 @@ module Skadi::Integration
           INJECTION_STRINGS.each do |value|
             dashboard_with_dataset(type: "events", field => value)
 
-            get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+            post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
             # The dashboard should be valid and no exception returned
             assert_response :ok
@@ -221,7 +221,7 @@ module Skadi::Integration
 
         dashboard_with_dataset(type: "sql", sql: "DELETE FROM skadi_visits WHERE 1=1 OR 1='date split count'")
 
-        get skadi.dashboard_data_path, params: {chart_id: CHART_ID}
+        post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
         # The side effect should not have run
         assert_equal 1, Skadi::Visit.count
