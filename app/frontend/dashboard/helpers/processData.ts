@@ -83,8 +83,11 @@ export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, 
       if (chart.time_series) {
         data[dataset.id] = populatePercentageData(numerator, denominator);
       } else {
+        // If the denominator is zero, skip it to avoid division by zero
+        const yValue = denominator[0].y !== 0 ? numerator[0].y / denominator[0].y : 0;
+
         // If there is no time-series, there is only one item per dataset
-        data[dataset.id] = [{x: dataset.label, y: Math.round((numerator[0].y / denominator[0].y) * 1000) / 10}]
+        data[dataset.id] = [{x: dataset.label, y: Math.round(yValue * 1000) / 10}]
       }
     }
   }
