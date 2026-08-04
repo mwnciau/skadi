@@ -25,7 +25,7 @@ let tabFilters: TabFilters = $state(untrack(() => ({
 })));
 
 let chartIdToEdit: string | null = $state(null);
-let editingEnabled: boolean = $state(true);
+let editingEnabled: boolean = $state(false);
 
 const selectTab = (tab: string) => {
   selectedTab = tab;
