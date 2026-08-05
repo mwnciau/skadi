@@ -294,7 +294,6 @@ module Skadi
         verb: request.request_method,
         path: Url.view_path_from_request(request),
         query_params: Url.whitelist_query_params(request.query_parameters),
-        referrer: Url.redact_and_normalise_url(request.referrer),
       )
     end
 

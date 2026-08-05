@@ -3,20 +3,6 @@ require "integration/test_case"
 module Skadi::Integration
   module ControllerDelegate
     class ViewTrackingTest < TestCase
-      test "referrer is tracked" do
-        get_tracked_action referrer: "https://example.com/referrer"
-
-        view = Skadi::View.first!
-        assert_equal "example.com/referrer", view.referrer
-      end
-
-      test "bad referrer is not tracked" do
-        get_tracked_action referrer: "this is not a valid url"
-
-        view = Skadi::View.first!
-        assert_nil view.referrer
-      end
-
       test "controller and action is tracked" do
         get_tracked_action(tracking_token: TRACKING_TOKEN)
 

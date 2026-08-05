@@ -64,9 +64,6 @@ module Skadi::Integration
 
         visit = Skadi::Visit.first!
         assert_equal "example.com/?whitelisted=value", visit.referrer
-
-        view = Skadi::View.first!
-        assert_equal "example.com/?whitelisted=value", view.referrer
       end
 
       test "landing page query parameters are not stored" do

@@ -8,7 +8,6 @@ FactoryBot.define do
     path { "/" }
     query_params { {} }
 
-    referrer { "https://example.com/referrer" }
     exit_page { nil }
 
     verified { false }

@@ -46,9 +46,6 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       t.text :path, null: false
       t.json :query_params
 
-      # Referrer URL, as reported by the user's browser
-      t.text :referrer
-
       # The page the user clicked on when leaving the page
       t.text :exit_page
 
@@ -62,6 +59,7 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
     end
 
     add_index :skadi_views, :view_token, unique: true
+    add_index :skadi_views, :created_at
     add_index :skadi_views, [:path, :created_at]
     add_index :skadi_views, [:visit_id, :created_at]
 
@@ -78,6 +76,7 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       t.datetime :created_at, null: false
     end
 
+    add_index :skadi_events, :created_at
     add_index :skadi_events, [:name, :created_at]
     add_index :skadi_events, [:view_id, :created_at]
     add_index :skadi_events, [:visit_id, :created_at]
@@ -98,6 +97,8 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       t.string :name, null: false
       t.text :description
       t.json :configuration, null: false
+
+      t.timestamps
     end
   end
 end

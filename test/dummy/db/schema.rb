@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_24_135551) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_04_193548) do
   create_table "dummy_users", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
@@ -19,8 +19,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_135551) do
 
   create_table "skadi_dashboards", force: :cascade do |t|
     t.json "configuration", null: false
+    t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "skadi_demographics", force: :cascade do |t|
@@ -38,6 +40,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_135551) do
     t.json "properties"
     t.integer "view_id"
     t.integer "visit_id"
+    t.index ["created_at"], name: "index_skadi_events_on_created_at"
     t.index ["name", "created_at"], name: "index_skadi_events_on_name_and_created_at"
     t.index ["view_id", "created_at"], name: "index_skadi_events_on_view_id_and_created_at"
     t.index ["visit_id", "created_at"], name: "index_skadi_events_on_visit_id_and_created_at"
@@ -50,13 +53,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_24_135551) do
     t.text "exit_page"
     t.text "path", null: false
     t.json "query_params"
-    t.text "referrer"
     t.datetime "updated_at", null: false
     t.string "verb", null: false
     t.boolean "verified", default: false, null: false
     t.string "version"
     t.string "view_token", limit: 36, null: false
     t.integer "visit_id"
+    t.index ["created_at"], name: "index_skadi_views_on_created_at"
     t.index ["path", "created_at"], name: "index_skadi_views_on_path_and_created_at"
     t.index ["view_token"], name: "index_skadi_views_on_view_token", unique: true
     t.index ["visit_id", "created_at"], name: "index_skadi_views_on_visit_id_and_created_at"
