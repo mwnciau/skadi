@@ -2,16 +2,17 @@
 let demographics: SkadiDemographic[] = [];
 let events: SkadiEvent[] = [];
 let largestContentfulPaint: number = -1;
-let requestTimeout: number|undefined;
-let exitPage: string|undefined;
+let requestTimeout: number | undefined;
+let exitPage: string | undefined;
 let useExitPage: boolean = false;
 
 type Consent = {
   cookie?: boolean;
   anonymity_set?: boolean;
   user?: boolean;
-}
+};
 
+// biome-ignore lint/correctness/noUnusedVariables: this is actually used, but hidden by the weird window variable
 interface Window {
   skadi?: {
     event: (name: string, properties: Record<string, unknown>) => void;
@@ -40,27 +41,27 @@ type SkadiOptions = {
   view: string;
   // Whether to send visit demographics
   visit?: "1" | null;
-}
+};
 
 type SkadiDemographic = {
   uri?: string;
   name: string;
   value: string;
-}
+};
 
 type SkadiEvent = {
   name: string;
   properties: Record<string, unknown>;
-}
+};
 
 const options: SkadiOptions = {
-  // @ts-ignore currentScript is not null because we control how this script is included
-  ..._document.currentScript.dataset as SkadiOptions,
-}
+  // @ts-expect-error currentScript is not null because we control how this script is included
+  ...(_document.currentScript.dataset as SkadiOptions),
+};
 
 const queueRequest = () => {
   requestTimeout ??= setTimeout(sendRequest, 500);
-}
+};
 
 const sendRequest = () => {
   if (requestTimeout) {
@@ -68,13 +69,21 @@ const sendRequest = () => {
     requestTimeout = 0;
   }
 
-  const result = navigator.sendBeacon(options.endpoint, new Blob([JSON.stringify({
-    view: options.view,
-    demographics,
-    events,
-    consent,
-    ...(useExitPage && {exit_page: exitPage})
-  })], {type: "application/json"}));
+  const result = navigator.sendBeacon(
+    options.endpoint,
+    new Blob(
+      [
+        JSON.stringify({
+          view: options.view,
+          demographics,
+          events,
+          consent,
+          ...(useExitPage && { exit_page: exitPage }),
+        }),
+      ],
+      { type: "application/json" },
+    ),
+  );
 
   // If the beacon was succesfully sent
   if (result) {
@@ -84,7 +93,7 @@ const sendRequest = () => {
 
     // Note: no need to set useExitPage here as it is only set as the page is being unloaded.
   }
-}
+};
 
 const bucketise = (value: number, buckets: [number, number, number, number]): string | null => {
   // Zero or negative values should not be appearing so are likely an edge-case browser behaviour we can discard
@@ -110,7 +119,7 @@ const addDemographic = (name: string, value: string | boolean | null, viewDemogr
     return;
   }
 
-  let demographic: SkadiDemographic = {name, value: value.toString()};
+  const demographic: SkadiDemographic = { name, value: value.toString() };
 
   if (viewDemographic) {
     demographic.uri = options.uri;
@@ -121,30 +130,26 @@ const addDemographic = (name: string, value: string | boolean | null, viewDemogr
 
 // The largest contentful paint is triggered multiple times during a page load, so we need to use the Observer API to keep track of each LCP as the page loads.
 new PerformanceObserver((entryList) => {
-  let entries = entryList.getEntries();
-  let lastEntry = entries[entries.length - 1];
+  const entries = entryList.getEntries();
+  const lastEntry = entries[entries.length - 1];
   largestContentfulPaint = lastEntry.startTime;
 }).observe({ type: largestContentfulPaintId, buffered: true });
 
 new PerformanceObserver((entryList, observer) => {
-  let paintTiming = entryList.getEntriesByName(firstContentfulPaintId)[0];
+  const paintTiming = entryList.getEntriesByName(firstContentfulPaintId)[0];
 
   if (paintTiming) {
-    addDemographic(
-      firstContentfulPaintId,
-      bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]),
-      true
-    );
+    addDemographic(firstContentfulPaintId, bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]), true);
     observer.disconnect();
   }
 }).observe({ type: "paint", buffered: true });
 
-_window.addEventListener('load', () => {
+_window.addEventListener("load", () => {
   if (options.visit === "1") {
     addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
     addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
     addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);
-    addDemographic("input-device", _window.matchMedia('(pointer: fine)').matches ? "mouse" : "touch");
+    addDemographic("input-device", _window.matchMedia("(pointer: fine)").matches ? "mouse" : "touch");
   }
 
   // Always send a beacon on page load to send the FCP and also verify the view
@@ -152,11 +157,11 @@ _window.addEventListener('load', () => {
 });
 
 // Track clicks to detect when the user leaves the page
-_document.addEventListener('click', (event: MouseEvent) => {
-  let link = (event.target as Element | null)?.closest('a');
+_document.addEventListener("click", (event: MouseEvent) => {
+  const link = (event.target as Element | null)?.closest("a");
 
-  if (link && link.href) {
-    let isNewTab = link.target === '_blank' || event.ctrlKey || event.metaKey;
+  if (link?.href) {
+    const isNewTab = link.target === "_blank" || event.ctrlKey || event.metaKey;
 
     if (!isNewTab) {
       exitPage = link.href;
@@ -164,19 +169,15 @@ _document.addEventListener('click', (event: MouseEvent) => {
   }
 });
 
-_window.addEventListener('pagehide', () => {
-  addDemographic(
-    largestContentfulPaintId,
-    bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]),
-    true,
-  );
+_window.addEventListener("pagehide", () => {
+  addDemographic(largestContentfulPaintId, bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]), true);
 
   // Flags that the page is unloading so the beacon sends the exit page
   useExitPage = true;
   sendRequest();
 });
 
-_window.addEventListener('visibilitychange', () => {
+_window.addEventListener("visibilitychange", () => {
   // Ensure any queued beacon is sent immediately if the user switches tab
   if (requestTimeout) {
     sendRequest();
@@ -185,7 +186,7 @@ _window.addEventListener('visibilitychange', () => {
 
 _window.skadi = {
   event: (name: string, properties: Record<string, unknown> = {}) => {
-    events.push({name, properties});
+    events.push({ name, properties });
     queueRequest();
   },
   demographic: (name: string, value: string, isPageSpecific: boolean = false) => {

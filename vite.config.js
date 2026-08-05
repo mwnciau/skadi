@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
-import { resolve } from "path";
+import { resolve } from "node:path";
 import tailwindcss from "@tailwindcss/vite";
-import {svelte} from "@sveltejs/vite-plugin-svelte";
+import { svelte } from "@sveltejs/vite-plugin-svelte";
 
 export default defineConfig({
   build: {

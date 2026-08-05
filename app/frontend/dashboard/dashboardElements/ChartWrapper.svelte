@@ -1,6 +1,6 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  import type { ChartConfig, ChartData, DashboardTabConfig, ResponseData, TabFilters } from "../../types.d.ts";
+  import type { ChartConfig, ChartData, ResponseData, TabFilters } from "../../types.d.ts";
   import ChartEditor from "../editors/ChartEditor.svelte";
   import { fillDataGaps, processDerivedDatasets, formatDates, createChartData } from "../helpers/processData";
   import BarChart from "./BarChart.svelte";
@@ -108,8 +108,8 @@ $effect(() => {
   {#if !isEditingChart}
     <div class="flex gap-2">
       {#if editingEnabled}
-        <button onclick={() => (isEditingChart = true)}>Edit</button>
-        <button onclick={onDuplicate}>Duplicate</button>
+        <button type="button" onclick={() => (isEditingChart = true)}>Edit</button>
+        <button type="button" onclick={onDuplicate}>Duplicate</button>
         {#if onMoveUp !== null }
           <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
         {/if}

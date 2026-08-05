@@ -93,6 +93,13 @@ then
     exit 0
 fi
 
+if [ "$1" == "cs:fix" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop --autocorrect "${@:2}"
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop --autocorrect "${@:2}"
+    exit 0
+fi
+
 if [ "$1" == "js" ]
 then
     echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run cs ${@:2}
@@ -100,13 +107,10 @@ then
     exit 0
 fi
 
-if [ "$1" == "cs:fix" ]
+if [ "$1" == "js:fix" ]
 then
-    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx ${@:2}
-    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx "${@:2}"
-    exit 0
-    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop --autocorrect "${@:2}"
-    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop --autocorrect "${@:2}"
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx biome check --write ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx biome lint --write "${@:2}"
     exit 0
 fi
 

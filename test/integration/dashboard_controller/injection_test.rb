@@ -45,7 +45,7 @@ module Skadi::Integration
           INJECTION_STRINGS.each do |value|
             dashboard_with_chart(id: CHART_ID)
 
-            post skadi.dashboard_data_path, params: {chart_id: CHART_ID, field => value}, as: :json
+            post skadi.dashboard_data_path, params: {:chart_id => CHART_ID, field => value}, as: :json
 
             # The dashboard should be valid and no exception returned
             assert_response :ok
@@ -65,7 +65,7 @@ module Skadi::Integration
           post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
           assert_response :unprocessable_content
-          assert_see /The time_series .* is invalid/
+          assert_see(/The time_series .* is invalid/)
         end
       end
 
@@ -74,7 +74,7 @@ module Skadi::Integration
 
         [:visit_tracking, :verified_visits, :unique_by].each do |field|
           INJECTION_STRINGS.each do |value|
-            dashboard_with_chart(id: CHART_ID, field => value)
+            dashboard_with_chart(:id => CHART_ID, field => value)
 
             post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
@@ -92,7 +92,7 @@ module Skadi::Integration
 
         [:date_from, :date_to].each do |field|
           INJECTION_STRINGS.each do |value|
-            dashboard_with_chart(id: CHART_ID, field => value)
+            dashboard_with_chart(:id => CHART_ID, field => value)
 
             post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 
@@ -100,7 +100,7 @@ module Skadi::Integration
             assert_response :ok
 
             # This is a bit of a weird state, but the important thing is there are no SQL errors
-            assert_see /\A\[\{"id":"dataset-1","date":null,"split":null,"count":[01]\}\]\z/
+            assert_see(/\A\[\{"id":"dataset-1","date":null,"split":null,"count":[01]\}\]\z/)
           end
         end
       end
@@ -202,7 +202,7 @@ module Skadi::Integration
       test "dataset date field" do
         [:date_from, :date_to].each do |field|
           INJECTION_STRINGS.each do |value|
-            dashboard_with_dataset(type: "events", field => value)
+            dashboard_with_dataset(:type => "events", field => value)
 
             post skadi.dashboard_data_path, params: {chart_id: CHART_ID}, as: :json
 

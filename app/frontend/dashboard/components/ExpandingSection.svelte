@@ -1,6 +1,6 @@
 <script lang="ts">
 import Icon from "./Icon.svelte";
-import { Snippet, untrack } from "svelte";
+import { type Snippet, untrack } from "svelte";
 
 const {
   startOpen = false,
@@ -20,13 +20,18 @@ let open = $state(untrack(() => startOpen));
 export function close() {
   open = false;
 }
+
+const toggleOpen = () => {
+  open = !open;
+}
 </script>
 
 
 <div class="border-l-4 {wrapperClass} pl-4 py-0.5">
   <button
+    type="button"
     class="group w-full flex items-center unstyled cursor-pointer py-0.5"
-    onclick={() => (open = !open)}
+    onclick={toggleOpen}
   >
     {@render title(open)}
     <Icon name={open ? "chevron_up" : "chevron_down"} size={24} class="text-ice-800 group-hover:text-black ml-auto" />

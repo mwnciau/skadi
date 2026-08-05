@@ -83,7 +83,7 @@ module Skadi::Unit
         date_from: "2020-01-01",
         date_to: "2020-12-31",
 
-        name: "name"
+        name: "name",
       )
 
       assert build_dashboard([build_tab(children: [build_chart(datasets: [events_dataset])])]).validate!
@@ -199,7 +199,7 @@ module Skadi::Unit
     end
 
     test "validates chart visit_tracking" do
-      assert_chart_error('visit_tracking [] must be one of', visit_tracking: [])
+      assert_chart_error("visit_tracking [] must be one of", visit_tracking: [])
     end
 
     test "validates chart datasets" do
@@ -328,7 +328,7 @@ module Skadi::Unit
       dashboard.save!
 
       # Insert a duplicate dataset with the same SQL
-      dashboard.configuration[0]["children"][0]["datasets"] << build_dataset(type: "sql", "sql" => VALID_SQL)
+      dashboard.configuration[0]["children"][0]["datasets"] << build_dataset(:type => "sql", "sql" => VALID_SQL)
       dashboard.can_dangerously_use_sql = false
 
       assert dashboard.validate!

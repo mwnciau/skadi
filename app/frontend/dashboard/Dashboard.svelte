@@ -7,10 +7,10 @@ import Tabs from "./Tabs.svelte";
 import { saveDashboard } from "./helpers/requestHandler";
 import { untrack } from "svelte";
 
-const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]")!;
+const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]") as HTMLElement;
 
 let tabs = $state<DashboardTabConfig[]>(
-  JSON.parse(callingScript.dataset.dashboardConfig!),
+  JSON.parse(callingScript.dataset.dashboardConfig as string),
 );
 const canEdit = callingScript.dataset.canEdit === "true";
 const canDangerouslyUseSql = callingScript.dataset.canDangerouslyUseSql === "true";
@@ -154,7 +154,7 @@ $effect(() => {
     </div>
 
     {#if canEdit}
-      <button onclick={() => (editingEnabled = !editingEnabled)}>
+      <button type="button" onclick={() => (editingEnabled = !editingEnabled)}>
         {editingEnabled ? "Finish" : "Enable"} editing
       </button>
     {/if}
@@ -177,7 +177,7 @@ $effect(() => {
 
   {#if editingEnabled}
     <div class="flex justify-center items-center py-8 mt-8 border border-dashed border-black/20">
-      <button onclick={addChart}>Add chart</button>
+      <button type="button" onclick={addChart}>Add chart</button>
     </div>
   {/if}
 </main>

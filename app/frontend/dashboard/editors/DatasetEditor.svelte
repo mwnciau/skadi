@@ -73,13 +73,13 @@ const types = $derived([
 ]);
 const fields = $derived<Record<string,FieldSchema>>(databaseSchema[dataset.type]?.fields ?? {});
 const filterFields = $derived.by<Record<string,FieldSchema>>(() => {
-  if (dataset.type == "sql") {
+  if (dataset.type === "sql") {
     return {
       sql: {type: "sql"},
     };
   }
 
-  if (dataset.type == "percentage") {
+  if (dataset.type === "percentage") {
     return {
       numerator: {
         description: "The dataset you are using for your target, e.g. a specific page view or event.",
@@ -102,7 +102,7 @@ const filterFields = $derived.by<Record<string,FieldSchema>>(() => {
   return {};
 });
 let splitFields = $derived.by(() => {
-  if (dataset.type == "sql" || dataset.type == "percentage") {
+  if (dataset.type === "sql" || dataset.type === "percentage") {
     return [];
   }
 

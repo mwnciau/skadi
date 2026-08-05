@@ -1,9 +1,35 @@
-import { ChartConfig, ChartDataset, Dataset, ResponseData } from "../../types";
+import type { ChartConfig, ChartDataset, Dataset, ResponseData } from "../../types";
 
-const months: Record<string, string> = {"01": "January", "02": "February", "03": "March", "04": "April", "05": "May", "06": "June", "07": "July", "08": "August", "09": "September", "10": "October", "11": "November", "12": "December"};
-const shortMonths: Record<string, string> = {"01": "Jan", "02": "Feb", "03": "Mar", "04": "Apr", "05": "May", "06": "Jun", "07": "Jul", "08": "Aug", "09": "Sep", "10": "Oct", "11": "Nov", "12": "Dec"};
+const months: Record<string, string> = {
+  "01": "January",
+  "02": "February",
+  "03": "March",
+  "04": "April",
+  "05": "May",
+  "06": "June",
+  "07": "July",
+  "08": "August",
+  "09": "September",
+  "10": "October",
+  "11": "November",
+  "12": "December",
+};
+const shortMonths: Record<string, string> = {
+  "01": "Jan",
+  "02": "Feb",
+  "03": "Mar",
+  "04": "Apr",
+  "05": "May",
+  "06": "Jun",
+  "07": "Jul",
+  "08": "Aug",
+  "09": "Sep",
+  "10": "Oct",
+  "11": "Nov",
+  "12": "Dec",
+};
 
-export const formatDates = (chartConfig: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
+export const formatDates = (chartConfig: ChartConfig, data: Record<string, { x: string; y: number }[]>) => {
   for (const dataset of chartConfig.datasets) {
     if (!chartConfig.time_series) {
       continue;
@@ -12,19 +38,18 @@ export const formatDates = (chartConfig: ChartConfig, data: Record<string, {x: s
     let dateFn: (dateParts: string[]) => string;
     if (chartConfig.time_series === "monthly") {
       dateFn = (dateParts: string[]) => {
-        return `${months[dateParts[1]]} ${dateParts[0]}`
-      }
-    }
-    else if (chartConfig.time_series === "weekly") {
+        return `${months[dateParts[1]]} ${dateParts[0]}`;
+      };
+    } else if (chartConfig.time_series === "weekly") {
       dateFn = (dateParts: string[]) => {
-        return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`
-      }
+        return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
+      };
     }
     // time_series = "daily"
     else {
       dateFn = (dateParts: string[]) => {
-        return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`
-      }
+        return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
+      };
     }
 
     // Loop through the returned data to find rows for this dataset
@@ -40,43 +65,41 @@ export const formatDates = (chartConfig: ChartConfig, data: Record<string, {x: s
       }
     }
   }
-}
+};
 
 export const createChartData = (chart: ChartConfig, responseData: ResponseData): ChartDataset[] => {
   return chart.datasets
     .filter((dataset: Dataset) => dataset.visible !== false)
     .flatMap((dataset: Dataset) => {
-      let datasetIds: Record<string, string> = {}
+      const datasetIds: Record<string, string> = {};
 
-      const splitDatasetIds = Object.keys(responseData)
-        .filter((id) => id.startsWith(dataset.id))
+      const splitDatasetIds = Object.keys(responseData).filter((id) => id.startsWith(dataset.id));
 
-      for (let splitDatasetId of splitDatasetIds) {
+      for (const splitDatasetId of splitDatasetIds) {
         const split = splitDatasetId.replace(/^[^ ]+ ?/, "");
 
-        datasetIds[split] = splitDatasetId
+        datasetIds[split] = splitDatasetId;
       }
 
       return Object.entries(datasetIds).map(([split, datasetId]) => {
         let label = dataset.label;
         if (split) {
           const splitParts = split.split("|~|");
-          const numSplits = Math.max(splitParts.length, (dataset as {split_by?: string[]}).split_by?.length ?? 0);
+          const numSplits = Math.max(splitParts.length, (dataset as { split_by?: string[] }).split_by?.length ?? 0);
 
           for (let i = 0; i < numSplits; i++) {
             const matcher = new RegExp(`%${i + 1}(?!\\d)(?:\\(([^)]+)\\))?`, "g");
 
-            let match = label.match(matcher);
+            const match = label.match(matcher);
             if (match) {
               label = label.replace(matcher, (match, defaultReplacement) => {
                 console.log(match, defaultReplacement);
                 return splitParts[i] ? splitParts[i] : (defaultReplacement ?? "n/a");
-
               });
             } else {
               const splitPart = splitParts[i] ? splitParts[i] : "n/a";
 
-              label = `${label}, ${splitPart}`
+              label = `${label}, ${splitPart}`;
             }
           }
         }
@@ -90,9 +113,9 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
         };
       });
     });
-}
+};
 
-export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, {x: string, y: number}[]>) => {
+export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, { x: string; y: number }[]>) => {
   for (const dataset of chart.datasets) {
     if (dataset.type === "percentage") {
       const numerator = data[dataset.numerator as string];
@@ -112,13 +135,13 @@ export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, 
         const yValue = denominator[0].y !== 0 ? numerator[0].y / denominator[0].y : 0;
 
         // If there is no time-series, there is only one item per dataset
-        data[dataset.id] = [{x: dataset.label, y: Math.round(yValue * 1000) / 10}]
+        data[dataset.id] = [{ x: dataset.label, y: Math.round(yValue * 1000) / 10 }];
       }
     }
   }
-}
+};
 
-const populatePercentageData = (numerator: {x: string, y: number}[], denominator: {x: string, y: number}[]) => {
+const populatePercentageData = (numerator: { x: string; y: number }[], denominator: { x: string; y: number }[]) => {
   let n = 0;
   let d = 0;
   const percentageData = [];
@@ -150,15 +173,15 @@ const populatePercentageData = (numerator: {x: string, y: number}[], denominator
   }
 
   return percentageData;
-}
+};
 
-export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string, y: number | null}[]>) => {
+export const fillDataGaps = (chart: ChartConfig, data: Record<string, { x: string; y: number | null }[]>) => {
   if (!chart.time_series) {
     // There will be no gaps if there is no time series
     return;
   }
 
-  let uniqueXValues = new Set<string>();
+  const uniqueXValues = new Set<string>();
 
   for (const dataPoints of Object.values(data)) {
     for (const dataPoint of dataPoints) {
@@ -172,11 +195,11 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, {x: string
   for (const dataset of Object.keys(data)) {
     for (let index = 0; index < xValues.length; index++) {
       if (!data[dataset][index] || data[dataset][index].x > xValues[index]) {
-        data[dataset].splice(index, 0, {x: xValues[index], y: null});
+        data[dataset].splice(index, 0, { x: xValues[index], y: null });
       }
     }
   }
-}
+};
 
 const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
   if (!chart.time_series) {
@@ -184,23 +207,21 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
   }
 
   for (let i = 0; i < xValues.length - 1; i++) {
-    let current = xValues[i];
-    let currentDate = new Date(current);
+    const current = xValues[i];
+    const currentDate = new Date(current);
 
     if (chart.time_series === "daily") {
       currentDate.setUTCDate(currentDate.getUTCDate() + 1);
-    }
-    else if (chart.time_series === "weekly") {
+    } else if (chart.time_series === "weekly") {
       currentDate.setUTCDate(currentDate.getUTCDate() + 7);
-    }
-    else if (chart.time_series === "monthly") {
+    } else if (chart.time_series === "monthly") {
       currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
     }
 
-    let next = currentDate.toISOString().split("T", 1)[0];
+    const next = currentDate.toISOString().split("T", 1)[0];
 
     if (next !== xValues[i + 1] && next < xValues[xValues.length - 1]) {
       xValues.splice(i + 1, 0, next);
     }
   }
-}
+};

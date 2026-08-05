@@ -83,7 +83,7 @@ module Skadi::Integration
         results = results_for_chart(daily)
         assert_equal 10, results.length
         DATES.each_with_index do |date, index|
-          assert_equal({"id" => "dataset-1", "date" => date[0,10], "split" => nil, "count" => 1}, results[index])
+          assert_equal({"id" => "dataset-1", "date" => date[0, 10], "split" => nil, "count" => 1}, results[index])
         end
 
         results = results_for_chart(weekly)
@@ -325,7 +325,7 @@ module Skadi::Integration
         dataset["sql"] = "SELECT '2020-01-11' as date, NULL as split, 1 AS count"
         assert_equal [{"id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 1}], results_for_chart(chart)
 
-        dataset["sql"] =  "SELECT '2020-01-06' as date, NULL as split, 5 AS count UNION ALL SELECT '2020-01-09' as date, NULL as split, 2 AS count"
+        dataset["sql"] = "SELECT '2020-01-06' as date, NULL as split, 5 AS count UNION ALL SELECT '2020-01-09' as date, NULL as split, 2 AS count"
         assert_equal [{"id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 7}], results_for_chart(chart)
 
         dataset["sql"] = "SELECT '2020-01-11' as date, NULL as split, 1 AS count UNION ALL SELECT '2020-01-11' as date, 'one' as split, 2 AS count"

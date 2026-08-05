@@ -1,19 +1,19 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { Chart } from "chart.js/auto";
-import type { ChartConfig, ChartData, ChartDataset, Dataset } from "../../types.d.ts";
+import type { ChartConfig, ChartData, ChartDataset } from "../../types.d.ts";
 
 let { chartConfig, data } : {
   chartConfig: ChartConfig;
   data: ChartData;
 } = $props();
 
-let canvas = $state<HTMLCanvasElement>();
+let canvas = $state<HTMLCanvasElement>() as HTMLCanvasElement;
 let chart: Chart<"line", {x: string, y: number}[], unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;
-  chart = buildChart(canvas!);
+  chart = buildChart(canvas);
   updateChartData();
   updateChartConfig();
 
@@ -23,7 +23,9 @@ onMount(() => {
 });
 
 const updateChartConfig = () => {
-  chart!.options!.plugins!.title!.text = chartConfig.title;
+  if (chart.options.plugins?.title) {
+    chart.options.plugins.title.text = chartConfig.title;
+  }
 }
 
 $effect(() => {
@@ -58,8 +60,12 @@ const updateChartData = () => {
     };
   });
 
-  chart!.options!.scales!.y!.display = leftAxis;
-  chart!.options!.scales!.y1!.display = rightAxis;
+  if (chart.options.scales?.y) {
+    chart.options.scales.y.display = leftAxis;
+  }
+  if (chart.options.scales?.y1) {
+    chart.options.scales.y1.display = rightAxis;
+  }
 }
 
 $effect(() => {

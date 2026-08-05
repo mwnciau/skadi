@@ -9,7 +9,7 @@ import { untrack } from "svelte";
 let { canDangerouslyUseSql, chartConfig, reloadChartData, onClose, onSave }: {
   canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
-  reloadChartData: (chartConfig?: ChartConfig) => Promise<any>;
+  reloadChartData: (chartConfig?: ChartConfig) => Promise<void>;
   onClose: () => void;
   onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
@@ -88,7 +88,6 @@ const deleteDataset = (index: number) => {
 
 const duplicateDataset = (index: number) => {
   const newDataset = $state.snapshot(localChartConfig.datasets[index]);
-  const oldDatasetId = newDataset.id;
   newDataset.id = crypto.randomUUID();
   datasetIdToOpen = newDataset.id;
   newDataset.label = `Copy of ${newDataset.label}`

@@ -41,7 +41,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
+        post skadi.dashboard_data_path, params: {chart_id:}, as: :json
 
         assert_response :ok
       end
@@ -52,7 +52,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
+        post skadi.dashboard_data_path, params: {chart_id:}, as: :json
 
         assert_response :forbidden
       end
@@ -63,7 +63,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
+        post skadi.dashboard_data_path, params: {chart_id:}, as: :json
 
         assert_response :forbidden
       end

@@ -119,9 +119,6 @@
     content: attr(placeholder);
   }
 
-  header {
-  }
-
   nav {
     @apply
       flex items-start gap-4
@@ -146,9 +143,6 @@
     &.selected,
     &:hover {
       @apply bg-ice-100;
-    }
-
-    &:not(.selected) {
     }
   }
 

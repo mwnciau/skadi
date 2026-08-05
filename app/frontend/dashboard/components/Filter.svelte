@@ -116,6 +116,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
   {/if}
 {/snippet}
 
+<!-- biome-ignore lint/a11y/noLabelWithoutControl: the control is added by the snippets -->
 <label>
   {@render children()}
 

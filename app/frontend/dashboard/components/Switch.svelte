@@ -19,7 +19,8 @@ const handleCheckboxChange = (e: Event) => {
 
 <input type="checkbox" class="sr-only" checked={value} onchange={handleCheckboxChange} />
 <button
-  aria-hidden="true"
+  type="button"
+  aria-label="toggle checkbox"
   class="
     unstyled
     my-1

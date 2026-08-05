@@ -8,12 +8,12 @@ let { chartConfig, data } : {
   data: ChartData;
 } = $props();
 
-let canvas = $state<HTMLCanvasElement>();
+let canvas = $state<HTMLCanvasElement>() as HTMLCanvasElement;
 let chart: Chart<"bar", {x: string, y: number}[], unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;
-  chart = buildChart(canvas!);
+  chart = buildChart(canvas);
   updateChartData();
   updateChartConfig();
 
@@ -23,10 +23,16 @@ onMount(() => {
 });
 
 const updateChartConfig = () => {
-  chart!.options!.plugins!.title!.text = chartConfig.title;
-  chart!.options!.plugins!.tooltip!.mode = chartConfig.time_series ? "index" : "x";
-  chart!.options!.plugins!.tooltip!.yAlign = chartConfig.time_series ? undefined : "bottom";
-  chart!.options!.hover!.mode = chartConfig.time_series ? "index" : "x";
+  if (chart.options.plugins?.title) {
+    chart.options.plugins.title.text = chartConfig.title;
+  }
+  if (chart.options.plugins?.tooltip) {
+    chart.options.plugins.tooltip.mode = chartConfig.time_series ? "index" : "x";
+    chart.options.plugins.tooltip.yAlign = chartConfig.time_series ? undefined : "bottom";
+  }
+  if (chart.options.hover) {
+    chart.options.hover.mode = chartConfig.time_series ? "index" : "x";
+  }
 }
 
 $effect(() => {
@@ -62,9 +68,15 @@ const updateChartData = () => {
     };
   });
 
-  chart!.options!.plugins!.legend!.display = leftAxis && rightAxis;
-  chart!.options!.scales!.y!.display = leftAxis;
-  chart!.options!.scales!.y1!.display = rightAxis;
+  if (chart.options.plugins?.legend) {
+    chart.options.plugins.legend.display = leftAxis && rightAxis;
+  }
+  if (chart.options.scales?.y) {
+    chart.options.scales.y.display = leftAxis;
+  }
+  if (chart.options.scales?.y1) {
+    chart.options.scales.y1.display = rightAxis;
+  }
 }
 
 $effect(() => {
@@ -111,8 +123,8 @@ $effect(() => {
           mode: "index",
           intersect: false,
         },
-        onHover: (event, activeElements, chart) => {
-          let hoveredPosition;
+        onHover: (_event, activeElements, chart) => {
+          let hoveredPosition : number | null;
           if (activeElements.length) {
             hoveredPosition = (activeElements[0].element.x + activeElements[activeElements.length - 1].element.x) / 2
           }
@@ -131,7 +143,7 @@ $effect(() => {
       },
       plugins: [{
         id: 'highlightXAxisBand',
-        beforeDatasetsDraw(chart, args, options) {
+        beforeDatasetsDraw(chart, _args, _options) {
           const { ctx, hoveredPosition, scales: { x, y } } = chart;
 
           if (!hoveredPosition) {

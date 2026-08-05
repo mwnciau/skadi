@@ -70,7 +70,7 @@ puts "Seeding Skadi database (#{Rails.env}):"
   view = nil
 
   unless i % 19 == 0
-    view = create_view(visit, view, controller: "home", action: "show", verb: "GET", path: "/", verified:, time: start_time, version: i % 37 ? "A" : "B")
+    view = create_view(visit, view, controller: "home", action: "show", verb: "GET", path: "/", verified:, time: start_time, version: (i % 37) ? "A" : "B")
 
     create_event(visit, view, name: "clicked banner", time: start_time) if i % 23 > 19
   end

@@ -34,11 +34,13 @@ const paginationPages = $derived.by(() => {
         <p class="text-gray-500 leading-none">&hellip;</p>
       {:else if p === page}
         <button
+          type="button"
           class="ghost bg-night-700 text-white"
           disabled
         >{p}</button>
       {:else}
         <button
+          type="button"
           class="ghost"
           onclick={() => setPage(p as number)}
         >{p}</button>

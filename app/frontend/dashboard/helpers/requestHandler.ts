@@ -1,12 +1,8 @@
-import { ChartConfig, DashboardConfig, TabFilters } from "../../types";
+import type { ChartConfig, DashboardConfig, TabFilters } from "../../types";
 
-const baseUrl = window.location.toString().endsWith("/")
-    ? window.location
-    : window.location.toString() + "/";
-
-const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]")!;
-const fetchDataPath = callingScript.dataset.fetchDataPath!;
-const updateDashboardPath = callingScript.dataset.updateDashboardPath!;
+const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]");
+const fetchDataPath = callingScript?.dataset?.fetchDataPath as string;
+const updateDashboardPath = callingScript?.dataset?.updateDashboardPath as string;
 
 const csrfParam = (document.querySelector("meta[name=csrf-param]") as HTMLMetaElement)?.content;
 const csrfToken = (document.querySelector("meta[name=csrf-token]") as HTMLMetaElement)?.content;
@@ -21,18 +17,18 @@ const handleResponseError = (response: Response) => {
 
     return body;
   });
-}
+};
 
 export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartConfig: ChartConfig | null) => {
-  let queryVars: Record<string, unknown> = {
-      [csrfParam]: csrfToken,
+  const queryVars: Record<string, unknown> = {
+    [csrfParam]: csrfToken,
   };
 
   if (tabFilters.date_from) {
-    queryVars.date_from = tabFilters.date_from
+    queryVars.date_from = tabFilters.date_from;
   }
   if (tabFilters.date_to) {
-    queryVars.date_to = tabFilters.date_to
+    queryVars.date_to = tabFilters.date_to;
   }
   if (chartConfig) {
     queryVars.configuration = chartConfig;
@@ -46,9 +42,8 @@ export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartCon
       "Content-Type": "application/json",
     },
     body: JSON.stringify(queryVars),
-  })
-    .then(handleResponseError);
-}
+  }).then(handleResponseError);
+};
 
 export const saveDashboard = (dashboardConfig: DashboardConfig) => {
   return fetch(updateDashboardPath, {
@@ -60,6 +55,5 @@ export const saveDashboard = (dashboardConfig: DashboardConfig) => {
       [csrfParam]: csrfToken,
       configuration: dashboardConfig,
     }),
-  })
-    .then(handleResponseError);
+  }).then(handleResponseError);
 };

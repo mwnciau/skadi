@@ -1,5 +1,5 @@
-import { DatabaseSchema } from "../../types";
+import type { DatabaseSchema } from "../../types";
 
 export const databaseSchema: DatabaseSchema = JSON.parse(
-  document.querySelector<HTMLElement>("[data-dashboard-config]")!.dataset.datasetSchema!,
+  document.querySelector<HTMLElement>("[data-dashboard-config]")?.dataset?.datasetSchema as string,
 );
