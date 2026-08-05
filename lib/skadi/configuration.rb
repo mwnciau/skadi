@@ -12,7 +12,7 @@ module Skadi
     self.validators = {}
 
     def self.validates(attribute, expecting, default:, &block)
-      validators[attribute] = {expecting: expecting, default: default, validator: block}
+      validators[attribute] = { expecting: expecting, default: default, validator: block }
     end
 
     # When enabled, users will automatically be tracked by their anonymity set.
@@ -99,7 +99,7 @@ module Skadi
     # An array of query parameter keys to whitelist for storage in URLs.
     # @return [Array<Symbol>]
     attr_accessor :query_param_whitelist
-    validates(:query_param_whitelist, "Array<Symbol>", default: []) { |it| it.is_a?(Array) && it.all? { |key| key.is_a?(Symbol) } }
+    validates(:query_param_whitelist, "Array<Symbol>", default: []) { |it| it.is_a?(Array) && it.all?(Symbol) }
 
     # Maximum length of the referrer and exit page URLs. Defaults to 2048.
     # @return [Integer]
@@ -113,7 +113,8 @@ module Skadi
     validates(:db_connects_to, "Hash compatible with ActiveRecord::ConnectionHandling#connects_to", default: nil) do |it|
       next true if it.nil?
 
-      it.is_a?(Hash) && !it.empty? && it.keys.all? { |key| [:database, :shards].include?(key) }
+      allowed_keys = [ :database, :shards ].freeze
+      it.is_a?(Hash) && !it.empty? && it.keys.all? { |key| allowed_keys.include?(key) }
     end
 
     # Whether to store the domain when tracking views. Can be useful when using multiple domains or subdomains. Defaults to false.

@@ -11,10 +11,10 @@ module Skadi::Unit
     end
 
     test "redact_and_insert strips whitespace from name" do
-      Skadi::Event.redact_and_insert([{
+      Skadi::Event.redact_and_insert([ {
         name: "  Log in  ",
         properties: {},
-      }], view: @view, visit: @visit)
+      } ], view: @view, visit: @visit)
 
       event = Skadi::Event.first!
       assert_equal "Log in", event.name
@@ -23,7 +23,7 @@ module Skadi::Unit
     test "redact_and_insert truncates name to 255 characters" do
       long = "a" * 300
 
-      Skadi::Event.redact_and_insert([{name: long, properties: {}}], view: @view, visit: @visit)
+      Skadi::Event.redact_and_insert([ { name: long, properties: {} } ], view: @view, visit: @visit)
 
       event = Skadi::Event.first!
       assert_equal 255, event.name.length
@@ -31,7 +31,7 @@ module Skadi::Unit
 
     test "redact_and_insert creates a row linked to the visit and view" do
       Skadi::Event.redact_and_insert(
-        [{name: "click", properties: {target: "button"}}],
+        [ { name: "click", properties: { target: "button" } } ],
         visit: @visit,
         view: @view,
       )
@@ -40,7 +40,7 @@ module Skadi::Unit
 
       event = Skadi::Event.first!
       assert_equal "click", event.name
-      assert_equal({"target" => "button"}, event.properties)
+      assert_equal({ "target" => "button" }, event.properties)
       assert_equal @visit.id, event.visit_id
       assert_equal @view.id, event.view_id
       assert_in_delta Time.current.to_f, event.created_at.to_f, 5
@@ -48,7 +48,7 @@ module Skadi::Unit
 
     test "redact_and_insert with a nil visit still records the event against the view" do
       Skadi::Event.redact_and_insert(
-        [{name: "click", properties: {}}],
+        [ { name: "click", properties: {} } ],
         visit: nil,
         view: @view,
       )
@@ -60,7 +60,7 @@ module Skadi::Unit
 
     test "redact_and_insert redacts sensitive events" do
       Skadi::Event.redact_and_insert(
-        [{name: "password_reset", properties: {}, sensitive: true}],
+        [ { name: "password_reset", properties: {}, sensitive: true } ],
         visit: @visit,
         view: @view,
       )
@@ -76,7 +76,7 @@ module Skadi::Unit
       # because there's no `sensitive` column.
       assert_nothing_raised do
         Skadi::Event.redact_and_insert(
-          [{name: "click", properties: {}, sensitive: false}],
+          [ { name: "click", properties: {}, sensitive: false } ],
           visit: @visit,
           view: @view,
         )
@@ -88,8 +88,8 @@ module Skadi::Unit
     test "redact_and_insert inserts multiple events in a single call" do
       Skadi::Event.redact_and_insert(
         [
-          {name: "click", properties: {n: 1}},
-          {name: "scroll", properties: {n: 2}},
+          { name: "click", properties: { n: 1 } },
+          { name: "scroll", properties: { n: 2 } },
         ],
         visit: @visit,
         view: @view,
@@ -100,16 +100,16 @@ module Skadi::Unit
       event_2 = Skadi::Event.last!
 
       assert_equal "click", event_1.name
-      assert_equal({"n" => 1}, event_1.properties)
+      assert_equal({ "n" => 1 }, event_1.properties)
       assert_equal "scroll", event_2.name
-      assert_equal({"n" => 2}, event_2.properties)
+      assert_equal({ "n" => 2 }, event_2.properties)
     end
 
     test "redact_and_insert handles mixed sensitivity in one call" do
       Skadi::Event.redact_and_insert(
         [
-          {name: "click", properties: {}},
-          {name: "password_reset", properties: {}, sensitive: true},
+          { name: "click", properties: {} },
+          { name: "password_reset", properties: {}, sensitive: true },
         ],
         visit: @visit,
         view: @view,
@@ -133,8 +133,8 @@ module Skadi::Unit
       # but in previous versions of Rails this silently failed to insert all the data.
       Skadi::Event.redact_and_insert(
         [
-          {name: "password_reset", properties: {}, sensitive: true},
-          {name: "click", properties: {}},
+          { name: "password_reset", properties: {}, sensitive: true },
+          { name: "click", properties: {} },
         ],
         visit: @visit,
         view: @view,

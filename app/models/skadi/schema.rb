@@ -2,7 +2,7 @@ module Skadi
   class Schema
     class << self
       # Extract out the most common field config into a const
-      FILTER_AND_SPLIT = {filter: true, split: true}
+      FILTER_AND_SPLIT = { filter: true, split: true }
       private_constant :FILTER_AND_SPLIT
 
       DATE_DESCRIPTION = "These dates are combined with the dashboard and chart's dates to further limit the date range returned by the dataset."
@@ -34,7 +34,7 @@ module Skadi
               date: {
                 type: :date,
                 filter: true,
-                sql: 'skadi_visits.created_at',
+                sql: "skadi_visits.created_at",
                 description: DATE_DESCRIPTION,
               },
               landing_page: FILTER_AND_SPLIT,
@@ -56,7 +56,7 @@ module Skadi
               date: {
                 type: :date,
                 filter: true,
-                sql: 'skadi_views.created_at',
+                sql: "skadi_views.created_at",
                 description: DATE_DESCRIPTION,
               },
               verified: {
@@ -87,7 +87,7 @@ module Skadi
               date: {
                 type: :date,
                 filter: true,
-                sql: 'skadi_events.created_at',
+                sql: "skadi_events.created_at",
                 description: DATE_DESCRIPTION,
               },
               name: FILTER_AND_SPLIT,
@@ -100,7 +100,7 @@ module Skadi
               date: {
                 type: :date,
                 filter: true,
-                sql: 'skadi_demographics.recorded_on',
+                sql: "skadi_demographics.recorded_on",
                 description: DATE_DESCRIPTION,
               },
               uri: FILTER_AND_SPLIT,

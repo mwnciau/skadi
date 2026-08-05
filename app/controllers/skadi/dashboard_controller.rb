@@ -12,7 +12,8 @@ module Skadi
         dashboard_configuration: @dashboard.configuration,
         dataset_schema: Skadi::Schema.frontend_schema,
         can_edit: can_edit,
-        can_dangerously_use_sql: can_dangerously_use_sql}
+        can_dangerously_use_sql: can_dangerously_use_sql,
+      }
     end
 
     def data
@@ -25,15 +26,15 @@ module Skadi
       end
 
       unless params[:chart_id].present?
-        return render json: {error: "The chart_id parameter must be specified"}, status: :unprocessable_content
+        return render json: { error: "The chart_id parameter must be specified" }, status: :unprocessable_content
       end
 
       return render json: @dashboard.chart_data(params[:chart_id], query_filters.to_h)
     rescue ActiveRecord::StatementInvalid => e
       message = can_dangerously_use_sql ? e.message : "Something went wrong fetching the data. Please contact a site admin."
-      render json: {error: message}, status: :unprocessable_content
+      render json: { error: message }, status: :unprocessable_content
     rescue Skadi::Dashboard::Error => e
-      render json: {error: e.message}, status: :unprocessable_content
+      render json: { error: e.message }, status: :unprocessable_content
     end
 
     def update
@@ -45,7 +46,7 @@ module Skadi
       if @dashboard.save
         head :ok
       else
-        render json: {error: "Dashboard validation failed. #{@dashboard.errors.full_messages.join("\n")}"}, status: :unprocessable_content
+        render json: { error: "Dashboard validation failed. #{@dashboard.errors.full_messages.join("\n")}" }, status: :unprocessable_content
       end
     end
 
@@ -58,7 +59,7 @@ module Skadi
       @dashboard.configuration[0]["children"] << chart_configuration
 
       unless @dashboard.valid?
-        return render json: {error: "Invalid chart configuration:\n#{@dashboard.errors.full_messages.join("\n")}"}, status: :unprocessable_content
+        return render json: { error: "Invalid chart configuration:\n#{@dashboard.errors.full_messages.join("\n")}" }, status: :unprocessable_content
       end
 
       DashboardQuery.chart_query(chart_configuration, query_filters)

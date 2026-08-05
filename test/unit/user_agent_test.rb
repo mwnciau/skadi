@@ -132,8 +132,8 @@ module Skadi::Unit
     end
 
     test "long user agent are truncated" do
-      valid = "a" * 2042 + " AVG/1"
-      too_long = "a" * 2048 + " AVG/1"
+      valid = ("a" * 2042) + " AVG/1"
+      too_long = ("a" * 2048) + " AVG/1"
 
       assert_equal "AVG Secure Browser", Skadi::UserAgent.new(valid).browser
       assert_equal "Unknown", Skadi::UserAgent.new(too_long).browser

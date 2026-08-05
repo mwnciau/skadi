@@ -30,12 +30,12 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
     add_index :skadi_visits, :visit_token, unique: true
     add_index :skadi_visits, :created_at
-    add_index :skadi_visits, [:tracking_token, :created_at]
-    add_index :skadi_visits, [:user_id, :created_at]
+    add_index :skadi_visits, [ :tracking_token, :created_at ]
+    add_index :skadi_visits, [ :user_id, :created_at ]
 
     create_table :skadi_views do |t|
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :visit, foreign_key: {to_table: :skadi_visits, on_delete: :cascade}, index: false
+      t.references :visit, foreign_key: { to_table: :skadi_visits, on_delete: :cascade }, index: false
 
       # A random uuid identifying the view. This will be sent to the front-end to allow updates to the view metrics without exposing details about the site analytics to the user.
       t.string :view_token, limit: 36, null: false
@@ -60,15 +60,15 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
 
     add_index :skadi_views, :view_token, unique: true
     add_index :skadi_views, :created_at
-    add_index :skadi_views, [:path, :created_at]
-    add_index :skadi_views, [:visit_id, :created_at]
+    add_index :skadi_views, [ :path, :created_at ]
+    add_index :skadi_views, [ :visit_id, :created_at ]
 
     create_table :skadi_events do |t|
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :visit, foreign_key: {to_table: :skadi_visits, on_delete: :cascade}, index: false
+      t.references :visit, foreign_key: { to_table: :skadi_visits, on_delete: :cascade }, index: false
 
       # Intentionally left nullable as not all requests will have a visit in the case a user has requested no tracking.
-      t.references :view, foreign_key: {to_table: :skadi_views, on_delete: :cascade}, index: false
+      t.references :view, foreign_key: { to_table: :skadi_views, on_delete: :cascade }, index: false
 
       t.string :name, null: false
       t.json :properties
@@ -77,9 +77,9 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
     end
 
     add_index :skadi_events, :created_at
-    add_index :skadi_events, [:name, :created_at]
-    add_index :skadi_events, [:view_id, :created_at]
-    add_index :skadi_events, [:visit_id, :created_at]
+    add_index :skadi_events, [ :name, :created_at ]
+    add_index :skadi_events, [ :view_id, :created_at ]
+    add_index :skadi_events, [ :visit_id, :created_at ]
 
     # Store demographic data separately so that it cannot be used to identify users
     # E.g. screen size, language, timezone, pointer type (mouse, touch), can-hover, prefers reduced motion, prefers contrast, forced colours, prefers dark mode
@@ -91,7 +91,7 @@ class InstallSkadi < ActiveRecord::Migration[8.1]
       t.integer :count, null: false, default: 0
     end
 
-    add_index :skadi_demographics, [:uri, :name, :value, :recorded_on], unique: true
+    add_index :skadi_demographics, [ :uri, :name, :value, :recorded_on ], unique: true
 
     create_table :skadi_dashboards do |t|
       t.string :name, null: false

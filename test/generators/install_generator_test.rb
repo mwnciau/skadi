@@ -24,7 +24,7 @@ module Skadi
 
       def test_raises_on_invalid_db_engine
         assert_raises(Skadi::Generators::InstallGenerator::Error) do
-          run_generator ["--db-engine=oracle"]
+          run_generator [ "--db-engine=oracle" ]
         end
       end
     end

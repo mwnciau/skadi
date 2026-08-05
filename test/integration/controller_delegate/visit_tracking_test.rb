@@ -19,14 +19,14 @@ module Skadi::Integration
       end
 
       test "landing page is tracked" do
-        get tracked_action_path, headers: {"HTTP_REFERER" => "https://example.com/referrer"}
+        get tracked_action_path, headers: { "HTTP_REFERER" => "https://example.com/referrer" }
 
         visit = Skadi::Visit.first!
         assert_equal "/track", visit.landing_page
       end
 
       test "utm parameters are tracked" do
-        get tracked_action_path, params: {utm_source: "source", utm_medium: "medium", utm_term: "term", utm_content: "content", utm_campaign: "campaign"}
+        get tracked_action_path, params: { utm_source: "source", utm_medium: "medium", utm_term: "term", utm_content: "content", utm_campaign: "campaign" }
 
         visit = Skadi::Visit.first!
         assert_equal "source", visit.utm_source

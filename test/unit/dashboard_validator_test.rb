@@ -26,7 +26,7 @@ module Skadi::Unit
         date_from: "2020-01-01",
         date_to: "2020-12-31",
 
-        split_by: ["referrer_domain"],
+        split_by: [ "referrer_domain" ],
 
         landing_page: "landing_page",
         referrer_domain: "referrer_domain",
@@ -38,13 +38,13 @@ module Skadi::Unit
         utm_campaign: "utm_campaign",
       )
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ views_dataset ]) ]) ]).validate!
     end
 
     test "valid minimal visits dataset" do
       visits_dataset = build_dataset(type: "visits")
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [visits_dataset])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ visits_dataset ]) ]) ]).validate!
     end
 
     test "valid views dataset" do
@@ -65,13 +65,13 @@ module Skadi::Unit
         version: "version",
       )
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ views_dataset ]) ]) ]).validate!
     end
 
     test "valid minimal views dataset" do
       views_dataset = build_dataset(type: "views")
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ views_dataset ]) ]) ]).validate!
     end
 
     test "valid events dataset" do
@@ -86,13 +86,13 @@ module Skadi::Unit
         name: "name",
       )
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [events_dataset])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ events_dataset ]) ]) ]).validate!
     end
 
     test "valid minimal events dataset" do
       views_dataset = build_dataset(type: "events")
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [views_dataset])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ views_dataset ]) ]) ]).validate!
     end
 
     test "valid percentage dataset" do
@@ -108,7 +108,7 @@ module Skadi::Unit
         denominator: "id2",
       )
 
-      assert build_dashboard([build_tab(children: [build_chart(datasets: [dataset_1, percentage_dataset, dataset_2])])]).validate!
+      assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ dataset_1, percentage_dataset, dataset_2 ]) ]) ]).validate!
     end
 
     test "valid sql dataset" do
@@ -119,7 +119,7 @@ module Skadi::Unit
 
         sql: VALID_SQL,
       )
-      dashboard = build_dashboard([build_tab(children: [build_chart(datasets: [sql_dataset])])])
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(datasets: [ sql_dataset ]) ]) ])
       dashboard.can_dangerously_use_sql = true
 
       assert dashboard.validate!
@@ -134,7 +134,7 @@ module Skadi::Unit
     end
 
     test "validates tab is a hash" do
-      assert_configuration_error("configuration[0] must be a hash", ["invalid"])
+      assert_configuration_error("configuration[0] must be a hash", [ "invalid" ])
     end
 
     test "validates tab id" do
@@ -170,7 +170,7 @@ module Skadi::Unit
     ##############################
 
     test "validates chart is a hash" do
-      assert_tab_error("children[0] must be a hash", children: [nil])
+      assert_tab_error("children[0] must be a hash", children: [ nil ])
     end
 
     CHART_FIELDS = {
@@ -215,7 +215,7 @@ module Skadi::Unit
     ##############################
 
     test "validates dataset is a hash" do
-      assert_chart_error("datasets[0] must be a hash", datasets: [0])
+      assert_chart_error("datasets[0] must be a hash", datasets: [ 0 ])
     end
 
     COMMON_DATASET_FIELDS = {
@@ -243,29 +243,29 @@ module Skadi::Unit
 
     test "validates dataset split_by" do
       assert_dataset_error("split_by must be an array", split_by: "pie")
-      assert_dataset_error('split_by[0] "pie" must be one of', split_by: ["pie"])
+      assert_dataset_error('split_by[0] "pie" must be one of', split_by: [ "pie" ])
     end
 
     test "validates dataset string" do
-      [1, 3.14, true, {}, [], false].each do |value|
+      [ 1, 3.14, true, {}, [], false ].each do |value|
         assert_dataset_error("utm_source must be a string", utm_source: value)
       end
     end
 
     test "validates dataset string with options" do
-      [1, 3.14, "true", {}, [], false].each do |value|
+      [ 1, 3.14, "true", {}, [], false ].each do |value|
         assert_dataset_error("verb #{value.inspect} must be one of", type: "views", verb: value)
       end
     end
 
     test "validates dataset boolean" do
-      [1, 3.14, "true", {}, [], "false"].each do |value|
+      [ 1, 3.14, "true", {}, [], "false" ].each do |value|
         assert_dataset_error("verified must be a boolean", type: "views", verified: value)
       end
     end
 
     test "validates dataset date" do
-      [1, 3.14, "true", {}, [], false, "9999-99-99"].each do |value|
+      [ 1, 3.14, "true", {}, [], false, "9999-99-99" ].each do |value|
         assert_dataset_error("date_from must be a date", date_from: value)
         assert_dataset_error("date_to must be a date", date_to: value)
       end
@@ -276,9 +276,9 @@ module Skadi::Unit
     ##############################
 
     test "validates sql when use is permitted" do
-      dashboard = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: 123)],
-      )])])
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(
+        datasets: [ build_dataset(type: "sql", sql: 123) ],
+      ) ]) ])
       dashboard.can_dangerously_use_sql = true
 
       refute dashboard.valid?
@@ -286,9 +286,9 @@ module Skadi::Unit
     end
 
     test "validates sql required fields are in sql" do
-      dashboard = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: "invalid sql")],
-      )])])
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(
+        datasets: [ build_dataset(type: "sql", sql: "invalid sql") ],
+      ) ]) ])
       dashboard.can_dangerously_use_sql = true
 
       refute dashboard.valid?
@@ -300,18 +300,18 @@ module Skadi::Unit
     end
 
     test "validates sql when use is not permitted" do
-      dashboard = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: VALID_SQL)],
-      )])])
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(
+        datasets: [ build_dataset(type: "sql", sql: VALID_SQL) ],
+      ) ]) ])
 
       refute dashboard.valid?
       assert_match "sql cannot be modified", dashboard.errors.full_messages.join
     end
 
     test "allows sql when use is not permitted after save" do
-      dashboard = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: VALID_SQL)],
-      )])])
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(
+        datasets: [ build_dataset(type: "sql", sql: VALID_SQL) ],
+      ) ]) ])
 
       refute dashboard.valid?
 
@@ -321,9 +321,9 @@ module Skadi::Unit
     end
 
     test "validates sql may be copied when use is not permitted" do
-      dashboard = build_dashboard([build_tab(children: [build_chart(
-        datasets: [build_dataset(type: "sql", sql: VALID_SQL)],
-      )])])
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(
+        datasets: [ build_dataset(type: "sql", sql: VALID_SQL) ],
+      ) ]) ])
       dashboard.can_dangerously_use_sql = true
       dashboard.save!
 
@@ -351,13 +351,13 @@ module Skadi::Unit
     end
 
     test "validates percentage dataset numerator/denominator only match datasets within the same chart" do
-      other_chart_datasets = [build_dataset(id: "a", type: "visits")]
-      this_chart_datasets = [build_dataset(id: "pct", type: "percentage", numerator: "a", denominator: "a")]
+      other_chart_datasets = [ build_dataset(id: "a", type: "visits") ]
+      this_chart_datasets = [ build_dataset(id: "pct", type: "percentage", numerator: "a", denominator: "a") ]
 
-      dashboard = build_dashboard([build_tab(children: [
+      dashboard = build_dashboard([ build_tab(children: [
         build_chart(id: "chart-1", datasets: other_chart_datasets),
         build_chart(id: "chart-2", datasets: this_chart_datasets),
-      ])])
+      ]) ])
 
       refute dashboard.valid?
       errors = dashboard.errors[:configuration].join
@@ -381,15 +381,15 @@ module Skadi::Unit
     end
 
     private def assert_tab_error(error, **tab_config)
-      assert_configuration_error("configuration[0].#{error}", [build_tab(**tab_config)])
+      assert_configuration_error("configuration[0].#{error}", [ build_tab(**tab_config) ])
     end
 
     private def assert_chart_error(error, **chart_config)
-      assert_tab_error("children[0].#{error}", children: [build_chart(**chart_config)])
+      assert_tab_error("children[0].#{error}", children: [ build_chart(**chart_config) ])
     end
 
     private def assert_dataset_error(error, **dataset_config)
-      assert_chart_error("datasets[0].#{error}", datasets: [build_dataset(**dataset_config)])
+      assert_chart_error("datasets[0].#{error}", datasets: [ build_dataset(**dataset_config) ])
     end
   end
 end

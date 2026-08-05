@@ -1,33 +1,38 @@
 AllCops:
-  DisabledByDefault: true
+  NewCops: enable
   SuggestExtensions: false
   TargetRubyVersion: 3.3
   UseCache: true
 
+# Omakase Ruby styling for Rails
 inherit_gem:
-  standard: config/base.yml
+  rubocop-rails-omakase: rubocop.yml
+
+# Omakase disables these rules almost entirely; re-enable them for actual bug/safety detection, on top of omakase's formatting rules.
+Lint:
+  Enabled: true
+Security:
+  Enabled: true
+Performance:
+  Enabled: true
 
 # Enforce commas at the end of multiline arguments, hashes and arrays, improving git diffs
 Style/TrailingCommaInArrayLiteral:
+  Enabled: true
   EnforcedStyleForMultiline: diff_comma
 
 Style/TrailingCommaInHashLiteral:
+  Enabled: true
   EnforcedStyleForMultiline: diff_comma
 
 Style/TrailingCommaInArguments:
+  Enabled: true
   EnforcedStyleForMultiline: comma
 
 # Enforce standardisation of method definitions
-Style/MethodDefParentheses:
-  Enabled: true
 Naming/MethodName:
   Enabled: true
 
-# Allow backwards compatible use of `it` parameter in blocks
-# Todo: add AllowNamedParameter if standard ever gets updated
-Style/ItAssignment:
-  Enabled: false
-
-# Allow for explcit returns at the end of methods where they're not needed
+# Allow for explicit returns at the end of methods where they're not needed
 Style/RedundantReturn:
   Enabled: false

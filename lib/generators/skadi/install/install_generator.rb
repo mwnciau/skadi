@@ -11,13 +11,13 @@ module Skadi
       source_root File.expand_path("templates", __dir__)
       desc "Generates the Skadi analytics migration"
 
-      VALID_DB_ENGINES = [:postgres, :mysql, :sqlite]
+      VALID_DB_ENGINES = [ :postgres, :mysql, :sqlite ]
       class_option :db_engine,
         type: :string,
         default: "postgres",
         desc: "Database engine (postgres, mysql, sqlite)"
 
-      VALID_USER_ID_TYPES = [:bigint, :integer, :uuid, :string]
+      VALID_USER_ID_TYPES = [ :bigint, :integer, :uuid, :string ]
       class_option :user_id_type,
         type: :string,
         default: "bigint",

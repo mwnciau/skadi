@@ -10,10 +10,10 @@ module Skadi::Integration
       end
 
       test "tracks demographics" do
-        post skadi.tracking_endpoint_path, params: {view: @view_token, demographics: [
-          {uri: "/pages/:id", name: "first-contentful-paint", value: "< 1000ms"},
-          {name: "browser", value: "Chrome"},
-        ]}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: @view_token, demographics: [
+          { uri: "/pages/:id", name: "first-contentful-paint", value: "< 1000ms" },
+          { name: "browser", value: "Chrome" },
+        ] }, as: :json
 
         assert_response :no_content
         assert_equal 2, Skadi::Demographic.count
@@ -35,10 +35,10 @@ module Skadi::Integration
         create :demographic, recorded_on: Date.today, uri: "/pages/:id", name: "first-contentful-paint", value: "< 1000ms", count: 6
         create :demographic, recorded_on: Date.today, name: "browser", value: "Chrome", count: 2
 
-        post skadi.tracking_endpoint_path, params: {view: @view_token, demographics: [
-          {uri: "/pages/:id", name: "first-contentful-paint", value: "< 1000ms"},
-          {name: "browser", value: "Chrome"},
-        ]}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: @view_token, demographics: [
+          { uri: "/pages/:id", name: "first-contentful-paint", value: "< 1000ms" },
+          { name: "browser", value: "Chrome" },
+        ] }, as: :json
 
         assert_response :no_content
         assert_equal 2, Skadi::Demographic.count
@@ -53,17 +53,17 @@ module Skadi::Integration
       end
 
       test "ignores invalid demographics" do
-        post skadi.tracking_endpoint_path, params: {view: @view_token, demographics: [
+        post skadi.tracking_endpoint_path, params: { view: @view_token, demographics: [
           {},
-          {name: "valid demographic", value: "value"},
-          {name: "", value: "value"},
-          {name: 123, value: "value"},
-          {value: "value"},
-          {name: "name", value: ""},
-          {name: "name", value: 123},
-          {name: "name"},
-          {name: "name", value: "value", uri: 123},
-        ]}, as: :json
+          { name: "valid demographic", value: "value" },
+          { name: "", value: "value" },
+          { name: 123, value: "value" },
+          { value: "value" },
+          { name: "name", value: "" },
+          { name: "name", value: 123 },
+          { name: "name" },
+          { name: "name", value: "value", uri: 123 },
+        ] }, as: :json
 
         assert_response :no_content
         assert_equal 1, Skadi::Demographic.count
@@ -71,16 +71,16 @@ module Skadi::Integration
       end
 
       test "all demographics invalid" do
-        post skadi.tracking_endpoint_path, params: {view: @view_token, demographics: [
-          {name: "invalid"},
-        ]}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: @view_token, demographics: [
+          { name: "invalid" },
+        ] }, as: :json
 
         assert_response :no_content
         assert_equal 0, Skadi::Demographic.count
       end
 
       test "non-array passed to demographics" do
-        post skadi.tracking_endpoint_path, params: {view: @view_token, demographics: "my demographics"}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: @view_token, demographics: "my demographics" }, as: :json
 
         assert_response :no_content
         assert_equal 0, Skadi::Demographic.count

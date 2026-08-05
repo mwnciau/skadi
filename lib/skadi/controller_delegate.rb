@@ -110,7 +110,7 @@ module Skadi
       raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as first parameter, got #{name.is_a?(String) ? "empty string" : name.class.name}" unless name.is_a?(String) && name.present?
       raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as second parameter, got #{value.is_a?(String) ? "empty string" : value.class.name}" unless value.is_a?(String) && value.present?
 
-      demographic = {name:, value:, uri: action_specific ? (uri || request.route_uri_pattern) : nil}
+      demographic = { name:, value:, uri: action_specific ? (uri || request.route_uri_pattern) : nil }
 
       @demographics << demographic
     end
@@ -126,7 +126,7 @@ module Skadi
       raise ArgumentError.new "Skadi::ControllerDelegate.event expects String as first parameter, got #{name.is_a?(String) ? "empty string" : name.class.name}" unless name.is_a?(String) && name.present?
       raise ArgumentError.new "Skadi::ControllerDelegate.event expects Hash as second parameter, got #{properties.class.name}" unless properties.is_a?(Hash)
 
-      event = {name:, properties:, sensitive:}
+      event = { name:, properties:, sensitive: }
 
       @events << event
     end

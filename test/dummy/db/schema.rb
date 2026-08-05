@@ -31,7 +31,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_193548) do
     t.date "recorded_on", null: false
     t.string "uri", null: false
     t.string "value", null: false
-    t.index ["uri", "name", "value", "recorded_on"], name: "idx_on_uri_name_value_recorded_on_79f5412e49", unique: true
+    t.index [ "uri", "name", "value", "recorded_on" ], name: "idx_on_uri_name_value_recorded_on_79f5412e49", unique: true
   end
 
   create_table "skadi_events", force: :cascade do |t|
@@ -40,10 +40,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_193548) do
     t.json "properties"
     t.integer "view_id"
     t.integer "visit_id"
-    t.index ["created_at"], name: "index_skadi_events_on_created_at"
-    t.index ["name", "created_at"], name: "index_skadi_events_on_name_and_created_at"
-    t.index ["view_id", "created_at"], name: "index_skadi_events_on_view_id_and_created_at"
-    t.index ["visit_id", "created_at"], name: "index_skadi_events_on_visit_id_and_created_at"
+    t.index [ "created_at" ], name: "index_skadi_events_on_created_at"
+    t.index [ "name", "created_at" ], name: "index_skadi_events_on_name_and_created_at"
+    t.index [ "view_id", "created_at" ], name: "index_skadi_events_on_view_id_and_created_at"
+    t.index [ "visit_id", "created_at" ], name: "index_skadi_events_on_visit_id_and_created_at"
   end
 
   create_table "skadi_views", force: :cascade do |t|
@@ -59,10 +59,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_193548) do
     t.string "version"
     t.string "view_token", limit: 36, null: false
     t.integer "visit_id"
-    t.index ["created_at"], name: "index_skadi_views_on_created_at"
-    t.index ["path", "created_at"], name: "index_skadi_views_on_path_and_created_at"
-    t.index ["view_token"], name: "index_skadi_views_on_view_token", unique: true
-    t.index ["visit_id", "created_at"], name: "index_skadi_views_on_visit_id_and_created_at"
+    t.index [ "created_at" ], name: "index_skadi_views_on_created_at"
+    t.index [ "path", "created_at" ], name: "index_skadi_views_on_path_and_created_at"
+    t.index [ "view_token" ], name: "index_skadi_views_on_view_token", unique: true
+    t.index [ "visit_id", "created_at" ], name: "index_skadi_views_on_visit_id_and_created_at"
   end
 
   create_table "skadi_visits", force: :cascade do |t|
@@ -80,10 +80,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_04_193548) do
     t.text "utm_term"
     t.boolean "verified", default: false, null: false
     t.string "visit_token", limit: 36, null: false
-    t.index ["created_at"], name: "index_skadi_visits_on_created_at"
-    t.index ["tracking_token", "created_at"], name: "index_skadi_visits_on_tracking_token_and_created_at"
-    t.index ["user_id", "created_at"], name: "index_skadi_visits_on_user_id_and_created_at"
-    t.index ["visit_token"], name: "index_skadi_visits_on_visit_token", unique: true
+    t.index [ "created_at" ], name: "index_skadi_visits_on_created_at"
+    t.index [ "tracking_token", "created_at" ], name: "index_skadi_visits_on_tracking_token_and_created_at"
+    t.index [ "user_id", "created_at" ], name: "index_skadi_visits_on_user_id_and_created_at"
+    t.index [ "visit_token" ], name: "index_skadi_visits_on_visit_token", unique: true
   end
 
   add_foreign_key "skadi_events", "skadi_views", column: "view_id", on_delete: :cascade

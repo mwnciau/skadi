@@ -3,7 +3,7 @@ Gem::Specification.new do |s|
   s.version = "0.3.0"
   s.summary = "First-party, privacy-by-default analytics for Rails."
   s.description = "Skadi adds flexible and lightweight first-party analytics to your Rails app. Track page views and events, perform A/B testing and more, giving you all the information you need to improve your website."
-  s.authors = ["Simon J"]
+  s.authors = [ "Simon J" ]
   s.email = "2857218+mwnciau@users.noreply.github.com"
 
   app_files = `git ls-files -z`.split("\x0").reject do |f|
@@ -16,7 +16,7 @@ Gem::Specification.new do |s|
     "README.md",
     *app_files,
   ]
-  s.require_paths = ["lib"]
+  s.require_paths = [ "lib" ]
   s.homepage = "https://rubygems.org/gems/skadi"
   s.metadata = {
     "source_code_uri" => "https://github.com/mwnciau/skadi",
@@ -51,8 +51,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "mocha", "~> 3.0"
 
   # Gems to enforce coding-standards
-  s.add_development_dependency "rubocop", "~> 1.0"
-  s.add_development_dependency "standard", "~> 1.0"
+  s.add_development_dependency "rubocop-rails-omakase", "~> 1.0"
 
   # Database gem for the dummy rails app
   s.add_development_dependency "puma", "~> 7.0"

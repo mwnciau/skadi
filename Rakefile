@@ -8,7 +8,7 @@ require "minitest/test_task"
 Minitest::TestTask.create
 
 # Set `test` as the default task
-task default: ["test"]
+task default: [ "test" ]
 
 # Expose the dummy app's Rake tasks (db:migrate, app:*, etc.) from the engine root
 APP_RAKEFILE = File.expand_path("test/dummy/Rakefile", __dir__)

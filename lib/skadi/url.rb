@@ -46,7 +46,7 @@ module Skadi
       result = +""
 
       # Only record interesting schemes, e.g. "android-app://"
-      result += "#{uri.scheme}://" if uri.scheme.present? && !["http", "https"].include?(uri.scheme)
+      result += "#{uri.scheme}://" if uri.scheme.present? && ![ "http", "https" ].include?(uri.scheme)
 
       result += uri.host if uri.host.present?
 

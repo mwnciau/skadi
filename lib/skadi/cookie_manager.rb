@@ -14,8 +14,8 @@ module Skadi
     end
 
     def renew!
-      set_cookie ANONYMITY_SET_KEY, cookies[ANONYMITY_SET_KEY] if ["1", "0"].include?(cookies[ANONYMITY_SET_KEY])
-      set_cookie TRACK_USER_KEY, cookies[TRACK_USER_KEY] if ["1", "0"].include?(cookies[TRACK_USER_KEY])
+      set_cookie ANONYMITY_SET_KEY, cookies[ANONYMITY_SET_KEY] if [ "1", "0" ].include?(cookies[ANONYMITY_SET_KEY])
+      set_cookie TRACK_USER_KEY, cookies[TRACK_USER_KEY] if [ "1", "0" ].include?(cookies[TRACK_USER_KEY])
 
       if cookies.has_key? TRACKING_TOKEN_KEY
         token = tracking_token

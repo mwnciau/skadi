@@ -91,15 +91,15 @@ module Skadi::Unit
     end
 
     test "query_param_whitelist validates" do
-      assert_values_are_valid(:query_param_whitelist, [], [:symbol], [:two, :symbols])
+      assert_values_are_valid(:query_param_whitelist, [], [ :symbol ], [ :two, :symbols ])
 
-      assert_values_are_invalid(:query_param_whitelist, ["string"], [:symbol, "string"], :symbol, {symbol: true}, true, false)
+      assert_values_are_invalid(:query_param_whitelist, [ "string" ], [ :symbol, "string" ], :symbol, { symbol: true }, true, false)
     end
 
     test "db_connects_to validates" do
-      assert_values_are_valid(:db_connects_to, nil, {database: :primary}, {database: :primary, shards: :all}, {shards: :all})
+      assert_values_are_valid(:db_connects_to, nil, { database: :primary }, { database: :primary, shards: :all }, { shards: :all })
 
-      assert_values_are_invalid(:db_connects_to, {}, {invalid_key: true}, {database: :primary, invalid_key: true}, true, false)
+      assert_values_are_invalid(:db_connects_to, {}, { invalid_key: true }, { database: :primary, invalid_key: true }, true, false)
     end
 
     test "store_domain_in_views validates" do

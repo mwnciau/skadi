@@ -9,7 +9,7 @@ module Skadi::Integration
         visit = create :visit, tracking_token: TRACKING_TOKEN
         view = create :view, visit: visit
 
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {cookie: true}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: { cookie: true } }, as: :json
 
         assert_response :no_content
 
@@ -30,7 +30,7 @@ module Skadi::Integration
 
         cookies["skadi_id"] = TRACKING_TOKEN
 
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {cookie: false}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: { cookie: false } }, as: :json
 
         assert_response :no_content
 
@@ -47,7 +47,7 @@ module Skadi::Integration
 
         cookies["skadi_anonymity_set"] = "0"
 
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {anonymity_set: true}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: { anonymity_set: true } }, as: :json
 
         assert_response :no_content
 
@@ -72,7 +72,7 @@ module Skadi::Integration
 
         cookies["skadi_anonymity_set"] = "1"
 
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {anonymity_set: false}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: { anonymity_set: false } }, as: :json
 
         assert_response :no_content
 
@@ -93,7 +93,7 @@ module Skadi::Integration
         cookies["skadi_track_user"] = "0"
 
         log_in_as user
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {user: true}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: { user: true } }, as: :json
 
         assert_response :no_content
         assert_equal "1", response.cookies["skadi_track_user"]
@@ -110,7 +110,7 @@ module Skadi::Integration
 
         cookies["skadi_track_user"] = "1"
 
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {user: false}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: { user: false } }, as: :json
 
         assert_response :no_content
 
@@ -129,7 +129,7 @@ module Skadi::Integration
         cookies["skadi_track_user"] = "0"
         cookies["skadi_id"] = TRACKING_TOKEN
 
-        post skadi.tracking_endpoint_path, params: {view: view.token, consent: {}}, as: :json
+        post skadi.tracking_endpoint_path, params: { view: view.token, consent: {} }, as: :json
 
         assert_response :no_content
         assert_equal "1", response.cookies["skadi_anonymity_set"]
@@ -146,11 +146,11 @@ module Skadi::Integration
 
         [
           {},
-          {consent: 1},
-          {consent: {consent: true}},
-          {consent: [true]},
+          { consent: 1 },
+          { consent: { consent: true } },
+          { consent: [ true ] },
         ].each do |invalid_params|
-          post skadi.tracking_endpoint_path, params: {view: view.token, **invalid_params}, as: :json
+          post skadi.tracking_endpoint_path, params: { view: view.token, **invalid_params }, as: :json
 
           assert_response :no_content
           assert_equal "0", response.cookies["skadi_anonymity_set"]

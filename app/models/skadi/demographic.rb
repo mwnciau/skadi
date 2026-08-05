@@ -22,7 +22,7 @@ module Skadi
 
       Skadi::Demographic.upsert_all(
         demographics_to_upsert,
-        unique_by: [:uri, :name, :value, :recorded_on],
+        unique_by: [ :uri, :name, :value, :recorded_on ],
         on_duplicate: Arel.sql("count = skadi_demographics.count + 1"),
         returning: false,
       )

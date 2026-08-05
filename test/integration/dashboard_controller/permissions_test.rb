@@ -41,7 +41,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        post skadi.dashboard_data_path, params: {chart_id:}, as: :json
+        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
 
         assert_response :ok
       end
@@ -52,7 +52,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        post skadi.dashboard_data_path, params: {chart_id:}, as: :json
+        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
 
         assert_response :forbidden
       end
@@ -63,7 +63,7 @@ module Skadi::Integration
         dashboard = create :dashboard
         chart_id = dashboard.configuration[0]["children"][0]["id"]
 
-        post skadi.dashboard_data_path, params: {chart_id:}, as: :json
+        post skadi.dashboard_data_path, params: { chart_id: }, as: :json
 
         assert_response :forbidden
       end
@@ -74,7 +74,7 @@ module Skadi::Integration
 
         create :view
 
-        post skadi.dashboard_data_path, params: {configuration: build_chart(dataset: build_dataset(type: "views")).to_json}, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: build_dataset(type: "views")).to_json }, as: :json
 
         assert_response :ok
         assert_see '"count":1'
@@ -84,7 +84,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_view = true
         ApplicationController.skadi_dashboard_edit = false
 
-        post skadi.dashboard_data_path, params: {configuration: build_chart.to_json}, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart.to_json }, as: :json
 
         assert_response :unprocessable_content
         assert_see "The chart_id parameter must be specified"
@@ -95,7 +95,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = true
 
-        post skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: SQL_DATASET).to_json }, as: :json
 
         assert_response :ok
       end
@@ -105,7 +105,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = false
 
-        post skadi.dashboard_data_path, params: {configuration: build_chart(dataset: SQL_DATASET).to_json}, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: SQL_DATASET).to_json }, as: :json
 
         assert_response :unprocessable_content
         assert_see "Invalid chart configuration"
@@ -119,7 +119,7 @@ module Skadi::Integration
         chart = build_chart(dataset: build_dataset(type: "sql", sql: "SELECT '"))
         build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        post skadi.dashboard_data_path, params: {chart_id: chart["id"]}, as: :json
+        post skadi.dashboard_data_path, params: { chart_id: chart["id"] }, as: :json
 
         assert_response :unprocessable_content
         assert_see "SQLException: unrecognized token"
@@ -133,7 +133,7 @@ module Skadi::Integration
         chart = build_chart(dataset: build_dataset(type: "sql", sql: "SELECT '"))
         build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        post skadi.dashboard_data_path, params: {chart_id: chart["id"]}, as: :json
+        post skadi.dashboard_data_path, params: { chart_id: chart["id"] }, as: :json
 
         assert_response :unprocessable_content
         refute_see "SQLException: unrecognized token"
@@ -143,7 +143,7 @@ module Skadi::Integration
       test "can update with permission" do
         ApplicationController.skadi_dashboard_edit = true
 
-        post skadi.dashboard_update_path, params: {configuration: Skadi::Dashboard.default_configuration}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: Skadi::Dashboard.default_configuration }, as: :json
 
         assert_response :ok
       end
@@ -151,7 +151,7 @@ module Skadi::Integration
       test "cannot update without permission" do
         ApplicationController.skadi_dashboard_edit = false
 
-        post skadi.dashboard_update_path, params: {configuration: Skadi::Dashboard.default_configuration}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: Skadi::Dashboard.default_configuration }, as: :json
 
         assert_response :forbidden
       end
@@ -159,7 +159,7 @@ module Skadi::Integration
       test "cannot update without controller method" do
         Skadi.configuration.dashboard_edit_controller_method = nil
 
-        post skadi.dashboard_update_path, params: {configuration: Skadi::Dashboard.default_configuration}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: Skadi::Dashboard.default_configuration }, as: :json
 
         assert_response :forbidden
       end
@@ -172,7 +172,7 @@ module Skadi::Integration
         configuration = dashboard.configuration.deep_dup
         configuration[0]["children"][0]["datasets"] << SQL_DATASET
 
-        post skadi.dashboard_update_path, params: {configuration:}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: }, as: :json
 
         assert_response :ok
         assert_equal configuration, dashboard.reload.configuration
@@ -186,7 +186,7 @@ module Skadi::Integration
         configuration = dashboard.configuration.deep_dup
         configuration[0]["children"][0]["datasets"] << SQL_DATASET
 
-        post skadi.dashboard_update_path, params: {configuration:}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: }, as: :json
 
         assert_response :unprocessable_content
         assert_see "configuration[0].children[0].datasets[1].sql cannot be modified"
@@ -203,7 +203,7 @@ module Skadi::Integration
 
         configuration[0]["children"][0]["datasets"] << SQL_DATASET
 
-        post skadi.dashboard_update_path, params: {configuration:}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: }, as: :json
 
         assert_response :ok
         assert_equal configuration, dashboard.reload.configuration
@@ -220,7 +220,7 @@ module Skadi::Integration
         new_configuration = configuration.deep_dup
         new_configuration[0]["children"][0]["datasets"][0]["sql"] = "SELECT * FROM skadi_views"
 
-        post skadi.dashboard_update_path, params: {configuration: new_configuration}, as: :json
+        post skadi.dashboard_update_path, params: { configuration: new_configuration }, as: :json
 
         assert_response :unprocessable_content
         assert_see "configuration[0].children[0].datasets[0].sql cannot be modified"

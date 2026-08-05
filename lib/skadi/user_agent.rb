@@ -319,7 +319,7 @@ module Skadi
       options[:browser] ||= key
 
       # Normalise into an array so we don't have to check the type during runtime
-      BROWSER_TOKENS[key] = [options]
+      BROWSER_TOKENS[key] = [ options ]
     end
 
     private def parse_browser
@@ -437,7 +437,7 @@ module Skadi
 
     BOT_WORD_SET = Set.new(%w[AGENT Agent AppInsights ArchiveBox Archiver Archiving BingPreview BrandVerity Butterfly Charlotte Checkly Claude CloudFlare Cloudflare Code Collapsify CookieHubVerify Criticalcss Daily DareBoost DatadogSynthetics Datanyze Devin Dlc FeedBurner Feeder Feedly FlipboardProxy Fluid Foregenix GTmetrix GeedoProductSearch GeedoShopProductFinder Google GoogleAgent GoogleImageProxy GotSiteMonitor Hardenize HeadlessChrome Hotjar Inspector Lighthouse LinkTiger Mail Manus MarketGoo MarketingMiner MetaIAB Miniature MonitoRSS Monitor Netcraft NewRelicSynthetics NewsBlur NewsNow Newsify Nitro OpenGraph Optimizer PTST PWABuilderHttpAgent Perplexity PingdomTMS Playwright Preview PrintFriendly Puppeteer Readable RevvimGort Rigor SQWatcher Scope3 SecurityHeaders Selenium SeoSiteCheckup Silktide Sindup Siteimprove Specificfeeds Sucuri TestLocally ThousandEyes Trae YLT ZoteroTranslationServer adbeat agent archiver archiving brandverity butterfly claude cloudflare code contentkingapp deadlinkchecker devin europarchive feeder feedly google img2dataset infegy mail mailservertest2023 marketingminer mirrorweb monitor nbertaupete95 netcraft newsai newsblur newsify opencode opengraph oupwis perplexity preview retrevo scope3 scraping seositecheckup sitebulb slider splash sqwatcher turingos ubermetrics uptimedoctor watchTowr webresearch websitepulse woorankreview xmco])
 
-    BOT_FALLBACK_MATCHERS = ["AP3A.240617.008"]
+    BOT_FALLBACK_MATCHERS = [ "AP3A.240617.008" ]
 
     private def detect_bot
       return true if user_agent_tokens.any? { |it| BOT_WORD_SET.include? it }

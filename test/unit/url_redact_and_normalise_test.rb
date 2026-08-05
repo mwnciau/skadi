@@ -68,10 +68,10 @@ module Skadi::Unit
 
     test "redact_and_normalise_url truncates URLs to configured length" do
       Skadi.configuration.max_url_length = 2048
-      url_2048 = Skadi::Url.redact_and_normalise_url("example.com/" + "a" * 2048)
+      url_2048 = Skadi::Url.redact_and_normalise_url("example.com/" + ("a" * 2048))
 
       Skadi.configuration.max_url_length = 4096
-      url_4096 = Skadi::Url.redact_and_normalise_url("example.com/" + "a" * 4096)
+      url_4096 = Skadi::Url.redact_and_normalise_url("example.com/" + ("a" * 4096))
 
       assert_equal 2048, url_2048.length
       assert_equal 4096, url_4096.length
@@ -87,7 +87,7 @@ module Skadi::Unit
     end
 
     test "redact_and_normalise_url only keeps whitelisted params" do
-      Skadi.configuration.query_param_whitelist = [:foo]
+      Skadi.configuration.query_param_whitelist = [ :foo ]
 
       url = Skadi::Url.redact_and_normalise_url("http://example.com/?foo=bar&baz=qux")
 
@@ -103,7 +103,7 @@ module Skadi::Unit
     end
 
     test "redact_and_normalise_url handles encoded characters" do
-      Skadi.configuration.query_param_whitelist = [:foo]
+      Skadi.configuration.query_param_whitelist = [ :foo ]
 
       url = Skadi::Url.redact_and_normalise_url("http://example.com/path%20with%20spaces?foo=param+with+spaces")
 

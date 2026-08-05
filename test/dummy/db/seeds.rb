@@ -1,4 +1,4 @@
-def create_view(visit, view, controller:, action:, verb:, path:, verified:, time:, version: nil)
+def create_view(visit, controller:, action:, verb:, path:, verified:, time:, version: nil)
   Skadi::View.create(
     visit: visit,
     view_token: Random.uuid_v7,
@@ -36,7 +36,7 @@ puts "Seeding Skadi database (#{Rails.env}):"
 10_000.times do |i|
   print "." if i % 100 == 0
   # Let's not start with all of our mod tests matching by multiplying and adding a prime to each i
-  i = i * 31_313 + 13_331
+  i = (i * 31_313) + 13_331
 
   start_time -= Random.rand(1..30).minutes
   offset = 0
@@ -70,7 +70,7 @@ puts "Seeding Skadi database (#{Rails.env}):"
   view = nil
 
   unless i % 19 == 0
-    view = create_view(visit, view, controller: "home", action: "show", verb: "GET", path: "/", verified:, time: start_time, version: (i % 37) ? "A" : "B")
+    view = create_view(visit, controller: "home", action: "show", verb: "GET", path: "/", verified:, time: start_time, version: (i % 57) ? "A" : "B")
 
     create_event(visit, view, name: "clicked banner", time: start_time) if i % 23 > 19
   end
@@ -78,31 +78,31 @@ puts "Seeding Skadi database (#{Rails.env}):"
   next if i % 37 < 24
 
   offset += Random.rand(30..659).seconds
-  view = create_view(visit, view, controller: "cart", action: "show", verb: "GET", path: "/cart", verified:, time: start_time + offset)
+  view = create_view(visit, controller: "cart", action: "show", verb: "GET", path: "/cart", verified:, time: start_time + offset)
 
   create_event(visit, view, name: "clicked upsell", time: start_time + offset) if i % 29 > 26
 
   # Let's not make all the paths the same
   if i % 11 == 1
     offset += Random.rand(30..659).seconds
-    view = create_view(visit, view, controller: "home", action: "show", verb: "GET", path: "/", verified:, time: start_time)
+    create_view(visit, controller: "home", action: "show", verb: "GET", path: "/", verified:, time: start_time)
   end
   if i % 13 == 1
     offset += Random.rand(30..659).seconds
-    view = create_view(visit, view, controller: "cart", action: "show", verb: "GET", path: "/cart", verified:, time: start_time + offset)
+    create_view(visit, controller: "cart", action: "show", verb: "GET", path: "/cart", verified:, time: start_time + offset)
   end
 
   next if i % 37 < 31
 
   offset += Random.rand(30..659).seconds
-  view = create_view(visit, view, controller: "checkout", action: "create", verb: "POST", path: "/checkout", verified:, time: start_time + offset)
+  create_view(visit, controller: "checkout", action: "create", verb: "POST", path: "/checkout", verified:, time: start_time + offset)
 
   next if i % 101 == 0
 
   offset += Random.rand(3).seconds
-  view = create_view(visit, view, controller: "checkout", action: "thank_you", verb: "GET", path: "/thank-you", verified:, time: start_time + offset)
+  view = create_view(visit, controller: "checkout", action: "thank_you", verb: "GET", path: "/thank-you", verified:, time: start_time + offset)
 
-  create_event(visit, view, name: "review", properties: {starts: Random.rand(1..5)}, time: start_time + offset) if i % 31 > 27
+  create_event(visit, view, name: "review", properties: { starts: Random.rand(1..5) }, time: start_time + offset) if i % 31 > 27
 end
 
 print "\n"

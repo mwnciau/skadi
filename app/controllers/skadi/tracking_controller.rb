@@ -99,7 +99,7 @@ module Skadi
 
     def limit_payload_size!
       if request.content_length && request.content_length > Skadi.configuration.max_tracking_payload_size
-        render json: {error: "Payload too large"}, status: :content_too_large
+        render json: { error: "Payload too large" }, status: :content_too_large
       end
     end
   end

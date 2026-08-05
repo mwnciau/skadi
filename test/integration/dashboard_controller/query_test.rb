@@ -6,13 +6,13 @@ module Skadi::Integration
       DATES = (11..20).map { |it| "2020-01-#{it} 09:13" }
 
       DATE_TEST_CASES = [
-        {count: 10},
-        {count: 5, date_from: "2020-01-16"},
-        {count: 5, date_to: "2020-01-15"},
-        {count: 5, date_from: "2020-01-12", date_to: "2020-01-16"},
-        {count: 1, date_from: "2020-01-13", date_to: "2020-01-13"},
-        {count: 0, date_from: "2020-01-01", date_to: "2020-01-05"},
-        {count: 0, date_from: "2020-01-16", date_to: "2020-01-12"},
+        { count: 10 },
+        { count: 5, date_from: "2020-01-16" },
+        { count: 5, date_to: "2020-01-15" },
+        { count: 5, date_from: "2020-01-12", date_to: "2020-01-16" },
+        { count: 1, date_from: "2020-01-13", date_to: "2020-01-13" },
+        { count: 0, date_from: "2020-01-01", date_to: "2020-01-05" },
+        { count: 0, date_from: "2020-01-16", date_to: "2020-01-12" },
       ]
 
       test "url date" do
@@ -51,16 +51,16 @@ module Skadi::Integration
         DATES.each { |date| create :visit, created_at: date }
 
         [
-          {count: 10},
-          {count: 9, url: {date_from: "2020-01-12"}},
-          {count: 8, url: {date_from: "2020-01-12"}, chart: {date_to: "2020-01-19"}},
-          {count: 7, url: {date_from: "2020-01-12"}, chart: {date_to: "2020-01-19"}, dataset: {date_from: "2020-01-13"}},
-          {count: 6, url: {date_from: "2020-01-12", date_to: "2020-01-18"}, chart: {date_to: "2020-01-19"}, dataset: {date_from: "2020-01-13"}},
-          {count: 5, url: {date_from: "2020-01-12", date_to: "2020-01-18"}, chart: {date_from: "2020-01-14", date_to: "2020-01-19"}, dataset: {date_from: "2020-01-13"}},
-          {count: 4, url: {date_from: "2020-01-12", date_to: "2020-01-18"}, chart: {date_from: "2020-01-14", date_to: "2020-01-19"}, dataset: {date_from: "2020-01-13", date_to: "2020-01-17"}},
-          {count: 3, chart: {date_from: "2020-01-15"}, dataset: {date_to: "2020-01-17"}},
-          {count: 2, url: {date_from: "2020-01-16"}, dataset: {date_to: "2020-01-17"}},
-          {count: 1, chart: {date_from: "2020-01-17"}, dataset: {date_to: "2020-01-17"}},
+          { count: 10 },
+          { count: 9, url: { date_from: "2020-01-12" } },
+          { count: 8, url: { date_from: "2020-01-12" }, chart: { date_to: "2020-01-19" } },
+          { count: 7, url: { date_from: "2020-01-12" }, chart: { date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13" } },
+          { count: 6, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13" } },
+          { count: 5, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_from: "2020-01-14", date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13" } },
+          { count: 4, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_from: "2020-01-14", date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13", date_to: "2020-01-17" } },
+          { count: 3, chart: { date_from: "2020-01-15" }, dataset: { date_to: "2020-01-17" } },
+          { count: 2, url: { date_from: "2020-01-16" }, dataset: { date_to: "2020-01-17" } },
+          { count: 1, chart: { date_from: "2020-01-17" }, dataset: { date_to: "2020-01-17" } },
         ].each do |testcase|
           chart = build_chart(**(testcase[:chart] || {}), dataset: build_dataset(**(testcase[:dataset] || {}))).to_json
 
@@ -78,27 +78,27 @@ module Skadi::Integration
 
         results = results_for_chart(none)
         assert_equal 1, results.length
-        assert_equal({"id" => "dataset-1", "date" => nil, "split" => nil, "count" => 10}, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => nil, "count" => 10 }, results[0])
 
         results = results_for_chart(daily)
         assert_equal 10, results.length
         DATES.each_with_index do |date, index|
-          assert_equal({"id" => "dataset-1", "date" => date[0, 10], "split" => nil, "count" => 1}, results[index])
+          assert_equal({ "id" => "dataset-1", "date" => date[0, 10], "split" => nil, "count" => 1 }, results[index])
         end
 
         results = results_for_chart(weekly)
         assert_equal 3, results.length
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-06", "split" => nil, "count" => 2}, results[0])
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-13", "split" => nil, "count" => 7}, results[1])
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-20", "split" => nil, "count" => 1}, results[2])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-06", "split" => nil, "count" => 2 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-13", "split" => nil, "count" => 7 }, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-20", "split" => nil, "count" => 1 }, results[2])
 
         # Add another visit to span multiple months
         create :visit, created_at: "2020-02-01"
 
         results = results_for_chart(monthly)
         assert_equal 2, results.length
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-01", "split" => nil, "count" => 10}, results[0])
-        assert_equal({"id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1}, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => nil, "count" => 10 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1 }, results[1])
       end
 
       test "chart visit_tracking" do
@@ -171,7 +171,7 @@ module Skadi::Integration
         anonymous_visit = create :visit, tracking_token: nil
         anonymous_visit_2 = create :visit, tracking_token: nil
 
-        visits = [cookie_visit, cookie_visit_2, anonymity_set_visit, anonymity_set_visit_2, anonymous_visit, anonymous_visit_2, nil]
+        visits = [ cookie_visit, cookie_visit_2, anonymity_set_visit, anonymity_set_visit_2, anonymous_visit, anonymous_visit_2, nil ]
 
         visits.each do |visit|
           create :view, visit: visit
@@ -229,15 +229,15 @@ module Skadi::Integration
         chart = build_chart(dataset: dataset, time_series: "daily")
 
         dataset["type"] = "views"
-        dataset["split_by"] = ["verb"]
+        dataset["split_by"] = [ "verb" ]
 
         results = results_for_chart(chart)
         assert_equal 5, results.length
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-01", "split" => "GET", "count" => 1}, results[0])
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-02", "split" => "GET", "count" => 1}, results[1])
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-01", "split" => "POST", "count" => 1}, results[2])
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-02", "split" => "POST", "count" => 2}, results[3])
-        assert_equal({"id" => "dataset-1", "date" => "2020-01-01", "split" => "PUT", "count" => 1}, results[4])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "GET", "count" => 1 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "GET", "count" => 1 }, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "POST", "count" => 1 }, results[2])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "POST", "count" => 2 }, results[3])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "PUT", "count" => 1 }, results[4])
       end
 
       test "dataset string filter" do
@@ -305,9 +305,9 @@ module Skadi::Integration
       test "percentage dataset" do
         dataset = build_dataset(id: "12345")
         percentage_dataset = build_dataset(type: "percentage", numerator: "12345", denominator: "12345")
-        chart = build_chart(datasets: [dataset, percentage_dataset])
+        chart = build_chart(datasets: [ dataset, percentage_dataset ])
 
-        assert_equal [{"id" => "12345", "date" => nil, "split" => nil, "count" => 0}], results_for_chart(chart)
+        assert_equal [ { "id" => "12345", "date" => nil, "split" => nil, "count" => 0 } ], results_for_chart(chart)
       end
 
       test "self-referential percentage dataset is handled" do
@@ -323,27 +323,27 @@ module Skadi::Integration
         chart = build_chart(time_series: "weekly", dataset: dataset)
 
         dataset["sql"] = "SELECT '2020-01-11' as date, NULL as split, 1 AS count"
-        assert_equal [{"id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 1}], results_for_chart(chart)
+        assert_equal [ { "id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 1 } ], results_for_chart(chart)
 
         dataset["sql"] = "SELECT '2020-01-06' as date, NULL as split, 5 AS count UNION ALL SELECT '2020-01-09' as date, NULL as split, 2 AS count"
-        assert_equal [{"id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 7}], results_for_chart(chart)
+        assert_equal [ { "id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 7 } ], results_for_chart(chart)
 
         dataset["sql"] = "SELECT '2020-01-11' as date, NULL as split, 1 AS count UNION ALL SELECT '2020-01-11' as date, 'one' as split, 2 AS count"
         assert_equal [
-          {"id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 1},
-          {"id" => "sql", "date" => "2020-01-06", "split" => "one", "count" => 2},
+          { "id" => "sql", "date" => "2020-01-06", "split" => nil, "count" => 1 },
+          { "id" => "sql", "date" => "2020-01-06", "split" => "one", "count" => 2 },
         ], results_for_chart(chart)
       end
 
       def results_for_chart(chart)
-        post skadi.dashboard_data_path, params: {configuration: chart.to_json}, as: :json
+        post skadi.dashboard_data_path, params: { configuration: chart.to_json }, as: :json
 
         assert_response :ok
         return JSON.parse(response.body)
       end
 
       def assert_results(count, **params)
-        post skadi.dashboard_data_path, params: {**params}, as: :json
+        post skadi.dashboard_data_path, params: { **params }, as: :json
 
         assert_response :ok
         results = JSON.parse(response.body)

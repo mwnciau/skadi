@@ -52,15 +52,15 @@ module Skadi
       return [] unless configuration_was.is_a?(Array)
 
       charts = configuration_was.flat_map do |tab|
-        tab.is_a?(Hash) && tab["children"].is_a?(Array) ? tab["children"] : []
+        (tab.is_a?(Hash) && tab["children"].is_a?(Array)) ? tab["children"] : []
       end
       datasets = charts.flat_map do |chart|
-        chart.is_a?(Hash) && chart["datasets"].is_a?(Array) ? chart["datasets"] : []
+        (chart.is_a?(Hash) && chart["datasets"].is_a?(Array)) ? chart["datasets"] : []
       end
       return datasets.flat_map do |dataset|
         next [] unless dataset.is_a?(Hash) && dataset["type"] == "sql" && dataset["sql"].is_a?(String)
 
-        [dataset["sql"]]
+        [ dataset["sql"] ]
       end
     end
 

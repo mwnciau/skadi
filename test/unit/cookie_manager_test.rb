@@ -39,7 +39,7 @@ module Skadi::Unit
     end
 
     test "tracking_token= with nil deletes the cookie" do
-      request = build_request({skadi_id: TRACKING_TOKEN})
+      request = build_request({ skadi_id: TRACKING_TOKEN })
       manager = Skadi::CookieManager.new(request)
 
       manager.tracking_token = nil
@@ -81,7 +81,7 @@ module Skadi::Unit
     end
 
     test "use_anonymity_sets= false sets the cookie to 0" do
-      request = build_request({skadi_anonymity_set: "1"})
+      request = build_request({ skadi_anonymity_set: "1" })
       manager = Skadi::CookieManager.new(request)
 
       manager.use_anonymity_sets = false
@@ -123,7 +123,7 @@ module Skadi::Unit
     end
 
     test "track_users= false sets the cookie to 0" do
-      request = build_request({skadi_track_user: "1"})
+      request = build_request({ skadi_track_user: "1" })
       manager = Skadi::CookieManager.new(request)
 
       manager.track_users = false
@@ -132,7 +132,7 @@ module Skadi::Unit
     end
 
     test "renew! re-writes existing cookies" do
-      request = build_request({skadi_id: TRACKING_TOKEN, skadi_anonymity_set: "1", skadi_track_user: "1"})
+      request = build_request({ skadi_id: TRACKING_TOKEN, skadi_anonymity_set: "1", skadi_track_user: "1" })
       manager = Skadi::CookieManager.new(request)
 
       manager.renew!
@@ -155,7 +155,7 @@ module Skadi::Unit
     end
 
     test "renew! deletes tracking token for invalid skadi_id cookie" do
-      request = build_request({skadi_id: "invalid tracking token"})
+      request = build_request({ skadi_id: "invalid tracking token" })
       manager = Skadi::CookieManager.new(request)
 
       manager.renew!

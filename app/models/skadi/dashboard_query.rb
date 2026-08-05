@@ -8,7 +8,7 @@ module Skadi
           elsif dataset["type"] == "percentage"
             # Percentage charts are handled by the frontend using other datasets
             next
-          elsif Schema.database_schema.keys.include?(dataset["type"].to_sym)
+          elsif Schema.database_schema.key?(dataset["type"].to_sym)
             schema = Schema.database_schema[dataset["type"].to_sym]
 
             build_query_from_schema(dataset, chart, schema, untrusted_url_filters)
@@ -35,7 +35,7 @@ module Skadi
       private def build_sql_query(dataset, chart, untrusted_url_filters)
         model = Skadi::Visit
 
-        safe_group = ["t.split"]
+        safe_group = [ "t.split" ]
         safe_id = model.connection.quote(dataset["id"])
 
         safe_aggregated_date = if chart["time_series"].present?
@@ -102,10 +102,10 @@ module Skadi
               query = query.where("DATE(#{table_name}.#{field}) <= ?", dataset["date_to"])
             end
           elsif dataset.key?(field.to_s)
-            if field_config[:sql]
-              query = query.where("#{field_config[:sql]} = ?", dataset[field.to_s])
+            query = if field_config[:sql]
+              query.where("#{field_config[:sql]} = ?", dataset[field.to_s])
             else
-              query = query.where(field => dataset[field.to_s])
+              query.where(field => dataset[field.to_s])
             end
           end
         end
@@ -183,13 +183,13 @@ module Skadi
         end
 
         return query
-          .select(
-            "#{safe_id} AS id",
-            "#{safe_date} AS date",
-            "#{safe_split} AS split",
-            "#{safe_count} AS count",
-          )
-          .group(safe_group)
+            .select(
+              "#{safe_id} AS id",
+              "#{safe_date} AS date",
+              "#{safe_split} AS split",
+              "#{safe_count} AS count",
+            )
+            .group(safe_group)
       end
 
       private def safe_split_columns(dataset, schema)

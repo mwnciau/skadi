@@ -1,14 +1,14 @@
 module Skadi
   # Validates that a Dashboard's configuration matches the DashboardConfig type in app/frontend/types.d.ts
   class DashboardValidator < ActiveModel::Validator
-    OneOf = Struct.new(:values, :allow_missing)
-    ArrayOf = Struct.new(:values, :allow_missing)
+    OneOf = Struct.new(:allowed_values, :allow_missing)
+    ArrayOf = Struct.new(:allowed_values, :allow_missing)
 
     COMMON_DATASET_FIELDS = {
       id: :string,
       label: :string,
       visible: :boolean?,
-      axis: OneOf.new(values: %w[left right].freeze, allow_missing: true),
+      axis: OneOf.new(allowed_values: %w[left right].freeze, allow_missing: true),
     }
 
     def self.types
@@ -21,18 +21,18 @@ module Skadi
           description: :string?,
           date_from: :date?,
           date_to: :date?,
-          children: :ChartConfigArray
+          children: :ChartConfigArray,
         },
         ChartConfig: {
           id: :string,
-          type: OneOf.new(values: %w[bar line].freeze).freeze,
+          type: OneOf.new(allowed_values: %w[bar line].freeze).freeze,
           title: :string,
-          time_series: OneOf.new(values: %w[daily weekly monthly].freeze, allow_missing: true).freeze,
+          time_series: OneOf.new(allowed_values: %w[daily weekly monthly].freeze, allow_missing: true).freeze,
           date_from: :date?,
           date_to: :date?,
           verified_visits: :boolean?,
-          unique_by: OneOf.new(values: %w[visit visitor].freeze, allow_missing: true).freeze,
-          visit_tracking: OneOf.new(values: %w[any anonymity_set cookie].freeze, allow_missing: true).freeze,
+          unique_by: OneOf.new(allowed_values: %w[visit visitor].freeze, allow_missing: true).freeze,
+          visit_tracking: OneOf.new(allowed_values: %w[any anonymity_set cookie].freeze, allow_missing: true).freeze,
           datasets: :DatasetArray,
         },
         percentageDataset: {
@@ -64,13 +64,13 @@ module Skadi
             dataset_type[:"#{field}_from"] = :date?
             dataset_type[:"#{field}_to"] = :date?
           elsif field_config[:options].is_a?(Array)
-            dataset_type[field] = OneOf.new(values: field_config[:options], allow_missing: true)
+            dataset_type[field] = OneOf.new(allowed_values: field_config[:options], allow_missing: true)
           else
             dataset_type[field] = :"#{field_config[:type] || :string}?"
           end
         end
 
-        dataset_type[:split_by] = ArrayOf.new(values: split_by_fields, allow_missing: true) if split_by_fields.any?
+        dataset_type[:split_by] = ArrayOf.new(allowed_values: split_by_fields, allow_missing: true) if split_by_fields.any?
 
         @types[:"#{dataset_name}Dataset"] = dataset_type
       end
@@ -98,7 +98,7 @@ module Skadi
           return if value.nil?
         end
 
-        add_error(path, "#{value.inspect} must be one of #{type.values.map(&:inspect).join(", ")}", context:) unless type.values.include?(value)
+        add_error(path, "#{value.inspect} must be one of #{type.allowed_values.map(&:inspect).join(", ")}", context:) unless type.allowed_values.include?(value)
 
         return
       end
@@ -111,7 +111,7 @@ module Skadi
         return add_error(path, "must be an array", context:) unless value.is_a?(Array)
 
         value.each_with_index do |item, index|
-          add_error("#{path}[#{index}]", "#{item.inspect} must be one of #{type.values.map(&:inspect).join(", ")}", context:) unless type.values.include?(item)
+          add_error("#{path}[#{index}]", "#{item.inspect} must be one of #{type.allowed_values.map(&:inspect).join(", ")}", context:) unless type.allowed_values.include?(item)
         end
 
         return
@@ -170,7 +170,7 @@ module Skadi
         return add_error(path, "must be a string", context:)
       end
 
-      unless ["date", "split", "count"].all? { |it| value.include?(it) }
+      unless [ "date", "split", "count" ].all? { |it| value.include?(it) }
         add_error(path, "must include the fields date, split and count", context:)
       end
     end

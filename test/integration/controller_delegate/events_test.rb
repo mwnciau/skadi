@@ -13,7 +13,7 @@ module Skadi::Integration
         assert_equal 1, Skadi::Event.count
         event = Skadi::Event.first!
         assert_equal "simple_event", event.name
-        assert_equal({"property" => "value"}, event.properties)
+        assert_equal({ "property" => "value" }, event.properties)
 
         refute_nil event.visit
         refute_nil event.view
@@ -34,7 +34,7 @@ module Skadi::Integration
         assert_equal({}, simple_event.properties)
 
         assert_equal "sensitive_event", sensitive_event.name
-        assert_equal({"sensitive_data" => "sensitive"}, sensitive_event.properties)
+        assert_equal({ "sensitive_data" => "sensitive" }, sensitive_event.properties)
 
         # Ensure the event has not been linked to a visit or view
         assert_nil sensitive_event.visit

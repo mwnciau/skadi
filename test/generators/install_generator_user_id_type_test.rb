@@ -46,7 +46,7 @@ module Skadi
 
       def test_raises_on_invalid_type
         assert_raises(Skadi::Generators::InstallGenerator::Error) do
-          run_generator ["--user-id-type=float"]
+          run_generator [ "--user-id-type=float" ]
         end
       end
     end

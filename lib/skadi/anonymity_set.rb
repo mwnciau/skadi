@@ -30,7 +30,7 @@ module Skadi
         pepper_expiry += 1.day if pepper_expiry < current_time
       end
 
-      Rails.cache.fetch("#{Skadi.configuration.anonymity_set_cache_key}/v1", expires_in: [1, pepper_expiry.to_i - current_time.to_i].max) do
+      Rails.cache.fetch("#{Skadi.configuration.anonymity_set_cache_key}/v1", expires_in: [ 1, pepper_expiry.to_i - current_time.to_i ].max) do
         SecureRandom.hex(32)
       end
     end
