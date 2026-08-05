@@ -18,7 +18,7 @@ module Skadi::Integration
       test "url date" do
         DATES.each { |date| create :visit, created_at: date }
 
-        chart = build_chart.to_json
+        chart = build_chart
 
         DATE_TEST_CASES.each do |testcase|
           assert_results testcase[:count], configuration: chart, **testcase.except(:count)
@@ -33,7 +33,7 @@ module Skadi::Integration
         DATES.each { |date| create :visit, created_at: date }
 
         DATE_TEST_CASES.each do |testcase|
-          chart = build_chart(**testcase.except(:count)).to_json
+          chart = build_chart(**testcase.except(:count))
           assert_results testcase[:count], configuration: chart
         end
       end
@@ -42,7 +42,7 @@ module Skadi::Integration
         DATES.each { |date| create :visit, created_at: date }
 
         DATE_TEST_CASES.each do |testcase|
-          chart = build_chart(dataset: build_dataset(**testcase.except(:count))).to_json
+          chart = build_chart(dataset: build_dataset(**testcase.except(:count)))
           assert_results testcase[:count], configuration: chart
         end
       end
@@ -62,7 +62,7 @@ module Skadi::Integration
           { count: 2, url: { date_from: "2020-01-16" }, dataset: { date_to: "2020-01-17" } },
           { count: 1, chart: { date_from: "2020-01-17" }, dataset: { date_to: "2020-01-17" } },
         ].each do |testcase|
-          chart = build_chart(**(testcase[:chart] || {}), dataset: build_dataset(**(testcase[:dataset] || {}))).to_json
+          chart = build_chart(**(testcase[:chart] || {}), dataset: build_dataset(**(testcase[:dataset] || {})))
 
           assert_results testcase[:count], configuration: chart, **(testcase[:url] || {})
         end
@@ -106,10 +106,10 @@ module Skadi::Integration
         create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: false
         create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
 
-        nil_chart = build_chart(visit_tracking: nil).to_json
-        any_chart = build_chart(visit_tracking: "any").to_json
-        anonymity_set_chart = build_chart(visit_tracking: "anonymity_set").to_json
-        cookie_chart = build_chart(visit_tracking: "cookie").to_json
+        nil_chart = build_chart(visit_tracking: nil)
+        any_chart = build_chart(visit_tracking: "any")
+        anonymity_set_chart = build_chart(visit_tracking: "anonymity_set")
+        cookie_chart = build_chart(visit_tracking: "cookie")
 
         assert_results 3, configuration: nil_chart
         assert_results 2, configuration: any_chart
@@ -138,27 +138,27 @@ module Skadi::Integration
         false_chart = build_chart(verified_visits: false, dataset:)
 
         # Visits
-        assert_results 2, configuration: nil_chart.to_json
-        assert_results 2, configuration: false_chart.to_json
-        assert_results 1, configuration: true_chart.to_json
+        assert_results 2, configuration: nil_chart
+        assert_results 2, configuration: false_chart
+        assert_results 1, configuration: true_chart
 
         # Views
         dataset["type"] = "views"
-        assert_results 3, configuration: nil_chart.to_json
-        assert_results 3, configuration: false_chart.to_json
-        assert_results 1, configuration: true_chart.to_json
+        assert_results 3, configuration: nil_chart
+        assert_results 3, configuration: false_chart
+        assert_results 1, configuration: true_chart
 
         # Events
         dataset["type"] = "events"
-        assert_results 3, configuration: nil_chart.to_json
-        assert_results 3, configuration: false_chart.to_json
-        assert_results 1, configuration: true_chart.to_json
+        assert_results 3, configuration: nil_chart
+        assert_results 3, configuration: false_chart
+        assert_results 1, configuration: true_chart
 
         # Demographics
         dataset["type"] = "demographics"
-        assert_results 5, configuration: nil_chart.to_json
-        assert_results 5, configuration: false_chart.to_json
-        assert_results 5, configuration: true_chart.to_json
+        assert_results 5, configuration: nil_chart
+        assert_results 5, configuration: false_chart
+        assert_results 5, configuration: true_chart
       end
 
       test "chart unique_by" do
@@ -187,34 +187,34 @@ module Skadi::Integration
         visitor_chart = build_chart(unique_by: "visitor", dataset:)
 
         # Visits: 6 total visits
-        assert_results 6, configuration: nil_chart.to_json
-        assert_results 6, configuration: visit_chart.to_json
+        assert_results 6, configuration: nil_chart
+        assert_results 6, configuration: visit_chart
         # 2 different non-nil tracking tokens
-        assert_results 2, configuration: visitor_chart.to_json
+        assert_results 2, configuration: visitor_chart
 
         # Views
         dataset["type"] = "views"
         # 7 total views
-        assert_results 7, configuration: nil_chart.to_json
+        assert_results 7, configuration: nil_chart
         # 6 with a visit
-        assert_results 6, configuration: visit_chart.to_json
+        assert_results 6, configuration: visit_chart
         # 2 different non-nil tracking tokens
-        assert_results 2, configuration: visitor_chart.to_json
+        assert_results 2, configuration: visitor_chart
 
         # Events
         dataset["type"] = "events"
         # 7 total events
-        assert_results 7, configuration: nil_chart.to_json
+        assert_results 7, configuration: nil_chart
         # 6 with a visit
-        assert_results 6, configuration: visit_chart.to_json
+        assert_results 6, configuration: visit_chart
         # 2 different non-nil tracking tokens
-        assert_results 2, configuration: visitor_chart.to_json
+        assert_results 2, configuration: visitor_chart
 
         # Demographics: not affected by this setting
         dataset["type"] = "demographics"
-        assert_results 5, configuration: nil_chart.to_json
-        assert_results 5, configuration: visitor_chart.to_json
-        assert_results 5, configuration: visit_chart.to_json
+        assert_results 5, configuration: nil_chart
+        assert_results 5, configuration: visitor_chart
+        assert_results 5, configuration: visit_chart
       end
 
       test "dataset split_by" do
@@ -248,20 +248,20 @@ module Skadi::Integration
         dataset = build_dataset(type: "demographics")
         chart = build_chart(dataset: dataset)
 
-        assert_results 7, configuration: chart.to_json
+        assert_results 7, configuration: chart
 
         dataset["name"] = "demographic 1"
-        assert_results 3, configuration: chart.to_json
+        assert_results 3, configuration: chart
 
         dataset["name"] = "demographic 2"
-        assert_results 4, configuration: chart.to_json
+        assert_results 4, configuration: chart
 
         dataset["name"] = "demographic"
-        assert_results 0, configuration: chart.to_json
+        assert_results 0, configuration: chart
 
         dataset["name"] = "demographic 1"
         dataset["value"] = "value 1"
-        assert_results 1, configuration: chart.to_json
+        assert_results 1, configuration: chart
       end
 
       test "dataset string filter with sql" do
@@ -273,16 +273,16 @@ module Skadi::Integration
         dataset = build_dataset(type: "visits")
         chart = build_chart(dataset: dataset)
 
-        assert_results 4, configuration: chart.to_json
+        assert_results 4, configuration: chart
 
         dataset["referrer_domain"] = "example.com"
-        assert_results 3, configuration: chart.to_json
+        assert_results 3, configuration: chart
 
         dataset["referrer_domain"] = "other.example.com"
-        assert_results 1, configuration: chart.to_json
+        assert_results 1, configuration: chart
 
         dataset["referrer_domain"] = "invalid.example.com"
-        assert_results 0, configuration: chart.to_json
+        assert_results 0, configuration: chart
       end
 
       test "dataset boolean filter" do
@@ -293,13 +293,13 @@ module Skadi::Integration
         dataset = build_dataset(type: "views")
         chart = build_chart(dataset: dataset)
 
-        assert_results 3, configuration: chart.to_json
+        assert_results 3, configuration: chart
 
         dataset["verified"] = true
-        assert_results 2, configuration: chart.to_json
+        assert_results 2, configuration: chart
 
         dataset["verified"] = false
-        assert_results 1, configuration: chart.to_json
+        assert_results 1, configuration: chart
       end
 
       test "percentage dataset" do
@@ -336,7 +336,7 @@ module Skadi::Integration
       end
 
       def results_for_chart(chart)
-        post skadi.dashboard_data_path, params: { configuration: chart.to_json }, as: :json
+        post skadi.dashboard_data_path, params: { configuration: chart }, as: :json
 
         assert_response :ok
         return JSON.parse(response.body)

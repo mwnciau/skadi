@@ -74,7 +74,7 @@ module Skadi::Integration
 
         create :view
 
-        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: build_dataset(type: "views")).to_json }, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: build_dataset(type: "views")) }, as: :json
 
         assert_response :ok
         assert_see '"count":1'
@@ -84,7 +84,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_view = true
         ApplicationController.skadi_dashboard_edit = false
 
-        post skadi.dashboard_data_path, params: { configuration: build_chart.to_json }, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart }, as: :json
 
         assert_response :unprocessable_content
         assert_see "The chart_id parameter must be specified"
@@ -95,7 +95,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = true
 
-        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: SQL_DATASET).to_json }, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: SQL_DATASET) }, as: :json
 
         assert_response :ok
       end
@@ -105,7 +105,7 @@ module Skadi::Integration
         ApplicationController.skadi_dashboard_edit = true
         ApplicationController.skadi_dashboard_use_sql = false
 
-        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: SQL_DATASET).to_json }, as: :json
+        post skadi.dashboard_data_path, params: { configuration: build_chart(dataset: SQL_DATASET) }, as: :json
 
         assert_response :unprocessable_content
         assert_see "Invalid chart configuration"

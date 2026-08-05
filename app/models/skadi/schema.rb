@@ -117,7 +117,7 @@ module Skadi
         # Redact the SQL from the dashboard schema
         schema = database_schema.deep_dup
         schema.each_value do |dataset|
-          Object.keys(dataset).each do |key|
+          dataset.keys.each do |key|
             dataset.delete(key) unless key == :fields
           end
 

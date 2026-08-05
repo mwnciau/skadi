@@ -32,7 +32,7 @@ module Skadi::Integration
         # The SQLite driver treats null bytes as the end of string, so we just check that the error is caught
         chart_configuration = build_chart(dataset: build_dataset(id: "\u0000"))
 
-        post skadi.dashboard_data_path, params: { configuration: chart_configuration.to_json }, as: :json
+        post skadi.dashboard_data_path, params: { configuration: chart_configuration }, as: :json
 
         assert_response :unprocessable_content
         assert_equal %({"error":"SQLite3::SQLException: unrecognized token: \\"'\\":\\nSELECT '\\n       ^"}), response.body
