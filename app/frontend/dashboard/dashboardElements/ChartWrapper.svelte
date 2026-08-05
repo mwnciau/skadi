@@ -93,7 +93,7 @@ $effect(() => {
     </div>
   {/if}
 
-  <div class={isEditingChart && "flex-1 min-w-0 max-w-256"}>
+  <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
     {#if viewData}
       <StaticDataTable chartConfig={localChartConfig} {data} />
     {:else}

@@ -1,11 +1,11 @@
 <script lang="ts">
-import type {
-  ChartConfig,
-  Dataset,
-} from "../../types";
+  import type {
+    ChartConfig,
+    Dataset, FieldSchema,
+  } from "../../types";
 import Icon from "../components/Icon.svelte";
 import Filter from "../components/Filter.svelte";
-import { datasetSchema } from "../helpers/datasetSchema";
+import { databaseSchema } from "../helpers/databaseSchema";
 import { untrack } from "svelte";
 import ExpandingSection from "../components/ExpandingSection.svelte";
 
@@ -67,12 +67,12 @@ const datasetIdOptions = $derived.by(() => {
 })
 
 const types = $derived([
-  ...Object.keys(datasetSchema),
+  ...Object.keys(databaseSchema),
   "percentage",
   "sql",
 ]);
-const fields = $derived<Record<string,unknown> | undefined>(datasetSchema[dataset.type]?.fields);
-const filterFields = $derived.by(() => {
+const fields = $derived<Record<string,FieldSchema>>(databaseSchema[dataset.type]?.fields ?? {});
+const filterFields = $derived.by<Record<string,FieldSchema>>(() => {
   if (dataset.type == "sql") {
     return {
       sql: {type: "sql"},
@@ -182,13 +182,14 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
   activeFields = calculateActiveFields(newType);
 }
 
-const addFilter = (e: Event) => {
+const addFilter = (e: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
   activeFields.push(e.currentTarget.value);
   e.currentTarget.value = "";
 }
 
-const addSplit = (e: Event) => {
-  if (dataset.split_by) {
+const addSplit = (e: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
+
+  if (Array.isArray(dataset.split_by)) {
     dataset.split_by.push(e.currentTarget.value);
   } else {
     dataset.split_by = [e.currentTarget.value];
@@ -198,7 +199,10 @@ const addSplit = (e: Event) => {
 }
 
 const removeSplit = (split: string) => {
-  // We assume that dataset.split_by is an array and it contains split
+  if (!Array.isArray(dataset.split_by)) {
+    return;
+  }
+
   if (dataset.split_by.length === 1) {
     delete dataset.split_by;
 
@@ -267,7 +271,7 @@ const duplicate = () => {
       <p class="text-xs text-grey-600">
         Shows a separate chart series for each unique value of the given fields
       </p>
-      {#if dataset.split_by}
+      {#if Array.isArray(dataset.split_by)}
         <div class="flex flex-wrap gap-2">
           {#each dataset.split_by as splitField}
             <div class="flex items-center gap-1">
@@ -293,8 +297,8 @@ const duplicate = () => {
         >
           <option selected value="">Add a split</option>
           {#each splitFields as field}
-            {#if !dataset.split_by?.includes(field)}
-              <option value={field}>{filterFields[field]?.label ?? formatString(field)}</option>
+            {#if !Array.isArray(dataset.split_by) || !dataset.split_by.includes(field)}
+              <option value={field}>{filterFields?.[field]?.label ?? formatString(field)}</option>
             {/if}
           {/each}
         </select>

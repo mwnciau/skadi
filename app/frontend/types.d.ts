@@ -33,7 +33,7 @@ export type SqlDataset = CommonDataset & {
   sql: string;
 }
 
-export type Dataset = SchemaDataset| PercentageDataset | SqlDataset;
+export type Dataset = (SchemaDataset| PercentageDataset | SqlDataset) & Record<string,string|boolean|number>;
 
 export type ChartConfig = {
   id: string;
@@ -75,3 +75,24 @@ export type ChartDataset = {
   axis: "left" | "right";
 }
 export type ChartData = ChartDataset[]
+
+export type FieldSchema = {
+  label?: string;
+  type?: "date" | "string" | "number" | "boolean" | "percentage" | "sql";
+  filter?: boolean;
+  split?: boolean;
+  description?: string;
+  // For select filters
+  options?: (string | {label: string, value: string})[];
+  // For boolean/switch filters
+  leftLabel?: string;
+  leftValue?: string;
+  rightLabel?: string;
+  rightValue?: string;
+}
+
+export type DatasetSchema = {
+  fields: Record<string, FieldSchema>;
+}
+
+export type DatabaseSchema = Record<string, DatasetSchema>;

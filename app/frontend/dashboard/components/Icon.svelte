@@ -6,12 +6,12 @@ const ICONS = {
   plus: "M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z",
 } as const;
 
-const { name, size = null, class: className = "", alt = null, ...attributes } = $props<{
+const { name, size = null, class: className = "", alt = null, ...attributes } : {
   name: keyof typeof ICONS;
   size?: number | string | null;
   class?: string;
   alt?: string | null;
-}>();
+} = $props();
 
 const sizeStyleString = $derived.by(() => {
   if (typeof size === "number" || (typeof size === "string" && size.match(/^\d+$/))) {

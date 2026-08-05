@@ -2,10 +2,10 @@
 import Filter from "../components/Filter.svelte";
 import type { DashboardTabConfig } from "../../types.d.ts";
 
-const {tabConfig, onDelete} = $props<{
+const {tabConfig, onDelete} : {
   tabConfig: DashboardTabConfig;
   onDelete: () => void;
-}>();
+} = $props();
 
 let confirmDelete: boolean = $state(false);
 </script>

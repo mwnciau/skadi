@@ -1,15 +1,18 @@
 <script lang="ts">
 import Icon from "./Icon.svelte";
-import { untrack } from "svelte";
+import { Snippet, untrack } from "svelte";
 
 const {
   startOpen = false,
   wrapperClass = "border-night-700",
   title,
   children,
-} = $props<{
+} : {
   startOpen?: boolean;
-}>();
+  wrapperClass?: string;
+  title: Snippet<[open: boolean]>,
+  children: Snippet,
+} = $props();
 
 // untrack: this is a one-time default that lets the parent control the state
 let open = $state(untrack(() => startOpen));

@@ -3,13 +3,13 @@ import { onMount } from "svelte";
 import { Chart } from "chart.js/auto";
 import type { ChartConfig, ChartData, ChartDataset, Dataset } from "../../types.d.ts";
 
-let { chartConfig, data } = $props<{
+let { chartConfig, data } : {
   chartConfig: ChartConfig;
   data: ChartData;
-}>();
+} = $props();
 
 let canvas = $state<HTMLCanvasElement>();
-let chart: Chart<"line", {x: string, y: number}, unknown>;
+let chart: Chart<"line", {x: string, y: number}[], unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;
@@ -77,7 +77,7 @@ $effect(() => {
 </div>
 
 <script module lang="ts">
-  const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}, unknown> => {
+  const buildChart = (canvas: HTMLCanvasElement): Chart<"line", {x: string, y: number}[], unknown> => {
     return new Chart(canvas, {
       type: "line",
       data: {
@@ -115,8 +115,9 @@ $effect(() => {
         id: 'verticalLineOnHover',
         afterDraw: (chart) => {
           // Check if the tooltip is active and has data points
-          if (chart.tooltip?._active?.length) {
-            const activePoint = chart.tooltip._active[0];
+          const activeElements = chart.tooltip?.getActiveElements();
+          if (activeElements?.length) {
+            const activePoint = activeElements[0];
             const ctx = chart.ctx;
             const x = activePoint.element.x;
             const topY = chart.scales.y.top;

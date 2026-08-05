@@ -29,6 +29,8 @@ module Skadi
               # filter: True if this field can be filtered
               # split: True if this field can be split
               # sql: The SQL expression used to get this value for derived fields
+              # options: A list of possible values
+              # description: used in the front end as help text for this field
               date: {
                 type: :date,
                 filter: true,
@@ -115,6 +117,10 @@ module Skadi
         # Redact the SQL from the dashboard schema
         schema = database_schema.deep_dup
         schema.each_value do |dataset|
+          Object.keys(dataset).each do |key|
+            dataset.delete(key) unless key == :fields
+          end
+
           dataset[:fields].each_value do |field|
             field.delete(:sql)
           end

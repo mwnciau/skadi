@@ -3,13 +3,13 @@ import { onMount } from "svelte";
 import { Chart } from "chart.js/auto";
 import type { ChartConfig, ChartData, ChartDataset } from "../../types.d.ts";
 
-let { chartConfig, data } = $props<{
+let { chartConfig, data } : {
   chartConfig: ChartConfig;
   data: ChartData;
-}>();
+} = $props();
 
 let canvas = $state<HTMLCanvasElement>();
-let chart: Chart<"bar", {x: string, y: number}, unknown>;
+let chart: Chart<"bar", {x: string, y: number}[], unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;
@@ -82,7 +82,7 @@ $effect(() => {
 </div>
 
 <script module lang="ts">
-  const buildChart = (canvas: HTMLCanvasElement): Chart<"bar", {x: string, y: number}, unknown> => {
+  const buildChart = (canvas: HTMLCanvasElement): Chart<"bar", {x: string, y: number}[], unknown> => {
     return new Chart(canvas, {
       type: "bar",
       data: {

@@ -1,11 +1,11 @@
 <script lang="ts">
-const { page, perPage, totalItems, setPage, class: className = "" } = $props<{
+const { page, perPage, totalItems, setPage, class: className = "" } : {
   page: number;
   perPage: number;
   totalItems: number;
   setPage: (newPage: number) => void;
   class?: string;
-}>();
+} = $props();
 
 const totalPages = $derived(Math.ceil(totalItems / perPage))
 
@@ -40,7 +40,7 @@ const paginationPages = $derived.by(() => {
       {:else}
         <button
           class="ghost"
-          onclick={() => setPage(p)}
+          onclick={() => setPage(p as number)}
         >{p}</button>
       {/if}
     {/each}

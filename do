@@ -81,8 +81,8 @@ fi
 
 if [ "$1" == "npx" ]
 then
-    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run ${@:2}
-    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run "${@:2}"
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx "${@:2}"
     exit 0
 fi
 
@@ -93,8 +93,18 @@ then
     exit 0
 fi
 
+if [ "$1" == "js" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run cs ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npm run cs "${@:2}"
+    exit 0
+fi
+
 if [ "$1" == "cs:fix" ]
 then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx "${@:2}"
+    exit 0
     echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop --autocorrect "${@:2}"
     ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rubocop --autocorrect "${@:2}"
     exit 0

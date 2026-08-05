@@ -2,10 +2,10 @@
 import type { ChartConfig, ChartData } from "../../types";
 import Pagination from "../components/Pagination.svelte";
 
-const { chartConfig, data } = $props<{
+const { chartConfig, data } : {
   chartConfig: ChartConfig,
   data: ChartData,
-}>();
+} = $props();
 
 const dataCount = $derived.by(() => {
   return data[0]?.data?.length ?? 0;

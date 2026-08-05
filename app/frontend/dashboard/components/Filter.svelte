@@ -11,16 +11,16 @@ let {
   children,
   description = null,
   selectOptions = null,
-  leftLabel = null,
-  rightLabel = null,
-  leftValue = null,
-  rightValue = null,
+  leftLabel,
+  rightLabel,
+  leftValue,
+  rightValue,
   allowEmpty = false,
   trimOnBlur = false,
   ...attributes
-} = $props<{
+} : {
   type?: "boolean" | "contenteditable" | "date" | "select" | "switch" | "text" | "textarea";
-  model: object;
+  model: Record<string,unknown>;
   key: string;
   booleanDefault?: true | false;
   leftLabel?: string;
@@ -35,10 +35,10 @@ let {
   description?: string | Snippet | null;
   selectOptions?: (string | {label?: string, value: string})[] | Snippet | null;
   [key: string]: unknown;
-}>();
+} = $props();
 
 type StringEvent = Event & {
-  currentTarget: EventTarget & (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement);
+  currentTarget: EventTarget & (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLParagraphElement);
 };
 
 let debounceTimeout: number;
@@ -52,7 +52,7 @@ let persistValue = () => {
 }
 
 const setString = (event: StringEvent) => {
-  debounceValue = type === "contenteditable" ? event.currentTarget.innerText : event.currentTarget.value;
+  debounceValue = type === "contenteditable" ? event.currentTarget.innerText : (event.currentTarget as HTMLInputElement).value;
 
   if (debounceTimeout) {
     clearTimeout(debounceTimeout);
@@ -86,13 +86,13 @@ const onBlur = () => {
     persistValue();
   }
 
-  if (trimOnBlur) {
-    model[key] = model[key]?.trim();
+  if (trimOnBlur && typeof model[key] === "string") {
+    model[key] = model[key].trim();
   }
 }
 
-const contentEditableSync = (node: HTMLElement, value: string) => {
-  node.innerText = value ?? "";
+const contentEditableSync = (node: HTMLElement, value: unknown) => {
+  node.innerText = (value as string | undefined) ?? "";
 
   return {
     update(value: string) {
@@ -163,8 +163,8 @@ const contentEditableSync = (node: HTMLElement, value: string) => {
       <Switch
         value={model[key] === rightValue}
         onToggle={toggleSwitch}
-        labelOff={leftLabel ? "" : null}
-        labelOn={rightLabel ? "" : null}
+        labelOff={leftLabel ? "" : undefined}
+        labelOn={rightLabel ? "" : undefined}
       />
       {rightLabel}
     </div>

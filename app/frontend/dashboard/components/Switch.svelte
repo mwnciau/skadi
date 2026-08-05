@@ -4,12 +4,12 @@ const {
   onToggle,
   labelOn = "YES",
   labelOff = "NO",
-} = $props<{
+} : {
   value: boolean;
   onToggle: () => void;
   labelOn?: string;
   labelOff?: string;
-}>();
+} = $props();
 
 const handleCheckboxChange = (e: Event) => {
   e.preventDefault();
