@@ -93,7 +93,6 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
             const match = label.match(matcher);
             if (match) {
               label = label.replace(matcher, (match, defaultReplacement) => {
-                console.log(match, defaultReplacement);
                 return splitParts[i] ? splitParts[i] : (defaultReplacement ?? "n/a");
               });
             } else {
