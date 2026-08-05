@@ -230,6 +230,7 @@ const duplicate = () => {
   <label>
     Label
     <input type="text" bind:value={dataset.label} />
+    <span class="help-text">Splits can be incorporated into the label using <code>%1</code>, <code>%2</code>, etc. or with a default value if empty using <code>%1(none)</code></span>
   </label>
 
   <label>

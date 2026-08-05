@@ -57,13 +57,38 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
         datasetIds[split] = splitDatasetId
       }
 
-      return Object.entries(datasetIds).map(([split, datasetId]) => ({
-        dataset: datasetId,
-        split: split,
-        label: split ? `${dataset.label ? `${dataset.label}: ` : ""}${split}` : dataset.label,
-        data: responseData[datasetId],
-        axis: dataset.axis === "right" ? "right" : "left",
-      }));
+      return Object.entries(datasetIds).map(([split, datasetId]) => {
+        let label = dataset.label;
+        if (split) {
+          const splitParts = split.split("|~|");
+          const numSplits = Math.max(splitParts.length, (dataset as {split_by?: string[]}).split_by?.length ?? 0);
+
+          for (let i = 0; i < numSplits; i++) {
+            const matcher = new RegExp(`%${i + 1}(?!\\d)(?:\\(([^)]+)\\))?`, "g");
+
+            let match = label.match(matcher);
+            if (match) {
+              label = label.replace(matcher, (match, defaultReplacement) => {
+                console.log(match, defaultReplacement);
+                return splitParts[i] ? splitParts[i] : (defaultReplacement ?? "n/a");
+
+              });
+            } else {
+              const splitPart = splitParts[i] ? splitParts[i] : "n/a";
+
+              label = `${label}, ${splitPart}`
+            }
+          }
+        }
+
+        return {
+          dataset: datasetId,
+          split: split,
+          label: label,
+          data: responseData[datasetId],
+          axis: dataset.axis === "right" ? "right" : "left",
+        };
+      });
     });
 }
 

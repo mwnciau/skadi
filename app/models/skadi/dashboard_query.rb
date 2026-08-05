@@ -170,9 +170,8 @@ module Skadi
         if split_columns.length == 1
           safe_split = split_columns.first
         elsif split_columns.length > 1
-          # Concatenate the split columns, separating the columns with commas
-          safe_split = "CONCAT(#{split_columns.join(", ', ', ")})"
-          #                                            0_0
+          # Concatenate the split columns, separating the columns with a token that can be processed in the front end
+          safe_split = "CONCAT(#{split_columns.join(", '|~|', ")})"
         end
 
         if schema[:count_sql]

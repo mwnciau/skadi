@@ -18,7 +18,7 @@ export type CommonDataset = {
 
 export type SchemaDataset = CommonDataset & {
   type: string;
-  split_by?: string;
+  split_by?: string[];
   [key: string]: string | boolean | number | DateFilter;
 }
 
