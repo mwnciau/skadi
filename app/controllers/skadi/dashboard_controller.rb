@@ -62,7 +62,6 @@ module Skadi
         return render json: { error: "Invalid chart configuration:\n#{@dashboard.errors.full_messages.join("\n")}" }, status: :unprocessable_content
       end
 
-      DashboardQuery.chart_query(chart_configuration, query_filters)
       return render json: @dashboard.chart_data("temporary-chart", query_filters.to_h)
     end
 
