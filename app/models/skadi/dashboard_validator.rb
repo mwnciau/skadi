@@ -33,7 +33,7 @@ module Skadi
           verified_visits: :boolean?,
           unique_by: OneOf.new(allowed_values: %w[visit visitor].freeze, allow_missing: true).freeze,
           visit_tracking: OneOf.new(allowed_values: %w[any anonymity_set cookie].freeze, allow_missing: true).freeze,
-          datasets: :DatasetArray,
+          datasets: :DatasetArray!,
         },
         percentageDataset: {
           **COMMON_DATASET_FIELDS,
@@ -83,7 +83,7 @@ module Skadi
     def validate(record)
       context = Context.new(record, nil, [])
 
-      validate_type(:DashboardTabConfigArray, record.configuration, "configuration", context:)
+      validate_type(:DashboardTabConfigArray!, record.configuration, "configuration", context:)
     end
 
     private def validate_type(type, value, path, context:)
@@ -129,10 +129,11 @@ module Skadi
         type = type.to_s.delete_suffix("?").to_sym
       end
 
-      if type.to_s.end_with?("Array")
+      if type.to_s.end_with?("Array") || type.to_s.end_with?("Array!")
         return add_error(path, "must be an array", context:) unless value.is_a?(Array)
+        return add_error(path, "must have at least one element", context:) if type.to_s.end_with?("!") && value.empty?
 
-        type = type.to_s.delete_suffix("Array").to_sym
+        type = type.to_s.delete_suffix("!").delete_suffix("Array").to_sym
 
         return value.each_with_index do |item, index|
           validate_type(type, item, "#{path}[#{index}]", context:)

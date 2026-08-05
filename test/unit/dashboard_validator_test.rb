@@ -133,6 +133,10 @@ module Skadi::Unit
       assert_configuration_error("configuration must be an array", {})
     end
 
+    test "validates configuration must have one element" do
+      assert_configuration_error("configuration must have at least one element", [])
+    end
+
     test "validates tab is a hash" do
       assert_configuration_error("configuration[0] must be a hash", [ "invalid" ])
     end
@@ -202,8 +206,12 @@ module Skadi::Unit
       assert_chart_error("visit_tracking [] must be one of", visit_tracking: [])
     end
 
-    test "validates chart datasets" do
+    test "validates chart datasets is an array" do
       assert_chart_error("datasets must be an array", datasets: {})
+    end
+
+    test "validates chart has a dataset" do
+      assert_chart_error("datasets must have at least one element", datasets: [])
     end
 
     test "validates chart unknown key" do
