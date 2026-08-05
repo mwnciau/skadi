@@ -37,7 +37,7 @@ module Skadi
     end
 
     def update
-      return head :forbidden unless can_edit
+      return head :forbidden unless can_view && can_edit
 
       # The dashboard validator will strongly check the structure of :configuration
       @dashboard.configuration = params.to_unsafe_h[:configuration]
