@@ -2,8 +2,8 @@
 let demographics: SkadiDemographic[] = [];
 let events: SkadiEvent[] = [];
 let largestContentfulPaint: number = -1;
-let requestTimeout: number|null = null;
-let exitPage: string|null = null;
+let requestTimeout: number|undefined;
+let exitPage: string|undefined;
 let useExitPage: boolean = false;
 
 type Consent = {
@@ -59,13 +59,13 @@ const options: SkadiOptions = {
 }
 
 const queueRequest = () => {
-  requestTimeout = setTimeout(sendRequest, 500);
+  requestTimeout ??= setTimeout(sendRequest, 500);
 }
 
 const sendRequest = () => {
-  if (requestTimeout !== null) {
+  if (requestTimeout) {
     clearTimeout(requestTimeout);
-    requestTimeout = null;
+    requestTimeout = 0;
   }
 
   const result = navigator.sendBeacon(options.endpoint, new Blob([JSON.stringify({
@@ -136,41 +136,20 @@ new PerformanceObserver((entryList, observer) => {
       true
     );
     observer.disconnect();
-    queueRequest();
   }
 }).observe({ type: "paint", buffered: true });
 
-const mediaMatches = (query: string): boolean => {
-  return _window.matchMedia(query).matches;
-}
-
 _window.addEventListener('load', () => {
-  let paintTiming = performance.getEntriesByName(firstContentfulPaintId)?.[0];
-  if (paintTiming) {
-    addDemographic(
-      firstContentfulPaintId,
-      bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]),
-      true
-    );
-  }
-
   if (options.visit === "1") {
     addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
     addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
     addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);
-    addDemographic("input-device", mediaMatches('(pointer: fine)') ? "mouse" : "touch");
-    queueRequest();
+    addDemographic("input-device", _window.matchMedia('(pointer: fine)').matches ? "mouse" : "touch");
   }
-})
 
-setTimeout(() => {
-  addDemographic(
-    largestContentfulPaintId,
-    bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]),
-    true,
-  );
+  // Always send a beacon on page load to send the FCP and also verify the view
   queueRequest();
-}, 6000);
+});
 
 // Track clicks to detect when the user leaves the page
 _document.addEventListener('click', (event: MouseEvent) => {
@@ -186,18 +165,23 @@ _document.addEventListener('click', (event: MouseEvent) => {
 });
 
 _window.addEventListener('pagehide', () => {
+  addDemographic(
+    largestContentfulPaintId,
+    bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]),
+    true,
+  );
+
   // Flags that the page is unloading so the beacon sends the exit page
   useExitPage = true;
   sendRequest();
-})
+});
 
 _window.addEventListener('visibilitychange', () => {
   // Ensure any queued beacon is sent immediately if the user switches tab
-  if (requestTimeout !== null) {
+  if (requestTimeout) {
     sendRequest();
   }
 });
-
 
 _window.skadi = {
   event: (name: string, properties: Record<string, unknown> = {}) => {
