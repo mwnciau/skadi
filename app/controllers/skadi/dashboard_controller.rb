@@ -50,11 +50,8 @@ module Skadi
     end
 
     private def custom_chart_data(query_filters)
-      chart_configuration = begin
-        JSON.parse(params[:configuration])
-      rescue
-        return render json: {error: "Unable to parse chart configuration"}, status: :unprocessable_content
-      end
+      # The dashboard validator will strongly check the structure of :configuration
+      chart_configuration = params[:configuration].to_unsafe_h
 
       # Temporarily add the chart to the current dashboard so we can validate it, ensuring it's in the right format and that no illegal SQL has been added.
       chart_configuration["id"] = "temporary-chart"
