@@ -126,7 +126,7 @@ fi
 if [ "$1" == "js:fix" ]
 then
     echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx biome check --write ${@:2}
-    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx biome lint --write "${@:2}"
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm node npx biome check --write "${@:2}"
     exit 0
 fi
 

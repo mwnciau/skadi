@@ -1,4 +1,4 @@
-import type { ChartConfig, DashboardConfig, TabFilters } from "../../types";
+import type { ChartConfig, DashboardConfig, RawResponseData, TabFilters } from "../../types";
 
 const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]");
 const fetchDataPath = callingScript?.dataset?.fetchDataPath as string;
@@ -24,7 +24,7 @@ const handleResponseError = (response: Response) => {
   });
 };
 
-export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartConfig: ChartConfig | null) => {
+export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartConfig: ChartConfig | null): Promise<RawResponseData> => {
   const queryVars: Record<string, unknown> = {
     [csrfParam]: csrfToken,
   };

@@ -1,13 +1,13 @@
 <script lang="ts">
+import { untrack } from "svelte";
   import type {
     ChartConfig,
     Dataset, FieldSchema,
   } from "../../types";
-import Icon from "../components/Icon.svelte";
-import Filter from "../components/Filter.svelte";
-import { databaseSchema } from "../helpers/databaseSchema";
-import { untrack } from "svelte";
 import ExpandingSection from "../components/ExpandingSection.svelte";
+import Filter from "../components/Filter.svelte";
+import Icon from "../components/Icon.svelte";
+import { databaseSchema } from "../helpers/databaseSchema";
 
 const SQL_DEFAULT = `SELECT
   skadi_views.created_at as "date",

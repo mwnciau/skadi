@@ -1,4 +1,4 @@
-import type { ChartConfig, ChartDataset, Dataset, ResponseData } from "../../types";
+import type { ChartConfig, ChartDataset, DataPoint, Dataset, ResponseData } from "../../types";
 
 const months: Record<string, string> = {
   "01": "January",
@@ -59,7 +59,11 @@ export const formatDates = (chartConfig: ChartConfig, data: ResponseData) => {
       }
 
       for (const item of data[datasetId]) {
-        const dateParts = item.x.split("-", 3);
+        if (!item.x) {
+          continue;
+        }
+
+        const dateParts = item.x.split("-", 3) ?? [];
 
         item.x = dateFn(dateParts);
       }
@@ -92,7 +96,7 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
 
           const match = label.match(matcher);
           if (match) {
-            label = label.replace(matcher, (match, defaultReplacement) => {
+            label = label.replace(matcher, (_match, defaultReplacement) => {
               return splitParts[i] ? splitParts[i] : (defaultReplacement ?? "n/a");
             });
           } else {
@@ -132,9 +136,9 @@ export const processDerivedDatasets = (chart: ChartConfig, data: ResponseData) =
 
       if (chart.time_series) {
         data[dataset.id] = populatePercentageData(numerator, denominator);
-      } else {
+      } else if (denominator[0]?.y !== null && numerator[0]?.y !== null && denominator[0].y !== 0) {
         // If the denominator is zero, skip it to avoid division by zero
-        const yValue = denominator[0].y !== 0 ? numerator[0].y / denominator[0].y : 0;
+        const yValue = numerator[0].y / denominator[0].y;
 
         // If there is no time-series, there is only one item per dataset
         data[dataset.id] = [{ x: dataset.label, y: Math.round(yValue * 1000) / 10 }];
@@ -143,7 +147,7 @@ export const processDerivedDatasets = (chart: ChartConfig, data: ResponseData) =
   }
 };
 
-const populatePercentageData = (numerator: { x: string; y: number }[], denominator: { x: string; y: number }[]) => {
+const populatePercentageData = (numerator: DataPoint[], denominator: DataPoint[]) => {
   let n = 0;
   let d = 0;
   const percentageData = [];
@@ -151,13 +155,19 @@ const populatePercentageData = (numerator: { x: string; y: number }[], denominat
   // Loop through the sorted numerator and denominator arrays and calculate a percentage
   // where the x values both exist.
   while (n < numerator.length && d < denominator.length) {
+    const numeratorX = numerator[n]?.x as string;
+    const denominatorX = denominator[d]?.x as string;
+
     // The labels match so populate the percentage for this label
-    if (numerator[n].x === denominator[d].x) {
-      // If the denominator is zero, skip it to avoid division by zero
-      if (denominator[d].y > 0) {
+    if (numeratorX === denominatorX) {
+      const numeratorY = numerator[n]?.y;
+      const denominatorY = denominator[d]?.y;
+
+      if (numeratorY !== null && denominatorY !== null && denominatorY !== 0) {
+        // If the denominator is zero, skip it to avoid division by zero
         percentageData.push({
           x: numerator[n].x,
-          y: Math.round((numerator[n].y / denominator[d].y) * 1000) / 10,
+          y: Math.round((numeratorY / denominatorY) * 1000) / 10,
         });
       }
 
@@ -165,7 +175,7 @@ const populatePercentageData = (numerator: { x: string; y: number }[], denominat
       d++;
     }
     // If the numerator is behind the denominator, increment just it to catch up
-    else if (numerator[n].x < denominator[d].x) {
+    else if (numeratorX < denominatorX) {
       n++;
     }
     // And vice versa. If they're not equal, and the numerator isn't smaller, the denominator must be behind.
@@ -177,7 +187,7 @@ const populatePercentageData = (numerator: { x: string; y: number }[], denominat
   return percentageData;
 };
 
-export const fillDataGaps = (chart: ChartConfig, data: Record<string, { x: string; y: number | null }[]>) => {
+export const fillDataGaps = (chart: ChartConfig, data: Record<string, DataPoint[]>) => {
   if (!chart.time_series) {
     // There will be no gaps if there is no time series
     return;
@@ -187,7 +197,7 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, { x: strin
 
   for (const dataPoints of Object.values(data)) {
     for (const dataPoint of dataPoints) {
-      uniqueXValues.add(dataPoint.x);
+      uniqueXValues.add(dataPoint.x as string);
     }
   }
 
@@ -196,20 +206,20 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, { x: strin
 
   for (const dataset of Object.keys(data)) {
     // Ensure the data is sorted by date
-    data[dataset].sort((a, b) => {
+    (data[dataset] as { x: string }[]).sort((a, b) => {
       if (a.x > b.x) {
         return 1;
       }
 
       if (a.x < b.x) {
-        return -1
+        return -1;
       }
 
-      return 0
+      return 0;
     });
 
     for (let index = 0; index < xValues.length; index++) {
-      if (!data[dataset][index] || data[dataset][index].x > xValues[index]) {
+      if (!data[dataset][index] || (data[dataset][index].x as string) > xValues[index]) {
         data[dataset].splice(index, 0, { x: xValues[index], y: null });
       }
     }

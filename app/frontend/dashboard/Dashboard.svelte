@@ -1,11 +1,11 @@
 <script lang="ts">
-import type { DashboardTabConfig, TabFilters } from "../types.d.ts";
-import ChartWrapper from "./dashboardElements/ChartWrapper.svelte";
-import Filter from "./components/Filter.svelte";
-import TabEditor from "./editors/TabEditor.svelte";
-import Tabs from "./Tabs.svelte";
-import { saveDashboard } from "./helpers/requestHandler";
 import { untrack } from "svelte";
+import type { DashboardTabConfig, TabFilters } from "../types.d.ts";
+import Filter from "./components/Filter.svelte";
+import ChartWrapper from "./dashboardElements/ChartWrapper.svelte";
+import TabEditor from "./editors/TabEditor.svelte";
+import { saveDashboard } from "./helpers/requestHandler";
+import Tabs from "./Tabs.svelte";
 
 const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]") as HTMLElement;
 

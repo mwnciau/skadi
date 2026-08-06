@@ -123,15 +123,15 @@ module Skadi
         return
       end
 
-      if type.to_s.end_with?("?")
+      if type.end_with?("?")
         return if value.nil?
 
         type = type.to_s.delete_suffix("?").to_sym
       end
 
-      if type.to_s.end_with?("Array") || type.to_s.end_with?("Array!")
+      if type.end_with?("Array", "Array!")
         return add_error(path, "must be an array", context:) unless value.is_a?(Array)
-        return add_error(path, "must have at least one element", context:) if type.to_s.end_with?("!") && value.empty?
+        return add_error(path, "must have at least one element", context:) if type.end_with?("!") && value.empty?
 
         type = type.to_s.delete_suffix("!").delete_suffix("Array").to_sym
 

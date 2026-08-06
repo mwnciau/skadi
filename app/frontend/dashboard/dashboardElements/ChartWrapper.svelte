@@ -1,13 +1,13 @@
 <script lang="ts">
   import { untrack } from "svelte";
   import type { ChartConfig, ChartData, ResponseData, TabFilters } from "../../types.d.ts";
-  import ChartEditor from "../editors/ChartEditor.svelte";
-  import { fillDataGaps, processDerivedDatasets, formatDates, createChartData } from "../helpers/processData";
-  import BarChart from "./BarChart.svelte";
-  import StaticDataTable from "./StaticDataTable.svelte";
-  import LineChart from "./LineChart.svelte";
   import Icon from "../components/Icon.svelte";
+  import ChartEditor from "../editors/ChartEditor.svelte";
+  import { createChartData, fillDataGaps, formatDates, processDerivedDatasets } from "../helpers/processData";
   import { fetchChartData } from "../helpers/requestHandler";
+  import BarChart from "./BarChart.svelte";
+  import LineChart from "./LineChart.svelte";
+  import StaticDataTable from "./StaticDataTable.svelte";
 
   let { canDangerouslyUseSql, chartConfig, editingEnabled, newChartId = $bindable(), tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
   canDangerouslyUseSql: boolean;

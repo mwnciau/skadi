@@ -1,7 +1,7 @@
 <script lang="ts">
 import type { Snippet } from "svelte";
-import Switch from "./Switch.svelte";
 import Icon from "./Icon.svelte";
+import Switch from "./Switch.svelte";
 
 let {
   type = "text",

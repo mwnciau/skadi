@@ -1,10 +1,10 @@
 <script lang="ts">
+import { untrack } from "svelte";
 import type {ChartConfig} from "../../types";
-import DatasetEditor from "./DatasetEditor.svelte";
-import Icon from "../components/Icon.svelte";
 import ExpandingSection from "../components/ExpandingSection.svelte";
 import Filter from "../components/Filter.svelte";
-import { untrack } from "svelte";
+import Icon from "../components/Icon.svelte";
+import DatasetEditor from "./DatasetEditor.svelte";
 
 let { canDangerouslyUseSql, chartConfig, reloadChartData, onClose, onSave }: {
   canDangerouslyUseSql: boolean;
