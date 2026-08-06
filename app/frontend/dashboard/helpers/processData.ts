@@ -195,6 +195,19 @@ export const fillDataGaps = (chart: ChartConfig, data: Record<string, { x: strin
   interpolateXValues(chart, xValues);
 
   for (const dataset of Object.keys(data)) {
+    // Ensure the data is sorted by date
+    data[dataset].sort((a, b) => {
+      if (a.x > b.x) {
+        return 1;
+      }
+
+      if (a.x < b.x) {
+        return -1
+      }
+
+      return 0
+    });
+
     for (let index = 0; index < xValues.length; index++) {
       if (!data[dataset][index] || data[dataset][index].x > xValues[index]) {
         data[dataset].splice(index, 0, { x: xValues[index], y: null });
