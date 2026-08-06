@@ -9,10 +9,15 @@ const csrfToken = (document.querySelector("meta[name=csrf-token]") as HTMLMetaEl
 
 const handleResponseError = (response: Response) => {
   return response.text().then((text) => {
-    const body = text ? JSON.parse(text) : null;
+    let body = null;
+    if (text) {
+      try {
+        body = JSON.parse(text);
+      } catch {}
+    }
 
     if (!response.ok) {
-      throw new Error(body?.error ?? `Request failed with status ${response.status}`);
+      throw new Error(body?.error ?? `Request failed with status ${response.status}\n${text}`);
     }
 
     return body;

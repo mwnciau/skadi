@@ -27,6 +27,9 @@ let tabFilters: TabFilters = $state(untrack(() => ({
 let chartIdToEdit: string | null = $state(null);
 let editingEnabled: boolean = $state(false);
 
+let saving: boolean = $state(false);
+let saveError: boolean = $state(false);
+
 const selectTab = (tab: string) => {
   selectedTab = tab;
   tabFilters = {
@@ -107,6 +110,32 @@ const onDelete = () => {
   tabs.splice(currentIndex, 1);
 }
 
+let saveTimeout: number | null = null;
+const save = () => {
+  saving = true;
+
+  if (saveTimeout !== null) {
+    clearTimeout(saveTimeout);
+    saveTimeout = null;
+  }
+
+  saveDashboard(tabs)
+    .then(() => {
+      saving = false;
+      saveError = false;
+    })
+    .catch(error => {
+      saving = false;
+      saveError = true;
+      console.error("Failed to save dashboard", error);
+
+      saveTimeout = setTimeout(() => {
+        save();
+        saveTimeout = null;
+      }, 10000)
+    });
+}
+
 let isMounted = false;
 $effect(() => {
   if (!isMounted) {
@@ -118,7 +147,7 @@ $effect(() => {
     return;
   }
 
-  saveDashboard(tabs);
+  save();
 });
 </script>
 
@@ -129,6 +158,16 @@ $effect(() => {
   newTab={newTab}
 />
 <main class="w-full max-w-256 mx-auto flex flex-col gap-12 pt-4">
+  {#if saving}
+    <div class="fixed bottom-2 right-2 z-10 p-2 bg-ice-50 border border-ice-200 text-ice-700">
+      <p>Saving your changes...</p>
+    </div>
+  {:else if saveError}
+    <div class="fixed bottom-2 right-2 z-10 p-2 bg-dawn-50 border border-dawn-200 text-dawn-700">
+      <p>Something went wrong when trying to save the dashboard. Retrying in 10 seconds...</p>
+    </div>
+  {/if}
+
   <div class="flex justify-between items-start">
     <div class="grow flex flex-col gap-4">
       {#if editingEnabled}
