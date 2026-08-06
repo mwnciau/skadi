@@ -335,6 +335,40 @@ module Skadi::Integration
         ], results_for_chart(chart)
       end
 
+      test "sql dataset time_series" do
+        DATES.each { |date| create :visit, created_at: date }
+
+        dataset = build_dataset(type: "sql", sql: "SELECT NULL AS split, created_at as date, 1 as count FROM skadi_visits")
+        none = build_chart(time_series: nil, dataset: dataset)
+        daily = build_chart(time_series: "daily", dataset: dataset)
+        weekly = build_chart(time_series: "weekly", dataset: dataset)
+        monthly = build_chart(time_series: "monthly", dataset: dataset)
+
+        results = results_for_chart(none)
+        assert_equal 1, results.length
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => nil, "count" => 10 }, results[0])
+
+        results = results_for_chart(daily)
+        assert_equal 10, results.length
+        DATES.each_with_index do |date, index|
+          assert_equal({ "id" => "dataset-1", "date" => date[0, 10], "split" => nil, "count" => 1 }, results[index])
+        end
+
+        results = results_for_chart(weekly)
+        assert_equal 3, results.length
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-06", "split" => nil, "count" => 2 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-13", "split" => nil, "count" => 7 }, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-20", "split" => nil, "count" => 1 }, results[2])
+
+        # Add another visit to span multiple months
+        create :visit, created_at: "2020-02-01"
+
+        results = results_for_chart(monthly)
+        assert_equal 2, results.length
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => nil, "count" => 10 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1 }, results[1])
+      end
+
       def results_for_chart(chart)
         post skadi.dashboard_data_path, params: { configuration: chart }, as: :json
 

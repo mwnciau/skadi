@@ -38,12 +38,12 @@ module Skadi
         safe_group = [ "t.split" ]
         safe_id = model.connection.quote(dataset["id"])
 
-        safe_aggregated_date = if chart["time_series"].present?
-          Helpers::Sql.time_series(chart["time_series"], model, "t.date")
+        if chart["time_series"].present?
+          safe_aggregated_date = Helpers::Sql.time_series(chart["time_series"], model, "t.date")
+          safe_group << safe_aggregated_date
         else
-          "t.date"
+          safe_aggregated_date = "NULL"
         end
-        safe_group << safe_aggregated_date
 
         safe_where = build_sql_where(chart, model, untrusted_url_filters)
 

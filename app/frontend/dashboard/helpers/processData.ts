@@ -83,24 +83,27 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
 
       return Object.entries(datasetIds).map(([split, datasetId]) => {
         let label = dataset.label;
-        if (split) {
-          const splitParts = split.split("|~|");
-          const numSplits = Math.max(splitParts.length, (dataset as { split_by?: string[] }).split_by?.length ?? 0);
+        const splitParts = split ? split.split("|~|") : [];
+        const numSplits = Math.max(splitParts.length, (dataset as { split_by?: string[] }).split_by?.length ?? 0);
 
-          for (let i = 0; i < numSplits; i++) {
-            const matcher = new RegExp(`%${i + 1}(?!\\d)(?:\\(([^)]+)\\))?`, "g");
+        // Replace split-part placeholders in the label
+        for (let i = 0; i < numSplits; i++) {
+          const matcher = new RegExp(`%${i + 1}(?!\\d)(?:\\(([^)]+)\\))?`, "g");
 
-            const match = label.match(matcher);
-            if (match) {
-              label = label.replace(matcher, (match, defaultReplacement) => {
-                return splitParts[i] ? splitParts[i] : (defaultReplacement ?? "n/a");
-              });
-            } else {
-              const splitPart = splitParts[i] ? splitParts[i] : "n/a";
+          const match = label.match(matcher);
+          if (match) {
+            label = label.replace(matcher, (match, defaultReplacement) => {
+              return splitParts[i] ? splitParts[i] : (defaultReplacement ?? "n/a");
+            });
+          } else {
+            const splitPart = splitParts[i] ? splitParts[i] : "n/a";
 
-              label = `${label}, ${splitPart}`;
-            }
+            label = `${label}, ${splitPart}`;
           }
+        }
+
+        if (!chart.time_series) {
+          responseData[datasetId][0].x = label;
         }
 
         return {

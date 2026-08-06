@@ -69,7 +69,8 @@ const updateChartData = () => {
   });
 
   if (chart.options.plugins?.legend) {
-    chart.options.plugins.legend.display = leftAxis && rightAxis;
+    // Don't show the legend if there is no time series - the x-axis instead labels the bars
+    chart.options.plugins.legend.display = !!chartConfig.time_series;
   }
   if (chart.options.scales?.y) {
     chart.options.scales.y.display = leftAxis;
@@ -104,6 +105,9 @@ $effect(() => {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
+          legend: {
+            display: false,
+          },
           title: { display: true, text: "Total visits" },
           tooltip: {
             position: "average",
