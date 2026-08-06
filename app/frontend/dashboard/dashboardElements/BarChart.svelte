@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onMount } from "svelte";
 import { Chart } from "chart.js/auto";
-import type { ChartConfig, ChartData, ChartDataset } from "../../types.d.ts";
+import type { ChartConfig, ChartData, ChartDataset, DataPoint } from "../../types.d.ts";
 
 let { chartConfig, data } : {
   chartConfig: ChartConfig;
@@ -9,7 +9,7 @@ let { chartConfig, data } : {
 } = $props();
 
 let canvas = $state<HTMLCanvasElement>() as HTMLCanvasElement;
-let chart: Chart<"bar", {x: string, y: number}[], unknown>;
+let chart: Chart<"bar", DataPoint[], unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;

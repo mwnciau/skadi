@@ -29,7 +29,7 @@ const shortMonths: Record<string, string> = {
   "12": "Dec",
 };
 
-export const formatDates = (chartConfig: ChartConfig, data: Record<string, { x: string; y: number }[]>) => {
+export const formatDates = (chartConfig: ChartConfig, data: ResponseData) => {
   for (const dataset of chartConfig.datasets) {
     if (!chartConfig.time_series) {
       continue;
@@ -117,7 +117,7 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
     });
 };
 
-export const processDerivedDatasets = (chart: ChartConfig, data: Record<string, { x: string; y: number }[]>) => {
+export const processDerivedDatasets = (chart: ChartConfig, data: ResponseData) => {
   for (const dataset of chart.datasets) {
     if (dataset.type === "percentage") {
       const numerator = data[dataset.numerator as string];
