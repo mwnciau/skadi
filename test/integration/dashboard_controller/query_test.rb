@@ -225,11 +225,8 @@ module Skadi::Integration
         create :view, verb: "POST", created_at: "2020-01-02"
         create :view, verb: "PUT", created_at: "2020-01-01"
 
-        dataset = build_dataset
+        dataset = build_dataset(type: "views", split_by: [ "verb" ])
         chart = build_chart(dataset: dataset, time_series: "daily")
-
-        dataset["type"] = "views"
-        dataset["split_by"] = [ "verb" ]
 
         results = results_for_chart(chart)
         assert_equal 5, results.length
@@ -238,6 +235,23 @@ module Skadi::Integration
         assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "POST", "count" => 1 }, results[2])
         assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "POST", "count" => 2 }, results[3])
         assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "PUT", "count" => 1 }, results[4])
+      end
+
+      test "dataset multiple split_by" do
+        create :view, controller: "controller 1", action: "action 1"
+        create :view, controller: "controller 1", action: "action 2"
+        create :view, controller: "controller 2", action: "action 1"
+        create :view, controller: "controller 2", action: "action 2"
+
+        dataset = build_dataset(type: "views", split_by: %w[controller action])
+        chart = build_chart(dataset: dataset)
+
+        results = results_for_chart(chart)
+        assert_equal 4, results.length
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 1|~|action 1", "count" => 1 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 1|~|action 2", "count" => 1 }, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|action 1", "count" => 1 }, results[2])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|action 2", "count" => 1 }, results[3])
       end
 
       test "dataset string filter" do
