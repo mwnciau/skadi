@@ -94,21 +94,21 @@ $effect(() => {
     </div>
   {/if}
 
-  <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
-    {#if viewData}
-      <StaticDataTable chartConfig={localChartConfig} {data} />
-    {:else}
-      {#if localChartConfig.type === "line"}
-        <LineChart chartConfig={localChartConfig} {data} />
-      {:else if localChartConfig.type === "bar"}
-        <BarChart chartConfig={localChartConfig} {data} />
+  <div class="grow flex flex-col gap-4">
+    <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
+      {#if viewData}
+        <StaticDataTable chartConfig={localChartConfig} {data} />
+      {:else}
+        {#if localChartConfig.type === "line"}
+          <LineChart chartConfig={localChartConfig} {data} />
+        {:else if localChartConfig.type === "bar"}
+          <BarChart chartConfig={localChartConfig} {data} />
+        {/if}
       {/if}
-    {/if}
-  </div>
+    </div>
 
-  {#if !isEditingChart}
     <div class="flex gap-2">
-      {#if editingEnabled}
+      {#if editingEnabled && !isEditingChart}
         <button type="button" onclick={() => (isEditingChart = true)}>Edit</button>
         <button type="button" onclick={onDuplicate}>Duplicate</button>
         {#if onMoveUp !== null }
@@ -130,5 +130,5 @@ $effect(() => {
 
       <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show Graph" : "Show Data"}</button>
     </div>
-  {/if}
+  </div>
 </div>
