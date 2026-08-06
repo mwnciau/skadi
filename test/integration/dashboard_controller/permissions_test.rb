@@ -148,8 +148,16 @@ module Skadi::Integration
         assert_response :ok
       end
 
-      test "cannot update without permission" do
+      test "cannot update without edit permission" do
         ApplicationController.skadi_dashboard_edit = false
+
+        post skadi.dashboard_update_path, params: { configuration: Skadi::Dashboard.default_configuration }, as: :json
+
+        assert_response :forbidden
+      end
+
+      test "cannot update without view permission" do
+        ApplicationController.skadi_dashboard_view = false
 
         post skadi.dashboard_update_path, params: { configuration: Skadi::Dashboard.default_configuration }, as: :json
 
