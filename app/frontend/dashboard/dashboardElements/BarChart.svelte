@@ -23,9 +23,6 @@ onMount(() => {
 });
 
 const updateChartConfig = () => {
-  if (chart.options.plugins?.title) {
-    chart.options.plugins.title.text = chartConfig.title;
-  }
   if (chart.options.plugins?.tooltip) {
     chart.options.plugins.tooltip.mode = chartConfig.time_series ? "index" : "x";
     chart.options.plugins.tooltip.yAlign = chartConfig.time_series ? undefined : "bottom";
@@ -91,7 +88,7 @@ $effect(() => {
 });
 </script>
 
-<div class="relative w-full aspect-video">
+<div class="relative w-full aspect-video pr-4">
   <canvas bind:this={canvas}></canvas>
 </div>
 
@@ -109,7 +106,6 @@ $effect(() => {
           legend: {
             display: false,
           },
-          title: { display: true, text: "Total visits" },
           tooltip: {
             position: "average",
             // Don't require hovering on top of the bars

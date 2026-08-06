@@ -4,8 +4,8 @@
 
 @theme {
   /* Ice https://tints.dev/palette/v1:aWNlfEEzRUNGM3wyMDB8cHw2fDExOXwxMHwxMDB8YQ */
-  --color-ice-50: oklch(0.974 0.009 247.89);
-  --color-ice-100: oklch(0.939 0.02 238.64);
+  --color-ice-50: oklch(0.974 0.02 247.89);
+  --color-ice-100: oklch(0.95 0.022 238.64);
   --color-ice-200: oklch(0.876 0.046 233.06);
   --color-ice-300: oklch(0.816 0.078 224.93);
   --color-ice-400: oklch(0.728 0.078 228.47);
@@ -47,7 +47,7 @@
 
 @layer base {
   body {
-    @apply bg-linear-to-t from-dawn-100/5 via-night-400/5 to-ice-600/5 pb-64;
+    @apply bg-linear-to-t from-dawn-50/5 via-night-400/5 to-ice-600/5 pb-32;
   }
 
   p {
@@ -66,12 +66,16 @@
     @apply px-2.5 py-2 max-w-120 border border-night-100 grow;
   }
 
+  [contenteditable] {
+    @apply max-w-120;
+  }
+
   button:where(:not(.unstyled)) {
-    @apply flex gap-2 items-center px-4 pt-1.5 pb-1 w-max border-b-4 border-black/10 backdrop-brightness-95 backdrop-saturate-800 text-black/80 text-lg font-semibold cursor-pointer translate-0;
+    @apply flex gap-2 items-center px-4 pt-1.5 pb-1 w-max border-b-4 border-ice-800/10 bg-ice-100 text-ice-950 text-lg font-semibold cursor-pointer translate-0;
 
     &:hover,
     &:active {
-      @apply backdrop-brightness-92 backdrop-saturate-2000;
+      @apply bg-ice-50 text-black;
     }
 
     &:active {
@@ -88,7 +92,7 @@
     }
 
     &.ghost {
-      @apply bg-transparent border-0 py-2 backdrop-brightness-100 backdrop-saturate-100 text-night-800 hover:text-night-900 hover:backdrop-brightness-95 active:translate-none;
+      @apply bg-transparent border-0 py-2 text-night-800 hover:text-night-900 hover:backdrop-brightness-95 active:translate-none;
       clip-path: none;
 
       &.sm {
@@ -105,21 +109,31 @@
     content: attr(placeholder);
   }
 
+  #skadi-dashboard {
+    @apply w-256 max-w-full mx-auto px-4;
+  }
+
   nav {
-    @apply flex items-start gap-4 w-full max-w-256 mx-auto border-b-2 border-ice-100;
+    @apply flex items-start gap-2 w-full border-b-3 border-night-700;
   }
 
   nav > button {
-    @apply pb-2.5 -mb-0.5 border-0 backdrop-brightness-100 backdrop-saturate-100 text-base font-semibold;
+    @apply block bg-transparent px-3 pb-1.5 -mb-0.5 border-0 text-base font-medium shrink truncate text-ellipsis;
 
     &:active {
       @apply translate-0;
       clip-path: none;
     }
 
-    &.selected,
+    &.selected {
+      @apply px-4 shrink-0 font-semibold bg-night-700 text-white;
+    }
     &:hover {
-      @apply bg-ice-100;
+      @apply shrink-0 bg-night-700 text-white;
+    }
+
+    &:active {
+      @apply bg-night-700 text-night-50;
     }
   }
 

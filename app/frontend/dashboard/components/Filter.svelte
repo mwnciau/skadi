@@ -129,7 +129,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
       onblur={onBlur}
       oninput={setString}
       use:contentEditableSync={model[key]}
-      class="mt-1 whitespace-pre"
+      class="mt-1 whitespace-pre-wrap"
       {...attributes}
     >{model[key]}</p>
   {:else if type === "date"}

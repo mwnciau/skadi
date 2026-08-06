@@ -122,6 +122,15 @@ const moveDown = (index: number) => {
     <input type="text" bind:value={localChartConfig.title} />
   </label>
 
+  <Filter
+    type="contenteditable"
+    model={localChartConfig}
+    key="description"
+    placeholder="Enter a description for this chart"
+  >
+    Description
+  </Filter>
+
   <label>
     Type
     <select onchange={setType} value={localChartConfig.type}>

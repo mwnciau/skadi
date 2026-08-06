@@ -39,6 +39,7 @@ export type ChartConfig = {
   id: string;
   type: "bar" | "line";
   title: string;
+  description?: string;
   time_series?: "daily" | "weekly" | "monthly";
   date_from?: DateFilter;
   date_to?: DateFilter;

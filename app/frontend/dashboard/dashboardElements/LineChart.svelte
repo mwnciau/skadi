@@ -15,26 +15,10 @@ onMount(() => {
   Chart.defaults.font.size = 18;
   chart = buildChart(canvas);
   updateChartData();
-  updateChartConfig();
 
   chart.update();
 
   return () => chart?.destroy();
-});
-
-const updateChartConfig = () => {
-  if (chart.options.plugins?.title) {
-    chart.options.plugins.title.text = chartConfig.title;
-  }
-}
-
-$effect(() => {
-  if (!chart) {
-    return;
-  }
-
-  updateChartConfig();
-  chart.update();
 });
 
 const updateChartData = () => {
@@ -78,7 +62,7 @@ $effect(() => {
 });
 </script>
 
-<div class="relative w-full aspect-video">
+<div class="relative w-full aspect-video pr-4">
   <canvas bind:this={canvas}></canvas>
 </div>
 
@@ -94,7 +78,6 @@ $effect(() => {
         maintainAspectRatio: false,
         plugins: {
           legend: { position: "top" },
-          title: { display: true, text: "Total visits" },
           tooltip: {
             // Show all datasets in the tooltip on the same x-coordinate
             intersect: false,

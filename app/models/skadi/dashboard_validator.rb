@@ -27,6 +27,7 @@ module Skadi
           id: :string,
           type: OneOf.new(allowed_values: %w[bar line].freeze).freeze,
           title: :string,
+          description: :string?,
           time_series: OneOf.new(allowed_values: %w[daily weekly monthly].freeze, allow_missing: true).freeze,
           date_from: :date?,
           date_to: :date?,

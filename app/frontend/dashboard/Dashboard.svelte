@@ -157,7 +157,7 @@ $effect(() => {
   selectTab={selectTab}
   newTab={newTab}
 />
-<main class="w-full max-w-256 mx-auto flex flex-col gap-12 pt-4">
+<main class="w-full mx-auto flex flex-col gap-4 pt-4">
   {#if saving}
     <div class="fixed bottom-2 right-2 z-10 p-2 bg-ice-50 border border-ice-200 text-ice-700">
       <p>Saving your changes...</p>
@@ -168,36 +168,51 @@ $effect(() => {
     </div>
   {/if}
 
-  <div class="flex justify-between items-start">
-    <div class="grow flex flex-col gap-4">
-      {#if editingEnabled}
-        {#key selectedTab}
-          <TabEditor tabConfig={selectedTabConfig} {onDelete} />
-        {/key}
-      {:else}
-        {#if selectedTabConfig.description}
-          <p class="whitespace-pre">{selectedTabConfig.description}</p>
-        {/if}
+  {#if editingEnabled}
+    <div class="sm:sticky z-10 sm:h-0 top-0 sm:-mb-4">
+      <div class="ml-auto w-max p-4 bg-white">
+        <button type="button" onclick={() => (editingEnabled = false)}>
+          Finish editing
+        </button>
+      </div>
+    </div>
+    <div class="flex flex-col gap-4 bg-white p-4">
+      {#key selectedTab}
+        <TabEditor tabConfig={selectedTabConfig} {onDelete} />
+      {/key}
+    </div>
+  {:else}
+    <div class="z-10 border border-night-50 gap-4 flex flex-col md:flex-row justify-between items-center md:items-start bg-white p-4 sm:sticky top-0">
+      <div class="grow flex flex-col gap-4">
+        {#if !editingEnabled}
+          {#if selectedTabConfig.description}
+            <p class="whitespace-pre-wrap">{selectedTabConfig.description}</p>
+          {/if}
 
-        <div class="flex gap-2 items-center">
-          Showing data from
-          <Filter type="date" model={tabFilters} key="date_from" hideLabel>
-            <span class="sr-only">Date from</span>
-          </Filter>
-          to
-          <Filter type="date" model={tabFilters} key="date_to" hideLabel>
-            <span class="sr-only">Date to</span>
-          </Filter>
-        </div>
+          <div class="flex flex-wrap gap-2 justify-center sm:justify-start items-center">
+            <div class="flex gap-2 items-center sm:contents">
+              Showing data from
+              <Filter type="date" model={tabFilters} key="date_from" hideLabel>
+                <span class="sr-only">Date from</span>
+              </Filter>
+            </div>
+            <div class="flex gap-2 items-center sm:contents">
+              to
+              <Filter type="date" model={tabFilters} key="date_to" hideLabel>
+                <span class="sr-only">Date to</span>
+              </Filter>
+            </div>
+          </div>
+        {/if}
+      </div>
+
+      {#if canEdit}
+        <button type="button" onclick={() => (editingEnabled = true)}>
+          Enable editing
+        </button>
       {/if}
     </div>
-
-    {#if canEdit}
-      <button type="button" onclick={() => (editingEnabled = !editingEnabled)}>
-        {editingEnabled ? "Finish" : "Enable"} editing
-      </button>
-    {/if}
-  </div>
+  {/if}
 
   {#each selectedTabConfig?.children as chartConfig, index (chartConfig.id)}
     <ChartWrapper

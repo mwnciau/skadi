@@ -95,7 +95,7 @@ $effect(() => {
 });
 </script>
 
-<div class="flex flex-col {isEditingChart && "xl:full-width xl:flex-row xl:justify-center xl:items-start"} gap-4">
+<div class="flex flex-col px-6 p-4 bg-white border border-night-50 {isEditingChart && "xl:full-width xl:flex-row xl:justify-center xl:items-start"} gap-4">
   {#if isEditingChart}
     <div class="mt-12">
       <ChartEditor
@@ -110,6 +110,12 @@ $effect(() => {
 
   <div class="grow min-w-0 flex flex-col gap-4">
     <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
+      <div class="mb-4">
+        <h2 class="text-night-950 text-xl font-semibold text-center">{chartConfig.title}</h2>
+        {#if localChartConfig.description}
+          <p class="whitespace-pre-wrap w-max max-w-full mx-auto px-2 lg:px-12">{localChartConfig.description}</p>
+        {/if}
+      </div>
       {#if viewData}
         <StaticDataTable chartConfig={localChartConfig} {data} />
       {:else}
@@ -127,7 +133,7 @@ $effect(() => {
       </div>
     {/if}
 
-    <div class="flex gap-2">
+    <div class="flex flex-wrap gap-2 items-center">
       {#if editingEnabled && !isEditingChart}
         <button type="button" onclick={() => (isEditingChart = true)}>Edit</button>
         <button type="button" onclick={onDuplicate}>Duplicate</button>
@@ -149,7 +155,7 @@ $effect(() => {
       <div class="ml-auto"></div>
 
       <button type="button" onclick={() => fetchData()}>Refresh</button>
-      <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show Graph" : "Show Data"}</button>
+      <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
     </div>
   </div>
 </div>
