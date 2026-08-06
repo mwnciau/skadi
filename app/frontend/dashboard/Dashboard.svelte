@@ -69,7 +69,7 @@ const deleteChart = (index: number) => {
   selectedTabConfig.children.splice(index, 1);
 }
 
-const duplicateDataset = (index: number) => {
+const duplicateChart = (index: number) => {
   const newChart = $state.snapshot(selectedTabConfig.children[index]);
   // Note: the dataset ids will be still be the same between the datasets, but changing them potentially breaks and SQL datasets, so we just accept that datasets in different graphs might have the same ID
   newChart.id = crypto.randomUUID();
@@ -207,7 +207,7 @@ $effect(() => {
       {tabFilters}
       bind:newChartId={chartIdToEdit}
       onDelete={() => deleteChart(index)}
-      onDuplicate={() => duplicateDataset(index)}
+      onDuplicate={() => duplicateChart(index)}
       onMoveUp={index !== 0 ? (() => moveChartUp(index)) : null}
       onMoveDown={index !== selectedTabConfig.children.length - 1 ? (() => moveChartDown(index)) : null}
       onSave={(newChartConfig) => selectedTabConfig.children[index] = newChartConfig}
