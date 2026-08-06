@@ -65,7 +65,7 @@ export type TabFilters = {
 // Note: any changes to this type need to be mirrored in the backend validator app/models/skadi/dashboard_validator.rb
 export type DashboardConfig = DashboardTabConfig[];
 
-export type DataPoint = { x: string; y: number };
+export type DataPoint = { x: string; y: number | null };
 export type ResponseData = Record<string, DataPoint[]>;
 export type ChartDataset = {
   dataset: string;
