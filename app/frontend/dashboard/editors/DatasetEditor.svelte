@@ -408,10 +408,12 @@ const duplicate = () => {
       <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
     {/if}
 
-    {#if confirmDelete}
-      <button type="button" class="sm bg-dawn-100 ml-auto" onclick={onDelete}>Yes, delete this dataset</button>
-    {:else}
-      <button type="button" class="sm bg-dawn-100 ml-auto" onclick={() => (confirmDelete = true)}>Delete</button>
+    {#if chartConfig.datasets.length > 1}
+      {#if confirmDelete}
+        <button type="button" class="sm bg-dawn-100 ml-auto" onclick={onDelete}>Yes, delete this dataset</button>
+      {:else}
+        <button type="button" class="sm bg-dawn-100 ml-auto" onclick={() => (confirmDelete = true)}>Delete</button>
+      {/if}
     {/if}
   </div>
 </ExpandingSection>
