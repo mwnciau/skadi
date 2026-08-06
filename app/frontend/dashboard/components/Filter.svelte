@@ -41,6 +41,7 @@ type StringEvent = Event & {
   currentTarget: EventTarget & (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLParagraphElement);
 };
 
+let persistDelayMs = $derived(["date", "text", "textarea", "contenteditable"].includes(type) ? 1000 : 250);
 let debounceTimeout: number;
 let debounceValue: string;
 let persistValue = () => {
@@ -57,7 +58,7 @@ const setString = (event: StringEvent) => {
   if (debounceTimeout) {
     clearTimeout(debounceTimeout);
   }
-  debounceTimeout = setTimeout(persistValue, 1000);
+  debounceTimeout = setTimeout(persistValue, persistDelayMs);
 }
 
 const toggleBoolean = () => {
