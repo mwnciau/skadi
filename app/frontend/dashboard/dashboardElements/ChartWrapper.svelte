@@ -94,7 +94,7 @@ $effect(() => {
     </div>
   {/if}
 
-  <div class="grow flex flex-col gap-4">
+  <div class="grow min-w-0 flex flex-col gap-4">
     <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
       {#if viewData}
         <StaticDataTable chartConfig={localChartConfig} {data} />
