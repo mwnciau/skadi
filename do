@@ -13,6 +13,8 @@ if [ -z "$1" ]
 then
     echo "Usage:"
     echo "./do run [command] - run a command"
+    echo "./do rake:dev [task] - run a rake task with RAILS_ENV=development"
+    echo "./do rake:test [task] - run a rake task with RAILS_ENV=test"
     exit 1
 fi
 
@@ -55,6 +57,20 @@ if [ "$1" == "rake" ] || [ "$1" == "rk" ]
 then
     echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rake ${@:2}
     ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm ruby rake "${@:2}"
+    exit 0
+fi
+
+if [ "$1" == "rake:dev" ] || [ "$1" == "rk:dev" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm -e RAILS_ENV=development ruby rake ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm -e RAILS_ENV=development ruby rake "${@:2}"
+    exit 0
+fi
+
+if [ "$1" == "rake:test" ] || [ "$1" == "rk:test" ]
+then
+    echo Running: ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm -e RAILS_ENV=test ruby rake ${@:2}
+    ${DOCKER_COMPOSE_COMMAND} run --remove-orphans --rm -e RAILS_ENV=test ruby rake "${@:2}"
     exit 0
 fi
 
