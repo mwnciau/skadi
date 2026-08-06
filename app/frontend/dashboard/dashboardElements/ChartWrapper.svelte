@@ -28,17 +28,25 @@ let isEditingChart = $state(untrack(() => chartConfig.id === newChartId));
 let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
 
+let loadError = $state(false);
+
 // untrack: this is manually updated by fetchData
 let localChartConfig = $state(untrack(() => chartConfig));
+let dirtyChartConfig = $state(false);
 
 // Make this shallow state using $state.raw. We don't care how the charting library uses it, only that it's notified when the whole dataset is changed
 let data : ChartData = $state.raw([]);
 
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
-  localChartConfig = newChartConfig ?? chartConfig;
+  if (newChartConfig !== null) {
+    localChartConfig = newChartConfig;
+    dirtyChartConfig = true;
+  } else if (dirtyChartConfig) {
+    newChartConfig ??= localChartConfig
+  }
 
+  // For new charts, send the configuration on the first load
   if (newChartConfig === null && chartConfig.id === newChartId) {
-    // For new charts, send the configuration on the first load
     newChartConfig = chartConfig;
     newChartId = null;
   }
@@ -57,6 +65,12 @@ const fetchData = (newChartConfig: ChartConfig | null = null) => {
       fillDataGaps(localChartConfig, responseData);
       formatDates(localChartConfig, responseData)
       data = createChartData(localChartConfig, responseData);
+
+      loadError = false;
+    })
+    .catch((error) => {
+      console.error(error);
+      loadError = true;
     });
 }
 
@@ -107,6 +121,12 @@ $effect(() => {
       {/if}
     </div>
 
+    {#if loadError}
+      <div class="p-2 bg-dawn-50 border border-dawn-200 text-dawn-700">
+        <p>Something went wrong when trying to load the chart data.</p>
+      </div>
+    {/if}
+
     <div class="flex gap-2">
       {#if editingEnabled && !isEditingChart}
         <button type="button" onclick={() => (isEditingChart = true)}>Edit</button>
@@ -128,6 +148,7 @@ $effect(() => {
 
       <div class="ml-auto"></div>
 
+      <button type="button" onclick={() => fetchData()}>Refresh</button>
       <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show Graph" : "Show Data"}</button>
     </div>
   </div>
