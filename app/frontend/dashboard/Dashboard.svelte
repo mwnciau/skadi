@@ -128,7 +128,7 @@ $effect(() => {
   selectTab={selectTab}
   newTab={newTab}
 />
-<main class="w-full max-w-256 mx-auto flex flex-col gap-4 pt-4">
+<main class="w-full max-w-256 mx-auto flex flex-col gap-12 pt-4">
   <div class="flex justify-between items-start">
     <div class="grow flex flex-col gap-4">
       {#if editingEnabled}
@@ -166,7 +166,7 @@ $effect(() => {
       {chartConfig}
       {editingEnabled}
       {tabFilters}
-      isNew={chartIdToEdit === chartConfig.id}
+      bind:newChartId={chartIdToEdit}
       onDelete={() => deleteChart(index)}
       onDuplicate={() => duplicateDataset(index)}
       onMoveUp={index !== 0 ? (() => moveChartUp(index)) : null}

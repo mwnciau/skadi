@@ -9,12 +9,13 @@
   import Icon from "../components/Icon.svelte";
   import { fetchChartData } from "../helpers/requestHandler";
 
-  let { canDangerouslyUseSql, chartConfig, editingEnabled, isNew = $bindable(), tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+  let { canDangerouslyUseSql, chartConfig, editingEnabled, newChartId = $bindable(), tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
   canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
   editingEnabled: boolean;
   tabFilters: TabFilters;
-  isNew: boolean;
+  // The ID of the chart if it was recently added and should start open
+  newChartId: string | null;
   onDelete: () => void;
   onDuplicate: () => void;
   onMoveUp?: null | (() => void);
@@ -23,7 +24,7 @@
 } = $props();
 
 // untrack: this is a one-time default that lets the parent control the state
-let isEditingChart = $state(untrack(() => isNew));
+let isEditingChart = $state(untrack(() => chartConfig.id === newChartId));
 let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
 
@@ -36,10 +37,10 @@ let data : ChartData = $state.raw([]);
 const fetchData = (newChartConfig: ChartConfig | null = null) => {
   localChartConfig = newChartConfig ?? chartConfig;
 
-  if (newChartConfig === null && isNew) {
+  if (newChartConfig === null && chartConfig.id === newChartId) {
     // For new charts, send the configuration on the first load
     newChartConfig = chartConfig;
-    isNew = false;
+    newChartId = null;
   }
 
   return fetchChartData(chartConfig.id, tabFilters, newChartConfig)
