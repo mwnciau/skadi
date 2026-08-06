@@ -43,7 +43,7 @@ const handleCheckboxChange = (e: Event) => {
       absolute top-1/2 -left-5
       transition-all -translate-y-1/2
       text-[0.625rem] font-light leading-none text-ice-600
-      {value && "translate-x-6.5"}
+      {value ? "translate-x-6.5" : ""}
     "
     aria-hidden={!value}
   >{labelOn}</span>
@@ -52,7 +52,7 @@ const handleCheckboxChange = (e: Event) => {
       absolute top-1/2 -right-4.75
       transition-all -translate-y-1/2
       text-[0.625rem] font-light leading-none text-dawn-600
-      {value || "-translate-x-6.5"}
+      {value ? "" : "-translate-x-6.5"}
     "
     aria-hidden={value}
   >{labelOff}</span>
