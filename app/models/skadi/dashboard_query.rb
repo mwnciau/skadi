@@ -96,10 +96,10 @@ module Skadi
 
           if field_config[:type] == :date
             if dataset.key?("#{field}_from")
-              query = query.where("DATE(#{table_name}.#{field}) >= ?", dataset["date_from"])
+              query = query.where("DATE(#{table_name}.#{field}) >= ?", dataset["#{field}_from"])
             end
             if dataset.key?("#{field}_to")
-              query = query.where("DATE(#{table_name}.#{field}) <= ?", dataset["date_to"])
+              query = query.where("DATE(#{table_name}.#{field}) <= ?", dataset["#{field}_to"])
             end
           elsif dataset.key?(field.to_s)
             query = if field_config[:sql]
