@@ -78,6 +78,7 @@ const updateChartData = () => {
   if (chart.options.scales?.y1) {
     chart.options.scales.y1.display = rightAxis;
   }
+  chart.hoveredPosition = null;
 }
 
 $effect(() => {
@@ -154,7 +155,7 @@ $effect(() => {
             return;
           }
 
-          const pixelWidth = x.getPixelForTick(1) - x.getPixelForTick(0);
+          const pixelWidth = x.ticks.length > 0 ? x.chart.chartArea.width / x.ticks.length : 0;
           let pixelLeft = hoveredPosition - (pixelWidth / 2);
 
           ctx.save();
