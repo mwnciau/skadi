@@ -71,7 +71,7 @@ const deleteChart = (index: number) => {
 
 const duplicateChart = (index: number) => {
   const newChart = $state.snapshot(selectedTabConfig.children[index]);
-  // Note: the dataset ids will be still be the same between the datasets, but changing them potentially breaks and SQL datasets, so we just accept that datasets in different graphs might have the same ID
+  // Note: the datasets in the new chart will have the same ids as the datasets in the copied chart, but this isn't problematic because datasets are never referenced directly apart from their chart.
   newChart.id = crypto.randomUUID();
   chartIdToEdit = newChart.id;
   newChart.title = `Copy of ${newChart.title}`
