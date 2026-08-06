@@ -142,9 +142,9 @@ module Skadi
           if chart["visit_tracking"] == "any"
             query = query.where("skadi_visits.tracking_token IS NOT NULL")
           elsif chart["visit_tracking"] == "anonymity_set"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = FALSE")
+            query = query.where("skadi_visits.tracking_token IS NOT NULL AND skadi_visits.cookies_enabled = FALSE")
           elsif chart["visit_tracking"] == "cookie"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL AND cookies_enabled = TRUE")
+            query = query.where("skadi_visits.tracking_token IS NOT NULL AND skadi_visits.cookies_enabled = TRUE")
           end
         end
 
