@@ -130,27 +130,27 @@ const moveDown = (index: number) => {
     </select>
   </label>
 
+  <Filter type="select" model={localChartConfig} key="time_series">
+    Time series
+
+    {#snippet selectOptions()}
+      {#if localChartConfig.type !== "line"}
+        <option value="">All time</option>
+      {/if}
+      {#if localChartConfig.type !== "bar"}
+        <option value="daily">Daily</option>
+      {/if}
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    {/snippet}
+  </Filter>
+
   <ExpandingSection wrapperClass="max-w-160 border-ice-700">
     {#snippet title()}
       <p class="text-sm font-semibold text-ice-700">
         Chart filters
       </p>
     {/snippet}
-
-    <Filter type="select" model={localChartConfig} key="time_series">
-      Time series
-
-      {#snippet selectOptions()}
-        {#if localChartConfig.type !== "line"}
-          <option value="">All time</option>
-        {/if}
-        {#if localChartConfig.type !== "bar"}
-          <option value="daily">Daily</option>
-        {/if}
-        <option value="weekly">Weekly</option>
-        <option value="monthly">Monthly</option>
-      {/snippet}
-    </Filter>
 
     <Filter
       type="boolean"
