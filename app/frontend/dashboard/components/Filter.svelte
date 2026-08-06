@@ -136,6 +136,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
     <div class="flex gap-1 items-center">
       <input
         type="date"
+        onblur={onBlur}
         oninput={setString}
         value={model[key]}
         class="w-max"
@@ -144,6 +145,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
     </div>
   {:else if type === "select"}
     <select
+      onblur={onBlur}
       oninput={setString}
       value={model[key] ?? ""}
     >
