@@ -91,6 +91,7 @@ module Skadi
                 description: DATE_DESCRIPTION,
               },
               name: FILTER_AND_SPLIT,
+              **Skadi.configuration.dashboard_custom_event_fields,
             },
           },
           demographics: {
@@ -108,6 +109,7 @@ module Skadi
               value: FILTER_AND_SPLIT,
             },
           },
+          **Skadi.configuration.dashboard_custom_schema,
         }
       end
 

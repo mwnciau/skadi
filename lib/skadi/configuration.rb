@@ -76,21 +76,6 @@ module Skadi
     attr_accessor :user_controller_method
     validates(:user_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
 
-    # Method in the host application's ApplicationController that returns true if the current request is allowed to view the Skadi dashboard. Defaults to nil (disabled).
-    # @return [Symbol, nil]
-    attr_accessor :dashboard_view_controller_method
-    validates(:dashboard_view_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
-
-    # Method in the host application's ApplicationController that returns true if the current request is allowed to edit Skadi dashboards. Defaults to nil (disabled).
-    # @return [Symbol, nil]
-    attr_accessor :dashboard_edit_controller_method
-    validates(:dashboard_edit_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
-
-    # Method in the host application's ApplicationController that returns true if the current request is allowed to edit raw SQL in the Skadi dashboard. Note that exposing SQL to users is dangerous and could lead to data loss. Defaults to nil (disabled).
-    # @return [Symbol, nil]
-    attr_accessor :dashboard_dangerously_use_sql_controller_method
-    validates(:dashboard_dangerously_use_sql_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
-
     # Enable filtering of query parameters to prevent sensitive data being exposed. Defaults to true.
     # @return [Boolean]
     attr_accessor :use_query_param_whitelist
@@ -140,6 +125,88 @@ module Skadi
     # Helper method to return the inverse of :track_bots
     def do_not_track_bots? = !@track_bots
 
+    ###########################
+    # Dashboard configuration #
+    ###########################
+
+    # Method in the host application's ApplicationController that returns true if the current request is allowed to view the Skadi dashboard. Defaults to nil (disabled).
+    # @return [Symbol, nil]
+    attr_accessor :dashboard_view_controller_method
+    validates(:dashboard_view_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+
+    # Method in the host application's ApplicationController that returns true if the current request is allowed to edit Skadi dashboards. Defaults to nil (disabled).
+    # @return [Symbol, nil]
+    attr_accessor :dashboard_edit_controller_method
+    validates(:dashboard_edit_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+
+    # Method in the host application's ApplicationController that returns true if the current request is allowed to edit raw SQL in the Skadi dashboard. Note that exposing SQL to users is dangerous and could lead to data loss. Defaults to nil (disabled).
+    # @return [Symbol, nil]
+    attr_accessor :dashboard_dangerously_use_sql_controller_method
+    validates(:dashboard_dangerously_use_sql_controller_method, "Symbol or nil", default: nil) { |it| it.nil? || it.is_a?(Symbol) }
+
+    # Use this to add custom fields to the events dataset in the dashboard. This should be set to a hash with values of the format:
+    #   {
+    #     label: The label to show in the front end,
+    #     type: The datatype, one of :date, :string, :number, :boolean. Defaults to :string if omitted.
+    #     filter: `true` if this field can be filtered
+    #     split: `true` if this field can be split
+    #     sql: The SQL expression used to get this value for derived fields
+    #     options: An array of possible values
+    #     description: used in the front end as help text for this field
+    #   }
+    # For example,
+    #   {clicks: {type: :number, filter: true, split: true, sql: "properties->>'clicks'"}}
+    # See Skadi::Schema for reference
+    # @return [Array<Hash>, nil]
+    attr_accessor :dashboard_custom_event_fields
+    validates(:dashboard_custom_event_fields, "Hash or nil", default: nil) do |it|
+      next true if it.nil?
+      next false unless it.is_a?(Hash)
+
+      next it.all? do |_key, item|
+        item.is_a?(Hash) && (item.keys.map(&:to_s) - %w[label type filter split sql option description]).empty?
+      end
+    end
+
+    # Use this to add custom database tables to the Skadi dashboard. See Skadi::Schema for reference.
+    attr_accessor :dashboard_custom_schema
+    validates(:dashboard_custom_schema, "a valid schema or nil", default: nil) do |it|
+      next true if it.nil?
+      unless it.is_a?(Hash)
+        error! "Skadi.configuration.dashboard_custom_schema must be a hash"
+        next false
+      end
+
+      tables_valid = it.all? do |_table_name, table_schema|
+        unless table_schema.is_a?(Hash)
+          error! "Skadi.configuration.dashboard_custom_schema values must be a hash"
+          next false
+        end
+
+        unless table_schema[:model].is_a?(String)
+          error! "Skadi.configuration.dashboard_custom_schema hash values must have a :model key"
+          next false
+        end
+
+        klass = table_schema[:model].constantize
+        unless klass.is_a?(Class) && klass < ActiveRecord::Base
+          error! "Skadi.configuration.dashboard_custom_schema hash values model key must be the name of a valid model"
+          next false
+        end
+
+        table_schema[:model] = klass
+
+        unless table_schema[:fields].is_a?(Hash)
+          error! "Skadi.configuration.dashboard_custom_schema fields must be a hash"
+        end
+
+        next true
+      end
+
+      next tables_valid
+    end
+
+
     def validate!
       validators.each do |attribute, validator_configuration|
         validator = validator_configuration[:validator]
@@ -150,12 +217,15 @@ module Skadi
           next
         end
 
-        error = "Skadi.configuration.#{attribute} error! Expecting a #{expecting}, but got a #{value.class}"
-        if Rails.env.local?
-          raise Error.new(error)
-        else
-          Rails.logger.error error
-        end
+        error! "Skadi.configuration.#{attribute} error! Expecting a #{expecting}, but got a #{value.class}"
+      end
+    end
+
+    private def error!(error)
+      if Rails.env.local?
+        raise Error.new(error)
+      else
+        Rails.logger.error error
       end
     end
   end
