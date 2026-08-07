@@ -1,10 +1,9 @@
 <script lang="ts">
 import { Chart } from "chart.js/auto";
 import { onMount } from "svelte";
-import type { ChartConfig, ChartData, ChartDataset, DataPoint } from "../../types.d.ts";
+import type { ChartData, ChartDataset, DataPoint } from "../../types.d.ts";
 
-let { chartConfig, data } : {
-  chartConfig: ChartConfig;
+let { data } : {
   data: ChartData;
 } = $props();
 

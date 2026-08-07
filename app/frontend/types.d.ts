@@ -93,9 +93,9 @@ export type FieldSchema = {
   options?: (string | { label: string; value: string })[];
   // For boolean/switch filters
   leftLabel?: string;
-  leftValue?: string;
+  leftValue?: unknown;
   rightLabel?: string;
-  rightValue?: string;
+  rightValue?: unknown;
 };
 
 export type DatasetSchema = {

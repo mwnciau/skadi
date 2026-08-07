@@ -5,7 +5,7 @@ const {
   labelOn = "YES",
   labelOff = "NO",
 } : {
-  value: boolean;
+  value: boolean | null;
   onToggle: () => void;
   labelOn?: string;
   labelOff?: string;
@@ -27,7 +27,7 @@ const handleCheckboxChange = (e: Event) => {
     relative
     h-6 w-13
     border rounded-full overflow-hidden
-    {value ? "border-ice-600 bg-ice-50" : "border-dawn-600 bg-dawn-50"}
+    {value ? "border-ice-600 bg-ice-50" : (value === null ? "border-gray-600 bg-gray-50" : "border-dawn-600 bg-dawn-50")}
     cursor-pointer
   "
   onclick={onToggle}
@@ -36,24 +36,24 @@ const handleCheckboxChange = (e: Event) => {
     absolute top-1/2 left-0.75
     transition-all -translate-y-1/2
     size-4.5 rounded-full shadow-inner
-    {value ? "bg-ice-300 translate-x-6.5" : "bg-dawn-300"}
+    {value === true ? "bg-ice-300 translate-x-6.5" : (value === null ? "bg-gray-600 translate-x-3.25" : "bg-dawn-300")}
   "></span>
   <span
     class="
       absolute top-1/2 -left-5
       transition-all -translate-y-1/2
-      text-[0.625rem] font-light leading-none text-ice-600
+      text-[0.625rem] font-light leading-none text-ice-700
       {value ? "translate-x-6.5" : ""}
     "
-    aria-hidden={!value}
+    aria-hidden={value !== true}
   >{labelOn}</span>
   <span
     class="
       absolute top-1/2 -right-4.75
       transition-all -translate-y-1/2
-      text-[0.625rem] font-light leading-none text-dawn-600
-      {value ? "" : "-translate-x-6.5"}
+      text-[0.625rem] font-light leading-none text-dawn-700
+      {value === false ? "-translate-x-6.5" : ""}
     "
-    aria-hidden={value}
+    aria-hidden={value !== false}
   >{labelOff}</span>
 </button>

@@ -7,26 +7,26 @@ let {
   type = "text",
   model,
   key,
-  booleanDefault = false,
   children,
   description = null,
   selectOptions = null,
   leftLabel,
   rightLabel,
-  leftValue,
-  rightValue,
+  leftValue = null,
+  rightValue = null,
+  switchIndeterminate = false,
   allowEmpty = false,
   trimOnBlur = false,
   ...attributes
 } : {
-  type?: "boolean" | "contenteditable" | "date" | "select" | "switch" | "text" | "textarea";
+  type?: "contenteditable" | "date" | "select" | "switch" | "text" | "textarea";
   model: Record<string,unknown>;
   key: string;
-  booleanDefault?: true | false;
   leftLabel?: string;
   rightLabel?: string;
-  leftValue?: string;
-  rightValue?: string;
+  leftValue?: unknown;
+  rightValue?: unknown;
+  switchIndeterminate?: boolean,
 
   allowEmpty?: boolean;
   trimOnBlur?: boolean;
@@ -40,6 +40,14 @@ let {
 type StringEvent = Event & {
   currentTarget: EventTarget & (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement | HTMLParagraphElement);
 };
+
+const switchValue = $derived.by(() => {
+  if (switchIndeterminate && model[key] !== rightValue && model[key] !== leftValue) {
+    return null;
+  }
+
+  return (model[key] === rightValue || (rightValue === null && model[key] === undefined));
+});
 
 let persistDelayMs = $derived(["date", "text", "textarea", "contenteditable"].includes(type) ? 1000 : 250);
 let debounceTimeout: number;
@@ -61,23 +69,21 @@ const setString = (event: StringEvent) => {
   debounceTimeout = setTimeout(persistValue, persistDelayMs);
 }
 
-const toggleBoolean = () => {
-  if (model[key] === !booleanDefault) {
-    delete model[key];
-  } else {
-    model[key] = !booleanDefault;
-  }
-}
-
 const toggleSwitch = () => {
-  if (model[key] === rightValue) {
+  if (switchValue) {
     if (leftValue === null) {
       delete model[key];
     } else {
       model[key] = leftValue;
     }
+  } else if (switchValue === null) {
+      model[key] = rightValue;
   } else {
-    model[key] = rightValue;
+    if (switchIndeterminate || rightValue === null) {
+      delete model[key];
+    } else {
+      model[key] = rightValue;
+    }
   }
 }
 
@@ -121,9 +127,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
 <label>
   {@render children()}
 
-  {#if type === "boolean"}
-    <Switch value={booleanDefault ? model[key] !== false : model[key] === true} onToggle={toggleBoolean} />
-  {:else if type === "contenteditable"}
+  {#if type === "contenteditable"}
     <p
       contenteditable
       onblur={onBlur}
@@ -165,7 +169,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
     <div class="flex items-center gap-2 font-normal">
       {leftLabel}
       <Switch
-        value={model[key] === rightValue}
+        value={switchValue}
         onToggle={toggleSwitch}
         labelOff={leftLabel ? "" : undefined}
         labelOn={rightLabel ? "" : undefined}

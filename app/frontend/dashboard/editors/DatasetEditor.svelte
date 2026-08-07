@@ -246,7 +246,7 @@ const duplicate = () => {
     </select>
   </label>
 
-  <Filter type="boolean" booleanDefault={true} model={dataset} key="visible">
+  <Filter type="switch" leftValue={false} model={dataset} key="visible">
     Show on chart
   </Filter>
 
@@ -320,9 +320,10 @@ const duplicate = () => {
             type="switch"
             model={dataset}
             leftLabel={fieldConfig.leftLabel}
-            leftValue={fieldConfig.leftValue}
+            leftValue={fieldConfig.leftValue === undefined ? false : fieldConfig.leftValue}
             rightLabel={fieldConfig.rightLabel}
-            rightValue={fieldConfig.rightValue}
+            rightValue={fieldConfig.rightValue === undefined ? true : fieldConfig.rightValue}
+            switchIndeterminate={true}
             key={field}
           >
             {fieldLabel}

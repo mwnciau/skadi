@@ -162,8 +162,9 @@ const moveDown = (index: number) => {
     {/snippet}
 
     <Filter
-      type="boolean"
+      type="switch"
       model={localChartConfig}
+      rightValue={true}
       key="verified_visits"
       description="Visits and views are created by the backend, and verified by a frontend request. Enabling this will filter out some bots and prevent page pre-fetching being tracked."
     >

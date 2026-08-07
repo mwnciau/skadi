@@ -121,7 +121,7 @@ $effect(() => {
           <StaticDataTable chartConfig={localChartConfig} {data} />
         {:else}
           {#if localChartConfig.type === "line"}
-            <LineChart chartConfig={localChartConfig} {data} />
+            <LineChart {data} />
           {:else if localChartConfig.type === "bar"}
             <BarChart chartConfig={localChartConfig} {data} />
           {/if}
