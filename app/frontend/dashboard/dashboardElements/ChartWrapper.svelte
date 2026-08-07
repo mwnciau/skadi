@@ -116,15 +116,22 @@ $effect(() => {
           <p class="whitespace-pre-wrap w-max max-w-full mx-auto px-2 lg:px-12">{localChartConfig.description}</p>
         {/if}
       </div>
-      {#if viewData}
-        <StaticDataTable chartConfig={localChartConfig} {data} />
-      {:else}
-        {#if localChartConfig.type === "line"}
-          <LineChart chartConfig={localChartConfig} {data} />
-        {:else if localChartConfig.type === "bar"}
-          <BarChart chartConfig={localChartConfig} {data} />
+      <div class="relative">
+        {#if viewData && data.length !== 0}
+          <StaticDataTable chartConfig={localChartConfig} {data} />
+        {:else}
+          {#if localChartConfig.type === "line"}
+            <LineChart chartConfig={localChartConfig} {data} />
+          {:else if localChartConfig.type === "bar"}
+            <BarChart chartConfig={localChartConfig} {data} />
+          {/if}
+          {#if data.length === 0}
+            <p class="absolute top-1/2 left-1/2 -translate-1/2 text-gray-600">
+              No data to display
+            </p>
+          {/if}
         {/if}
-      {/if}
+      </div>
     </div>
 
     {#if loadError}
@@ -155,7 +162,9 @@ $effect(() => {
       <div class="ml-auto"></div>
 
       <button type="button" onclick={() => fetchData()}>Refresh</button>
-      <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
+      {#if data.length !== 0}
+        <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
+      {/if}
     </div>
   </div>
 </div>
