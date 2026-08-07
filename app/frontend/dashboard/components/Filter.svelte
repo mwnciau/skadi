@@ -19,7 +19,7 @@ let {
   trimOnBlur = false,
   ...attributes
 } : {
-  type?: "contenteditable" | "date" | "select" | "switch" | "text" | "textarea";
+  type?: "contenteditable" | "date" | "number" | "select" | "switch" | "text" | "textarea";
   model: Record<string,unknown>;
   key: string;
   leftLabel?: string;
@@ -49,11 +49,11 @@ const switchValue = $derived.by(() => {
   return (model[key] === rightValue || (rightValue === null && model[key] === undefined));
 });
 
-let persistDelayMs = $derived(["date", "text", "textarea", "contenteditable"].includes(type) ? 1000 : 250);
+let persistDelayMs = $derived(["date", "number", "text", "textarea", "contenteditable"].includes(type) ? 1000 : 250);
 let debounceTimeout: number;
-let debounceValue: string;
+let debounceValue: string | number | null = null;
 let persistValue = () => {
-  if (debounceValue || allowEmpty) {
+  if (debounceValue !== null || allowEmpty) {
     model[key] = debounceValue;
   } else {
     delete model[key];
@@ -61,7 +61,19 @@ let persistValue = () => {
 }
 
 const setString = (event: StringEvent) => {
-  debounceValue = type === "contenteditable" ? event.currentTarget.innerText : (event.currentTarget as HTMLInputElement).value;
+  if (type === "contenteditable") {
+    debounceValue = event.currentTarget.innerText;
+  } else if (type === "number") {
+    let value = (event.currentTarget as HTMLInputElement).value.trim();
+
+    if (value.match(/^-?\d*\.?\d+$/)) {
+      debounceValue = Number.parseFloat(value);
+    } else {
+      debounceValue = null;
+    }
+  } else {
+    debounceValue = (event.currentTarget as HTMLInputElement).value;
+  }
 
   if (debounceTimeout) {
     clearTimeout(debounceTimeout);
@@ -144,6 +156,16 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
         oninput={setString}
         value={model[key]}
         class="w-max"
+      >
+      {@render clearButton()}
+    </div>
+  {:else if type === "number"}
+    <div class="flex gap-1 items-center">
+      <input
+        type="number"
+        onblur={onBlur}
+        oninput={setString}
+        value={model[key]}
       >
       {@render clearButton()}
     </div>

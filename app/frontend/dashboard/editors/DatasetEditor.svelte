@@ -346,6 +346,10 @@ const duplicate = () => {
           >
             {fieldLabel} to
           </Filter>
+        {:else if fieldConfig.type === "number"}
+          <Filter type="number" model={dataset} key={field} description={fieldConfig.description}>
+            {fieldLabel}
+          </Filter>
         {:else if fieldConfig.type === "sql"}
           <Filter
             type="textarea"

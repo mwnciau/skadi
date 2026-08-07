@@ -148,6 +148,9 @@ module Skadi
       when :boolean
         add_error(path, "must be a boolean", context:) unless value == true || value == false
         return
+      when :number
+        add_error(path, "must be a number", context:) unless value.is_a?(Numeric)
+        return
       when :date
         add_error(path, "must be a date", context:) unless value.is_a?(String) && value.match?(/\A\d{4}-[01]\d-[0-3]\d\z/)
         return
