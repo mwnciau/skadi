@@ -86,7 +86,7 @@ module Skadi
       end
 
       private def apply_schema_filters(dataset, schema, query)
-        table_name = schema[:model].table_name
+        model = schema[:model]
 
         schema[:fields].each do |field, field_config|
           next unless field_config[:filter]
@@ -96,16 +96,26 @@ module Skadi
 
           if field_config[:type] == :date
             if dataset.key?("#{field}_from")
-              query = query.where("DATE(#{table_name}.#{field}) >= ?", dataset["#{field}_from"])
+              query = query.where("DATE(#{model.table_name}.#{field}) >= ?", dataset["#{field}_from"])
             end
             if dataset.key?("#{field}_to")
-              query = query.where("DATE(#{table_name}.#{field}) <= ?", dataset["#{field}_to"])
+              query = query.where("DATE(#{model.table_name}.#{field}) <= ?", dataset["#{field}_to"])
             end
           elsif dataset.key?(field.to_s)
-            query = if field_config[:sql]
-              query.where("#{field_config[:sql]} = ?", dataset[field.to_s])
+            field_sql = field_config[:sql] ? field_config[:sql] : "#{model.table_name}.#{model.connection.quote_column_name(field)}"
+            untrusted_value = dataset[field.to_s]
+
+            if field_config[:type].nil? || field_config[:type] == :string
+              like = Helpers::Sql.ilike(model)
+              if untrusted_value&.start_with?("!")
+                untrusted_value.delete_prefix!("!")
+
+                query = query.where("#{field_sql} IS NULL OR #{field_sql} NOT #{like} ?", untrusted_value)
+              else
+                query = query.where("#{field_sql} #{like} ?", untrusted_value)
+              end
             else
-              query.where(field => dataset[field.to_s])
+              query = query.where("#{field_sql} = ?", dataset[field.to_s])
             end
           end
         end

@@ -2,6 +2,20 @@ module Skadi
   module Helpers
     class Sql
       class << self
+        # Provides the keyword for case insensitive LIKE
+        def ilike(model)
+          case model.connection.adapter_name
+          when "PostgreSQL"
+            "ILIKE"
+          when "Mysql2"
+            "LIKE"
+          when "SQLite"
+            "LIKE"
+          else
+            raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+          end
+        end
+
         def string_before_separator(model, field, separator)
           case model.connection.adapter_name
           when "PostgreSQL"

@@ -399,6 +399,8 @@ const duplicate = () => {
         </select>
       </label>
     {/if}
+
+    <p class="help-text">For string filters, use <code>%</code> as a wildcard of any length, <code>_</code> for a single character wildcard, and start the value with ! to negate the check.</p>
   </div>
 
   <div class="flex flex-row gap-2 mt-4">
