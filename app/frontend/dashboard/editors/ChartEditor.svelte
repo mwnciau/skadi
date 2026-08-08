@@ -36,7 +36,8 @@ const saveChanges = () => {
 const cancelChanges = () => {
   // If we've previewed at all, reset the chart display
   if (displayedChartConfigString !== chartConfigString) {
-    reloadChartData();
+    // Revert to the original chart data
+    reloadChartData(chartConfig);
   }
 
   onClose();

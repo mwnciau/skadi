@@ -32,26 +32,19 @@ let loadError = $state(false);
 
 // untrack: this is manually updated by fetchData
 let localChartConfig = $state(untrack(() => chartConfig));
-let dirtyChartConfig = $state(false);
 
 // Make this shallow state using $state.raw. We don't care how the charting library uses it, only that it's notified when the whole dataset is changed
 let data : ChartData = $state.raw([]);
 
-const fetchData = (newChartConfig: ChartConfig | null = null) => {
-  if (newChartConfig !== null) {
-    localChartConfig = newChartConfig;
-    dirtyChartConfig = true;
-  } else if (dirtyChartConfig) {
-    newChartConfig ??= localChartConfig
-  }
+const fetchData = (newChartConfig: ChartConfig) => {
+  localChartConfig = newChartConfig;
 
-  // For new charts, send the configuration on the first load
-  if (newChartConfig === null && chartConfig.id === newChartId) {
-    newChartConfig = chartConfig;
-    newChartId = null;
-  }
-
-  return fetchChartData(chartConfig.id, tabFilters, newChartConfig)
+  return fetchChartData(
+    chartConfig.id,
+    tabFilters,
+    // While the chart is being edited, always send the chart config
+    isEditingChart ? newChartConfig : null
+  )
     .then((items) => {
       const responseData: ResponseData = {};
 
@@ -74,7 +67,7 @@ const fetchData = (newChartConfig: ChartConfig | null = null) => {
     });
 }
 
-const reloadChartData = (localChartConfig: ChartConfig | null = null) => {
+const reloadChartData = (localChartConfig: ChartConfig) => {
   return fetchData(localChartConfig);
 }
 
@@ -90,7 +83,7 @@ $effect(() => {
   JSON.stringify(tabFilters);
 
   untrack(() => {
-    fetchData();
+    fetchData(localChartConfig);
   });
 });
 </script>
@@ -111,7 +104,7 @@ $effect(() => {
   <div class="grow min-w-0 flex flex-col gap-4">
     <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
       <div class="mb-4">
-        <h2 class="text-night-950 text-xl font-semibold text-center">{chartConfig.title}</h2>
+        <h2 class="text-night-950 text-xl font-semibold text-center">{localChartConfig.title}</h2>
         {#if localChartConfig.description}
           <p class="whitespace-pre-wrap w-max max-w-full mx-auto px-2 lg:px-12">{localChartConfig.description}</p>
         {/if}
@@ -161,7 +154,7 @@ $effect(() => {
 
       <div class="ml-auto"></div>
 
-      <button type="button" onclick={() => fetchData()}>Refresh</button>
+      <button type="button" onclick={() => fetchData(localChartConfig)}>Refresh</button>
       {#if data.length !== 0}
         <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
       {/if}
