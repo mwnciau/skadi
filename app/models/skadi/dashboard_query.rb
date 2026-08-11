@@ -21,7 +21,7 @@ module Skadi
           end
         end
 
-        return [] unless queries.any?
+        return {data: []} unless queries.any?
 
         result = {
           data: [],

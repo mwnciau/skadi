@@ -420,7 +420,9 @@ module Skadi::Integration
         post skadi.dashboard_data_path, params: { configuration: chart }, as: :json
 
         assert_response :ok
-        return JSON.parse(response.body)
+        raw = JSON.parse(response.body)
+
+        return raw["data"]
       end
 
       def assert_results(count, **params)
@@ -429,7 +431,7 @@ module Skadi::Integration
         assert_response :ok
         results = JSON.parse(response.body)
 
-        assert_equal count, results.sum { |it| it["count"] }, "Expected to see #{count} results but got #{results[0]["count"]} at #{caller[0]}"
+        assert_equal count, results["data"].sum { |it| it["count"] }, "Expected to see #{count} results but got #{results["data"][0]["count"]} at #{caller[0]}"
       end
     end
   end

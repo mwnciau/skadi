@@ -51,7 +51,7 @@ module Skadi::Integration
             assert_response :ok
 
             # Setting the date fields should return no rows
-            assert_equal '[{"id":"dataset-1","date":null,"split":null,"count":1}]', response.body
+            assert_equal '{"data":[{"id":"dataset-1","date":null,"split":null,"count":1}]}', response.body
           end
         end
       end
@@ -82,7 +82,7 @@ module Skadi::Integration
             assert_response :ok
 
             # Setting the visit_tracking field to a non-boolean value should be ignored
-            assert_equal '[{"id":"dataset-1","date":null,"split":null,"count":1}]', response.body
+            assert_equal '{"data":[{"id":"dataset-1","date":null,"split":null,"count":1}]}', response.body
           end
         end
       end
@@ -100,7 +100,7 @@ module Skadi::Integration
             assert_response :ok
 
             # This is a bit of a weird state, but the important thing is there are no SQL errors
-            assert_see(/\A\[\{"id":"dataset-1","date":null,"split":null,"count":[01]\}\]\z/)
+            assert_see(/\A\{"data":\[\{"id":"dataset-1","date":null,"split":null,"count":[01]\}\]\}\z/)
           end
         end
       end
@@ -147,7 +147,7 @@ module Skadi::Integration
           assert_response :ok
 
           # Setting the utm_source field should return no rows
-          assert_equal "[]", response.body
+          assert_equal '{"data":[]}', response.body
         end
       end
 
@@ -163,7 +163,7 @@ module Skadi::Integration
           assert_response :ok
 
           # Setting the referrer_domain field should return no rows
-          assert_equal "[]", response.body
+          assert_equal '{"data":[]}', response.body
         end
       end
 
@@ -179,7 +179,7 @@ module Skadi::Integration
           assert_response :ok
 
           # Setting the verb field should return no rows
-          assert_equal "[]", response.body
+          assert_equal '{"data":[]}', response.body
         end
       end
 
@@ -195,7 +195,7 @@ module Skadi::Integration
           assert_response :ok
 
           # Setting the verified field should return no rows
-          assert_equal "[]", response.body
+          assert_equal '{"data":[]}', response.body
         end
       end
 
@@ -210,7 +210,7 @@ module Skadi::Integration
             assert_response :ok
 
             # Setting the date fields should return no rows
-            assert_equal "[]", response.body
+            assert_equal '{"data":[]}', response.body
           end
         end
       end
