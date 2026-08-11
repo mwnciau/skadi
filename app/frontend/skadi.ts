@@ -66,7 +66,7 @@ const queueRequest = () => {
 const sendRequest = () => {
   if (requestTimeout) {
     clearTimeout(requestTimeout);
-    requestTimeout = 0;
+    requestTimeout = null;
   }
 
   const result = navigator.sendBeacon(
