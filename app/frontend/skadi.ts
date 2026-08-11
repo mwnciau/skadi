@@ -2,7 +2,7 @@
 let demographics: SkadiDemographic[] = [];
 let events: SkadiEvent[] = [];
 let largestContentfulPaint: number = -1;
-let requestTimeout: number | undefined;
+let requestTimeout: number | null | undefined;
 let exitPage: string | undefined;
 let useExitPage: boolean = false;
 
