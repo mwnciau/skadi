@@ -1,4 +1,11 @@
-import type { ChartConfig, DashboardConfig, RawResponseData, TabFilters } from "../../types";
+import type {
+  ChartConfig,
+  ChartFilters,
+  DashboardConfig,
+  RawChartResponseData,
+  RawResponse,
+  TabFilters
+} from "../../types";
 
 const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]");
 const fetchDataPath = callingScript?.dataset?.fetchDataPath as string;
@@ -24,7 +31,7 @@ const handleResponseError = (response: Response) => {
   });
 };
 
-export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartConfig: ChartConfig | null): Promise<RawResponseData> => {
+export const fetchChartData = (chart: string | ChartConfig, tabFilters: TabFilters, chartFilters: ChartFilters): Promise<RawResponse> => {
   const queryVars: Record<string, unknown> = {
     [csrfParam]: csrfToken,
   };
@@ -35,10 +42,13 @@ export const fetchChartData = (chartId: string, tabFilters: TabFilters, chartCon
   if (tabFilters.date_to) {
     queryVars.date_to = tabFilters.date_to;
   }
-  if (chartConfig) {
-    queryVars.configuration = chartConfig;
+  if (chartFilters.page) {
+    queryVars.page = chartFilters.page;
+  }
+  if (typeof chart === "string") {
+    queryVars.chart_id = chart;
   } else {
-    queryVars.chart_id = chartId;
+    queryVars.configuration = chart;
   }
 
   return fetch(fetchDataPath, {

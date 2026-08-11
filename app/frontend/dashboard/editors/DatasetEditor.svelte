@@ -8,23 +8,13 @@ import ExpandingSection from "../components/ExpandingSection.svelte";
 import Filter from "../components/Filter.svelte";
 import Icon from "../components/Icon.svelte";
 import { databaseSchema } from "../helpers/databaseSchema";
+import { formatString } from "../helpers/formatting";
 
 const SQL_DEFAULT = `SELECT
   skadi_views.created_at as "date",
   NULL as "split",
   1 as "count"
 FROM skadi_views`;
-
-const formatString = (string: string) => {
-  return string
-    // Replace underscores with spaces
-    .replace(/_/g, " ")
-    // Capitalise the first letter
-    .replace(/^[a-z]/, (letter) => letter.toLocaleUpperCase())
-    // A few QoL replacements
-    .replace(/^Sql/, "SQL")
-    .replace(/^Utm/, "UTM");
-}
 
 const { canDangerouslyUseSql, chartConfig, dataset, index, startOpen = false, onDelete, onDuplicate, onMoveUp, onMoveDown }: {
   canDangerouslyUseSql: boolean;
@@ -246,64 +236,66 @@ const duplicate = () => {
     </select>
   </label>
 
-  <Filter type="switch" leftValue={false} model={dataset} key="visible">
-    Show on chart
-  </Filter>
-
-  {#if dataset.visible !== false}
-    <Filter
-      type="switch"
-      leftLabel="Left"
-      rightLabel="Right"
-      rightValue="right"
-      model={dataset}
-      key="axis"
-    >
-      Axis
+  {#if chartConfig.type !== "table"}
+    <Filter type="switch" leftValue={false} model={dataset} key="visible">
+      Show on chart
     </Filter>
-  {/if}
 
-  {#if splitFields.length > 0}
-    <div class="border-l-2 border-ice-600 pl-4 mt-4 py-0.5 flex flex-col gap-3">
-      <p class="text-sm font-medium text-ice-600">
-        Splits
-      </p>
-      <p class="text-xs text-grey-600">
-        Shows a separate chart series for each unique value of the given fields
-      </p>
-      {#if Array.isArray(dataset.split_by)}
-        <div class="flex flex-wrap gap-2">
-          {#each dataset.split_by as splitField}
-            <div class="flex items-center gap-1">
-              <div class="font-medium">
-                {fields[splitField].label ?? formatString(splitField)}
+    {#if dataset.visible !== false}
+      <Filter
+        type="switch"
+        leftLabel="Left"
+        rightLabel="Right"
+        rightValue="right"
+        model={dataset}
+        key="axis"
+      >
+        Axis
+      </Filter>
+    {/if}
+
+    {#if splitFields.length > 0}
+      <div class="border-l-2 border-ice-600 pl-4 mt-4 py-0.5 flex flex-col gap-3">
+        <p class="text-sm font-medium text-ice-600">
+          Splits
+        </p>
+        <p class="text-xs text-grey-600">
+          Shows a separate chart series for each unique value of the given fields
+        </p>
+        {#if Array.isArray(dataset.split_by)}
+          <div class="flex flex-wrap gap-2">
+            {#each dataset.split_by as splitField}
+              <div class="flex items-center gap-1">
+                <div class="font-medium">
+                  {fields[splitField].label ?? formatString(splitField)}
+                </div>
+                <button
+                  type="button"
+                  class="unstyled text-night-800 hover:text-black hover:bg-night-50 p-1 cursor-pointer"
+                  onclick={() => removeSplit(splitField)}>
+                  <Icon size=16 name="delete" />
+                </button>
               </div>
-              <button
-                type="button"
-                class="unstyled text-night-800 hover:text-black hover:bg-night-50 p-1 cursor-pointer"
-                onclick={() => removeSplit(splitField)}>
-                <Icon size=16 name="delete" />
-              </button>
-            </div>
-          {/each}
-        </div>
-      {/if}
+            {/each}
+          </div>
+        {/if}
 
-      <label>
-        <span class="sr-only">Add a split</span>
-        <select
-          onchange={addSplit}
-          class="text-gray-600"
-        >
-          <option selected value="">Add a split</option>
-          {#each splitFields as field}
-            {#if !Array.isArray(dataset.split_by) || !dataset.split_by.includes(field)}
-              <option value={field}>{filterFields?.[field]?.label ?? formatString(field)}</option>
-            {/if}
-          {/each}
-        </select>
-      </label>
-    </div>
+        <label>
+          <span class="sr-only">Add a split</span>
+          <select
+            onchange={addSplit}
+            class="text-gray-600"
+          >
+            <option selected value="">Add a split</option>
+            {#each splitFields as field}
+              {#if !Array.isArray(dataset.split_by) || !dataset.split_by.includes(field)}
+                <option value={field}>{filterFields?.[field]?.label ?? formatString(field)}</option>
+              {/if}
+            {/each}
+          </select>
+        </label>
+      </div>
+    {/if}
   {/if}
 
   <div class="border-l-2 border-ice-600 pl-4 mt-4 py-0.5 flex flex-col gap-3">

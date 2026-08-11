@@ -9,7 +9,7 @@ import DatasetEditor from "./DatasetEditor.svelte";
 let { canDangerouslyUseSql, chartConfig, reloadChartData, onClose, onSave }: {
   canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
-  reloadChartData: (chartConfig?: ChartConfig) => Promise<void>;
+  reloadChartData: (chartConfig: ChartConfig) => Promise<void>;
   onClose: () => void;
   onSave: (newChartConfig: ChartConfig) => void;
 } = $props();
@@ -51,8 +51,7 @@ const previewChanges = () => {
       errorMessage = null;
     })
     .catch(error => {
-      errorMessage = error.message.trim();
-      console.error(error);
+      errorMessage = error.message.trim().replace(/Configuration configuration\[\d+\]\.children\[\d+\]\./g, "");
     });
 }
 
@@ -70,6 +69,20 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
     if (localChartConfig.time_series === "daily") {
       delete localChartConfig.time_series;
     }
+  }
+
+  if (newType === "table") {
+    localChartConfig.type = "table";
+
+    // Delete all but the first dataset
+    localChartConfig.datasets.splice(1);
+
+    // These fields are meaningless for the table type so we delete them
+    delete localChartConfig.datasets[0].visible
+    delete localChartConfig.datasets[0].axis
+    delete localChartConfig.datasets[0].split_by
+
+    delete localChartConfig.time_series;
   }
 }
 
@@ -137,23 +150,26 @@ const moveDown = (index: number) => {
     <select onchange={setType} value={localChartConfig.type}>
       <option value="line">Line chart</option>
       <option value="bar">Bar chart</option>
+      <option value="table">Table</option>
     </select>
   </label>
 
-  <Filter type="select" model={localChartConfig} key="time_series">
-    Time series
+  {#if chartConfig.type !== "table"}
+    <Filter type="select" model={localChartConfig} key="time_series">
+      Time series
 
-    {#snippet selectOptions()}
-      {#if localChartConfig.type !== "line"}
-        <option value="">All time</option>
-      {/if}
-      {#if localChartConfig.type !== "bar"}
-        <option value="daily">Daily</option>
-      {/if}
-      <option value="weekly">Weekly</option>
-      <option value="monthly">Monthly</option>
-    {/snippet}
-  </Filter>
+      {#snippet selectOptions()}
+        {#if localChartConfig.type !== "line"}
+          <option value="">All time</option>
+        {/if}
+        {#if localChartConfig.type !== "bar"}
+          <option value="daily">Daily</option>
+        {/if}
+        <option value="weekly">Weekly</option>
+        <option value="monthly">Monthly</option>
+      {/snippet}
+    </Filter>
+  {/if}
 
   <ExpandingSection wrapperClass="max-w-160 border-ice-700">
     {#snippet title()}
@@ -234,15 +250,17 @@ const moveDown = (index: number) => {
       />
     {/each}
 
-    <button type="button" class="sm text-sm ghost w-full border-l-4 border-night-100 hover:border-night-700 pl-4 hover:bg-transparent hover:backdrop-filter-none" onclick={addDataset}>
-      <Icon name="plus" size={18} class="-ml-1 mt-px" />
-      New dataset
-    </button>
+    {#if localChartConfig.type !== "table"}
+      <button type="button" class="sm text-sm ghost w-full border-l-4 border-night-100 hover:border-night-700 pl-4 hover:bg-transparent hover:backdrop-filter-none" onclick={addDataset}>
+        <Icon name="plus" size={18} class="-ml-1 mt-px" />
+        New dataset
+      </button>
+    {/if}
   </div>
 
   {#if errorMessage}
     <div class="p-1 px-2 bg-red-50/50 border border-red-500">
-      <p class="text-red-800 font-semibold">An error occurred during this request:</p>
+      <p class="text-red-800 font-semibold">Unable to preview the chart:</p>
       <pre class="text-red-800 whitespace-pre-wrap">{errorMessage}</pre>
     </div>
   {/if}

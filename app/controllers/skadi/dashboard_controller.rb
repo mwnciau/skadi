@@ -19,7 +19,7 @@ module Skadi
     def data
       return head :forbidden unless can_view
 
-      query_filters = params.permit(:date_from, :date_to)
+      query_filters = params.permit(:date_from, :date_to, :page)
 
       if can_edit && params[:configuration].present?
         return custom_chart_data(query_filters)

@@ -1,21 +1,29 @@
 <script lang="ts">
-  import { untrack } from "svelte";
-  import type { ChartConfig, ChartData, ResponseData, TabFilters } from "../../types.d.ts";
-  import Icon from "../components/Icon.svelte";
-  import ChartEditor from "../editors/ChartEditor.svelte";
-  import { createChartData, fillDataGaps, formatDates, processDerivedDatasets } from "../helpers/processData";
-  import { fetchChartData } from "../helpers/requestHandler";
-  import BarChart from "./BarChart.svelte";
-  import LineChart from "./LineChart.svelte";
-  import StaticDataTable from "./StaticDataTable.svelte";
+import { untrack } from "svelte";
+import type {
+  ChartConfig,
+  ChartData,
+  ChartFilters,
+  ChartMetadata,
+  RawChartResponseData,
+  TabFilters,
+  TableData
+} from "../../types.d.ts";
+import Icon from "../components/Icon.svelte";
+import ChartEditor from "../editors/ChartEditor.svelte";
+import processChartResponseData from "../helpers/processChartResponseData";
+import { fetchChartData } from "../helpers/requestHandler";
+import BarChart from "./BarChart.svelte";
+import DynamicTable from "./DynamicTable.svelte";
+import LineChart from "./LineChart.svelte";
+import StaticDataTable from "./StaticDataTable.svelte";
 
-  let { canDangerouslyUseSql, chartConfig, editingEnabled, newChartId = $bindable(), tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
+let { canDangerouslyUseSql, chartConfig, editingEnabled, startOpen, tabFilters, onDelete, onDuplicate, onMoveUp, onMoveDown, onSave }: {
   canDangerouslyUseSql: boolean;
   chartConfig: ChartConfig;
   editingEnabled: boolean;
   tabFilters: TabFilters;
-  // The ID of the chart if it was recently added and should start open
-  newChartId: string | null;
+  startOpen: boolean;
   onDelete: () => void;
   onDuplicate: () => void;
   onMoveUp?: null | (() => void);
@@ -24,46 +32,53 @@
 } = $props();
 
 // untrack: this is a one-time default that lets the parent control the state
-let isEditingChart = $state(untrack(() => chartConfig.id === newChartId));
+let isEditingChart = $state(untrack(() => startOpen));
+
 let viewData = $state(false);
 let confirmDelete: boolean = $state(false);
-
 let loadError = $state(false);
+let loading = $state(false);
 
 // untrack: this is manually updated by fetchData
 let localChartConfig = $state(untrack(() => chartConfig));
 
+let chartFilters: ChartFilters = $state({});
+let chartMetadata: ChartMetadata = $state({});
+
 // Make this shallow state using $state.raw. We don't care how the charting library uses it, only that it's notified when the whole dataset is changed
-let data : ChartData = $state.raw([]);
+let data : ChartData | TableData = $state.raw([]);
 
 const fetchData = (newChartConfig: ChartConfig) => {
-  localChartConfig = newChartConfig;
+  loading = true;
 
   return fetchChartData(
-    chartConfig.id,
-    tabFilters,
     // While the chart is being edited, always send the chart config
-    isEditingChart ? newChartConfig : null
+    isEditingChart ? newChartConfig : chartConfig.id,
+    tabFilters,
+    chartFilters,
   )
-    .then((items) => {
-      const responseData: ResponseData = {};
+    .then((response) => {
+      localChartConfig = newChartConfig;
 
-      for (const item of items) {
-        const key: string = item.split ? `${item.id} ${item.split}` : item.id;
-        responseData[key] ??= [];
-        responseData[key].push({x: item.date, y: item.count});
+      if (localChartConfig.type === "table") {
+        chartMetadata.resultOffset = response.resultOffset;
+        chartMetadata.resultCount = response.resultCount;
+        data = response.data as TableData;
+      } else {
+        data = processChartResponseData(localChartConfig, response.data as RawChartResponseData);
       }
-
-      processDerivedDatasets(localChartConfig, responseData);
-      fillDataGaps(localChartConfig, responseData);
-      formatDates(localChartConfig, responseData)
-      data = createChartData(localChartConfig, responseData);
 
       loadError = false;
     })
     .catch((error) => {
       console.error(error);
       loadError = true;
+
+      // Let downstream handlers also catch errors
+      throw error;
+    })
+    .finally(() => {
+      loading = false;
     });
 }
 
@@ -79,8 +94,9 @@ const saveChartConfig = (newChartConfig: ChartConfig) => {
 }
 
 $effect(() => {
-  // Ensure this effect is run when tabFilters changes
+  // Ensure this effect is run when chartFilters or tabFilters changes
   JSON.stringify(tabFilters);
+  JSON.stringify(chartFilters);
 
   untrack(() => {
     fetchData(localChartConfig);
@@ -110,19 +126,20 @@ $effect(() => {
         {/if}
       </div>
       <div class="relative">
-        {#if viewData && data.length !== 0}
-          <StaticDataTable chartConfig={localChartConfig} {data} />
-        {:else}
-          {#if localChartConfig.type === "line"}
-            <LineChart {data} />
-          {:else if localChartConfig.type === "bar"}
-            <BarChart chartConfig={localChartConfig} {data} />
-          {/if}
-          {#if data.length === 0}
+        {#if data.length === 0}
+          <div class="aspect-video border border-ice-100">
             <p class="absolute top-1/2 left-1/2 -translate-1/2 text-gray-600">
               No data to display
             </p>
-          {/if}
+          </div>
+        {:else if localChartConfig.type === "table"}
+          <DynamicTable chartConfig={localChartConfig} {chartFilters} {chartMetadata} data={data as TableData} {loading} />
+        {:else if viewData && data.length !== 0}
+          <StaticDataTable chartConfig={localChartConfig} data={data as ChartData} />
+        {:else if localChartConfig.type === "line"}
+          <LineChart data={data as ChartData} />
+        {:else if localChartConfig.type === "bar"}
+          <BarChart chartConfig={localChartConfig} data={data as ChartData} />
         {/if}
       </div>
     </div>
@@ -155,7 +172,7 @@ $effect(() => {
       <div class="ml-auto"></div>
 
       <button type="button" onclick={() => fetchData(localChartConfig)}>Refresh</button>
-      {#if data.length !== 0}
+      {#if data.length !== 0 && chartConfig.type !== "table"}
         <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
       {/if}
     </div>

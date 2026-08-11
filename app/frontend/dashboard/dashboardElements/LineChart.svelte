@@ -1,14 +1,14 @@
 <script lang="ts">
 import { Chart } from "chart.js/auto";
 import { onMount } from "svelte";
-import type { ChartData, ChartDataset, DataPoint } from "../../types.d.ts";
+import type { ChartData, ChartDataset, ChartDataPoint } from "../../types.d.ts";
 
 let { data } : {
   data: ChartData;
 } = $props();
 
 let canvas = $state<HTMLCanvasElement>() as HTMLCanvasElement;
-let chart: Chart<"line", DataPoint[], unknown>;
+let chart: Chart<"line", ChartDataPoint[], unknown>;
 
 onMount(() => {
   Chart.defaults.font.size = 18;

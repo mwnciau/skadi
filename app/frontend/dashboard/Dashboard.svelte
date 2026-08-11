@@ -24,13 +24,14 @@ let tabFilters: TabFilters = $state(untrack(() => ({
   date_to: selectedTabConfig.date_to,
 })));
 
-let chartIdToEdit: string | null = $state(null);
+let justAddedChartId: string | null = $state(null);
 let editingEnabled: boolean = $state(false);
 
 let saving: boolean = $state(false);
 let saveError: boolean = $state(false);
 
 const selectTab = (tab: string) => {
+  justAddedChartId = null;
   selectedTab = tab;
   tabFilters = {
     date_from: selectedTabConfig.date_from,
@@ -51,7 +52,7 @@ const newTab = (newTitle: string | null = null) => {
 
 const addChart = () => {
   const uuid = crypto.randomUUID();
-  chartIdToEdit = uuid;
+  justAddedChartId = uuid;
 
   selectedTabConfig.children.push({
     id: uuid,
@@ -73,7 +74,7 @@ const duplicateChart = (index: number) => {
   const newChart = $state.snapshot(selectedTabConfig.children[index]);
   // Note: the datasets in the new chart will have the same ids as the datasets in the copied chart, but this isn't problematic because datasets are never referenced directly apart from their chart.
   newChart.id = crypto.randomUUID();
-  chartIdToEdit = newChart.id;
+  justAddedChartId = newChart.id;
   newChart.title = `Copy of ${newChart.title}`
 
   selectedTabConfig.children.splice(index + 1, 0, newChart);
@@ -220,7 +221,7 @@ $effect(() => {
       {chartConfig}
       {editingEnabled}
       {tabFilters}
-      bind:newChartId={chartIdToEdit}
+      startOpen={justAddedChartId === chartConfig.id}
       onDelete={() => deleteChart(index)}
       onDuplicate={() => duplicateChart(index)}
       onMoveUp={index !== 0 ? (() => moveChartUp(index)) : null}

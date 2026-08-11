@@ -1,77 +1,24 @@
-import type { ChartConfig, ChartDataset, DataPoint, Dataset, ResponseData } from "../../types";
+import type { ChartConfig, ChartDataset, ChartDataPoint, Dataset, RawChartResponseData } from "../../types";
+import { formatDate } from "./formatting";
 
-const months: Record<string, string> = {
-  "01": "January",
-  "02": "February",
-  "03": "March",
-  "04": "April",
-  "05": "May",
-  "06": "June",
-  "07": "July",
-  "08": "August",
-  "09": "September",
-  "10": "October",
-  "11": "November",
-  "12": "December",
-};
-const shortMonths: Record<string, string> = {
-  "01": "Jan",
-  "02": "Feb",
-  "03": "Mar",
-  "04": "Apr",
-  "05": "May",
-  "06": "Jun",
-  "07": "Jul",
-  "08": "Aug",
-  "09": "Sep",
-  "10": "Oct",
-  "11": "Nov",
-  "12": "Dec",
-};
+type ChartResponseData = Record<string, ChartDataPoint[]>;
 
-export const formatDates = (chartConfig: ChartConfig, data: ResponseData) => {
-  for (const dataset of chartConfig.datasets) {
-    if (!chartConfig.time_series) {
-      continue;
+export default (localChartConfig: ChartConfig, items: RawChartResponseData): ChartDataset[] => {
+    const responseData: Record<string, ChartDataPoint[]> = {};
+
+    for (const item of items) {
+      const key: string = item.split ? `${item.id} ${item.split}` : item.id;
+      responseData[key] ??= [];
+      responseData[key].push({x: item.date, y: item.count});
     }
 
-    let dateFn: (dateParts: string[]) => string;
-    if (chartConfig.time_series === "monthly") {
-      dateFn = (dateParts: string[]) => {
-        return `${months[dateParts[1]]} ${dateParts[0]}`;
-      };
-    } else if (chartConfig.time_series === "weekly") {
-      dateFn = (dateParts: string[]) => {
-        return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
-      };
-    }
-    // time_series = "daily"
-    else {
-      dateFn = (dateParts: string[]) => {
-        return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
-      };
-    }
+    processDerivedDatasets(localChartConfig, responseData);
+    fillDataGaps(localChartConfig, responseData);
+    formatDates(localChartConfig, responseData)
+    return createChartData(localChartConfig, responseData);
+}
 
-    // Loop through the returned data to find rows for this dataset
-    for (const datasetId of Object.keys(data)) {
-      if (!datasetId.startsWith(dataset.id)) {
-        continue;
-      }
-
-      for (const item of data[datasetId]) {
-        if (!item.x) {
-          continue;
-        }
-
-        const dateParts = item.x.split("-", 3) ?? [];
-
-        item.x = dateFn(dateParts);
-      }
-    }
-  }
-};
-
-export const createChartData = (chart: ChartConfig, responseData: ResponseData): ChartDataset[] => {
+const createChartData = (chart: ChartConfig, responseData: ChartResponseData): ChartDataset[] => {
   return chart.datasets
     .filter((dataset: Dataset) => dataset.visible !== false)
     .flatMap((dataset: Dataset) => {
@@ -121,7 +68,7 @@ export const createChartData = (chart: ChartConfig, responseData: ResponseData):
     });
 };
 
-export const processDerivedDatasets = (chart: ChartConfig, data: ResponseData) => {
+const processDerivedDatasets = (chart: ChartConfig, data: ChartResponseData) => {
   for (const dataset of chart.datasets) {
     if (dataset.type === "percentage") {
       const numerator = data[dataset.numerator as string];
@@ -147,7 +94,7 @@ export const processDerivedDatasets = (chart: ChartConfig, data: ResponseData) =
   }
 };
 
-const populatePercentageData = (numerator: DataPoint[], denominator: DataPoint[]) => {
+const populatePercentageData = (numerator: ChartDataPoint[], denominator: ChartDataPoint[]) => {
   let n = 0;
   let d = 0;
   const percentageData = [];
@@ -187,7 +134,7 @@ const populatePercentageData = (numerator: DataPoint[], denominator: DataPoint[]
   return percentageData;
 };
 
-export const fillDataGaps = (chart: ChartConfig, data: Record<string, DataPoint[]>) => {
+const fillDataGaps = (chart: ChartConfig, data: Record<string, ChartDataPoint[]>) => {
   if (!chart.time_series) {
     // There will be no gaps if there is no time series
     return;
@@ -247,6 +194,36 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
 
     if (next !== xValues[i + 1] && next < xValues[xValues.length - 1]) {
       xValues.splice(i + 1, 0, next);
+    }
+  }
+};
+
+const timeSeriesToFormat = {
+  monthly: "month",
+  weekly: "week",
+  daily: "day"
+};
+const formatDates = (chartConfig: ChartConfig, data: ChartResponseData) => {
+  for (const dataset of chartConfig.datasets) {
+    if (!chartConfig.time_series) {
+      continue;
+    }
+
+    let dateFormat= timeSeriesToFormat[chartConfig.time_series] as "month" | "week" | "day";
+
+    // Loop through the returned data to find rows for this dataset
+    for (const datasetId of Object.keys(data)) {
+      if (!datasetId.startsWith(dataset.id)) {
+        continue;
+      }
+
+      for (const item of data[datasetId]) {
+        if (!item.x) {
+          continue;
+        }
+
+        item.x = formatDate(item.x, dateFormat);
+      }
     }
   }
 };

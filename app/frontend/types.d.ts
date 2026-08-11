@@ -37,7 +37,7 @@ export type Dataset = (SchemaDataset | PercentageDataset | SqlDataset) & Record<
 
 export type ChartConfig = {
   id: string;
-  type: "bar" | "line";
+  type: "bar" | "line" | "table";
   title: string;
   description?: string;
   time_series?: "daily" | "weekly" | "monthly";
@@ -47,6 +47,11 @@ export type ChartConfig = {
   unique_by?: "visit" | "visitor";
   visit_tracking?: "any" | "anonymity_set" | "cookie";
   datasets: Dataset[];
+};
+
+export type ChartMetadata = {
+  resultCount?: number;
+  resultOffset?: number;
 };
 
 export type DashboardTabConfig = {
@@ -63,25 +68,36 @@ export type TabFilters = {
   date_to?: string;
 };
 
+export type ChartFilters = {
+  page?: number;
+};
+
 // Note: any changes to this type need to be mirrored in the backend validator app/models/skadi/dashboard_validator.rb
 export type DashboardConfig = DashboardTabConfig[];
 
-export type DataPoint = { x: string | null; y: number | null };
-export type RawResponseData = {
+export type ChartDataPoint = { x: string | null; y: number | null };
+export type RawChartResponseData = {
   id: string;
   date: string | null;
   split: string | null;
   count: number;
 }[];
-export type ResponseData = Record<string, DataPoint[]>;
+export type RawResponse = {
+  resultCount?: number;
+  resultOffset?: number;
+  data: RawChartResponseData | TableData;
+}
 export type ChartDataset = {
   dataset: string;
   split: string;
   label: string;
-  data: DataPoint[];
+  data: ChartDataPoint[];
   axis: "left" | "right";
 };
 export type ChartData = ChartDataset[];
+
+export type TableRow = Record<string, string | number | boolean | null>;
+export type TableData = TableRow[];
 
 export type FieldSchema = {
   label?: string;
