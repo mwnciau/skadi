@@ -38,13 +38,13 @@ module Skadi
             query = queries.first
 
             result[:resultCount] = Skadi::Visit.connection.select_one("
-                SELECT COUNT(*) as count FROM (#{query})
+                SELECT COUNT(*) as count FROM (#{query}) q
             ")["count"]
 
             result[:resultOffset] = offset
 
             result[:data] = Skadi::Visit.connection.select_all("
-                SELECT * FROM (#{query}) LIMIT #{limit} OFFSET #{offset}
+                SELECT * FROM (#{query}) q LIMIT #{limit} OFFSET #{offset}
             ")
           else
             result[:data] = Skadi::ApplicationRecord.connection.unprepared_statement do
