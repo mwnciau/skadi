@@ -193,13 +193,13 @@ $effect(() => {
           <div class="flex flex-wrap gap-2 justify-center sm:justify-start items-center">
             <div class="flex gap-2 items-center sm:contents">
               Showing data from
-              <Filter type="date" model={tabFilters} key="date_from" hideLabel>
+              <Filter type="date" model={tabFilters} key="date_from">
                 <span class="sr-only">Date from</span>
               </Filter>
             </div>
             <div class="flex gap-2 items-center sm:contents">
               to
-              <Filter type="date" model={tabFilters} key="date_to" hideLabel>
+              <Filter type="date" model={tabFilters} key="date_to">
                 <span class="sr-only">Date to</span>
               </Filter>
             </div>
