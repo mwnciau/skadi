@@ -198,7 +198,7 @@ module Skadi
         if value["datasets"].is_a?(Array)
           # Special case for table chart type, limiting datasets to 1
           if value["type"] == "table"
-            if value[:datasets].is_a?(Array) && value[:datasets].length > 1
+            if value["datasets"].is_a?(Array) && value["datasets"].length > 1
               return add_error("#{path}.datasets", "must only contain one dataset for the table type", context:)
             end
           end

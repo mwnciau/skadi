@@ -218,6 +218,10 @@ module Skadi::Unit
       assert_chart_error("bogus is not a valid key", bogus: :value)
     end
 
+    test "validates table has one dataset" do
+      assert_chart_error("datasets must only contain one dataset for the table type", type: "table", datasets: [1, 2])
+    end
+
     ##############################
     #     Dataset validation     #
     ##############################
