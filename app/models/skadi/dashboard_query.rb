@@ -256,8 +256,9 @@ module Skadi
           dataset["split_by"].each do |field|
             field_config = schema[:fields][field.to_sym]
             if field_config && field_config[:split]
-              # These are safe because either we define the SQL used, or the field name exists in the schema
-              safe_split << (field_config[:sql] || %(#{schema[:model].table_name}."#{field}"))
+              safe_field = schema[:model].connection.quote_column_name(field)
+
+              safe_split << (field_config[:sql] || %(#{schema[:model].table_name}.#{safe_field}))
             end
           end
         end
