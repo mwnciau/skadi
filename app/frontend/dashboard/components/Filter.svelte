@@ -53,7 +53,7 @@ let persistDelayMs = $derived(["date", "number", "text", "textarea", "contentedi
 let debounceTimeout: number;
 let debounceValue: string | number | null = null;
 let persistValue = () => {
-  if (debounceValue !== null || allowEmpty) {
+  if ((debounceValue !== null && debounceValue !== "") || allowEmpty) {
     model[key] = debounceValue;
   } else {
     delete model[key];

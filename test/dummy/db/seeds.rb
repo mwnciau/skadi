@@ -48,6 +48,7 @@ puts "Seeding Skadi database (#{Rails.env}):"
       visit_token: Random.uuid_v7,
       # Occasionally we'll have a visit with DNT
       tracking_token: (i % 102 == 0) ? nil : Random.uuid_v7,
+      cookies_enabled: (i % 102 == 0) ? false : (i % 7 <= 4),
       user_id: nil,
 
       referrer: (i % 31 == 0) ? "example.com/path" : nil,

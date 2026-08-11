@@ -25,7 +25,7 @@ module Skadi
         },
         ChartConfig: {
           id: :string,
-          type: OneOf.new(allowed_values: %w[bar line].freeze).freeze,
+          type: OneOf.new(allowed_values: %w[bar line table].freeze).freeze,
           title: :string,
           description: :string?,
           time_series: OneOf.new(allowed_values: %w[daily weekly monthly].freeze, allow_missing: true).freeze,
@@ -192,10 +192,18 @@ module Skadi
     private def validate_custom_type(type, value, path, context:)
       return add_error(path, "Unknown type #{type.inspect}", context:) unless self.class.types.key?(type)
 
-      # Store dataset ids for the current chart for the :dataset_id type
       if type == :ChartConfig && value.is_a?(Hash)
         context.dataset_ids = []
+
         if value["datasets"].is_a?(Array)
+          # Special case for table chart type, limiting datasets to 1
+          if value["type"] == "table"
+            if value[:datasets].is_a?(Array) && value[:datasets].length > 1
+              return add_error("#{path}.datasets", "must only contain one dataset for the table type", context:)
+            end
+          end
+
+          # Store dataset ids for the current chart for the :dataset_id type
           value["datasets"].each do |dataset|
             context.dataset_ids << dataset["id"] if dataset.is_a?(Hash) && dataset["id"].is_a?(String)
           end

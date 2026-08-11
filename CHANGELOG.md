@@ -1,3 +1,7 @@
+## 0.4.0 [2026-08-07
+- Add the dashboard
+- 
+
 ## 0.3.0 [2026-06-24]
 - Add user agent parser for browser, engine and operating system detection
 - Add bot detection with a configurable `track_bots` option to exclude crawler traffic (bot tracking is disabled by default in production)

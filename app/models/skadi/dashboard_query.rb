@@ -1,17 +1,21 @@
 module Skadi
   class DashboardQuery
     class << self
-      def chart_query(chart, untrusted_url_filters)
+      # Mimics app/frontend/dashboard/dashboardElements/DynamicTable.svelte:13
+      ITEMS_PER_PAGE = 10
+      PAGES_PER_CHUNK = 10
+
+      def chart_query(chart, untrusted_param_filters)
         queries = chart["datasets"].filter_map do |dataset|
           if dataset["type"] == "sql"
-            build_sql_query(dataset, chart, untrusted_url_filters)
+            build_sql_query(dataset, chart, untrusted_param_filters)
           elsif dataset["type"] == "percentage"
             # Percentage charts are handled by the frontend using other datasets
             next
           elsif Schema.database_schema.key?(dataset["type"].to_sym)
             schema = Schema.database_schema[dataset["type"].to_sym]
 
-            build_query_from_schema(dataset, chart, schema, untrusted_url_filters)
+            build_query_from_schema(dataset, chart, schema, untrusted_param_filters)
           else
             raise ::Skadi::Dashboard::DatasetConfigurationError.new("Unknown dataset type #{dataset["type"]}")
           end
@@ -19,10 +23,33 @@ module Skadi
 
         return [] unless queries.any?
 
-        result = nil
+        result = {
+          data: [],
+        }
         Skadi::ApplicationRecord.connection.transaction do
-          result = Skadi::ApplicationRecord.connection.unprepared_statement do
-            Skadi::Visit.connection.select_all(queries.join(" UNION ALL "))
+          if chart["type"] == "table"
+            # Note that the page starts with 1
+            page = untrusted_param_filters["page"].is_a?(Integer) ? untrusted_param_filters["page"] : 1
+
+            offset = (page - 1) * ITEMS_PER_PAGE
+            limit = ITEMS_PER_PAGE * PAGES_PER_CHUNK
+
+            # We cannot union more than one query when selecting multiple fields for the table dataset so just take the first one as a precaution
+            query = queries.first
+
+            result[:resultCount] = Skadi::Visit.connection.select_one("
+                SELECT COUNT(*) as count FROM (#{query})
+            ")["count"]
+
+            result[:resultOffset] = offset
+
+            result[:data] = Skadi::Visit.connection.select_all("
+                SELECT * FROM (#{query}) LIMIT #{limit} OFFSET #{offset}
+            ")
+          else
+            result[:data] = Skadi::ApplicationRecord.connection.unprepared_statement do
+              Skadi::Visit.connection.select_all(queries.join(" UNION ALL "))
+            end
           end
 
           # Rollback after the SQL is run, preventing some side effects
@@ -32,7 +59,7 @@ module Skadi
         return result
       end
 
-      private def build_sql_query(dataset, chart, untrusted_url_filters)
+      private def build_sql_query(dataset, chart, untrusted_param_filters)
         model = Skadi::Visit
 
         safe_group = [ "t.split" ]
@@ -45,7 +72,7 @@ module Skadi
           safe_aggregated_date = "NULL"
         end
 
-        safe_where = build_sql_where(chart, model, untrusted_url_filters)
+        safe_where = build_sql_where(chart, model, untrusted_param_filters)
 
         return "
             SELECT
@@ -61,26 +88,31 @@ module Skadi
           "
       end
 
-      private def build_sql_where(chart, model, untrusted_url_filters)
+      private def build_sql_where(chart, model, untrusted_param_filters)
         safe_where = []
 
-        url_date_from = untrusted_url_filters["date_from"] if valid_date_string?(untrusted_url_filters["date_from"])
+        url_date_from = untrusted_param_filters["date_from"] if valid_date_string?(untrusted_param_filters["date_from"])
         date_from = combine_dates(chart["date_from"], url_date_from, type: :from)
         safe_where << "DATE(t.date) >= #{model.connection.quote(date_from)}" unless date_from.nil?
 
-        url_date_to = untrusted_url_filters["date_to"] if valid_date_string?(untrusted_url_filters["date_to"])
+        url_date_to = untrusted_param_filters["date_to"] if valid_date_string?(untrusted_param_filters["date_to"])
         date_to = combine_dates(chart["date_to"], url_date_to, type: :to)
         safe_where << "DATE(t.date) <= #{model.connection.quote(date_to)}" unless date_to.nil?
 
         return safe_where.any? ? "WHERE #{safe_where.join(" AND ")}" : ""
       end
 
-      private def build_query_from_schema(dataset, chart, schema, untrusted_url_filters)
+      private def build_query_from_schema(dataset, chart, schema, untrusted_param_filters)
         query = schema[:model].all
 
         query = apply_schema_filters(dataset, schema, query)
-        query = apply_chart_filters(dataset, chart, schema, query, untrusted_url_filters)
-        query = select_split_and_group(dataset, chart, schema, query)
+        query = apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
+
+        query = if chart["type"] == "table"
+          select_table_query(schema, query)
+        else
+          select_split_and_group_chart_query(dataset, chart, schema, query)
+        end
 
         return query.to_sql
       end
@@ -123,15 +155,15 @@ module Skadi
         return query
       end
 
-      private def apply_chart_filters(dataset, chart, schema, query, untrusted_url_filters)
+      private def apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
         date_config = schema[:fields][:date]
 
         if date_config
-          url_date_from = untrusted_url_filters["date_from"] if valid_date_string?(untrusted_url_filters["date_from"])
+          url_date_from = untrusted_param_filters["date_from"] if valid_date_string?(untrusted_param_filters["date_from"])
           date_from = combine_dates(chart["date_from"], dataset["date_from"], url_date_from, type: :from)
           query = query.where("DATE(#{date_config[:sql]}) >= ?", date_from) unless date_from.nil?
 
-          url_date_to = untrusted_url_filters["date_to"] if valid_date_string?(untrusted_url_filters["date_to"])
+          url_date_to = untrusted_param_filters["date_to"] if valid_date_string?(untrusted_param_filters["date_to"])
           date_to = combine_dates(chart["date_to"], dataset["date_to"], url_date_to, type: :to)
           query = query.where("DATE(#{date_config[:sql]}) <= ?", date_to) unless date_to.nil?
         end
@@ -161,7 +193,22 @@ module Skadi
         return query
       end
 
-      private def select_split_and_group(dataset, chart, schema, query)
+      private def select_table_query(schema, query)
+        model = schema[:model]
+        select_fields = schema[:fields].map do |key, field_config|
+          quoted_field = model.connection.quote_column_name(key)
+
+          if field_config[:sql]
+            "#{field_config[:sql]} AS #{quoted_field}"
+          else
+            "#{model.table_name}.#{quoted_field}"
+          end
+        end
+
+        return query.select(*select_fields)
+      end
+
+      private def select_split_and_group_chart_query(dataset, chart, schema, query)
         model = schema[:model]
         split_columns = safe_split_columns(dataset, schema)
 
