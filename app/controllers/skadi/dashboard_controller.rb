@@ -1,5 +1,7 @@
 module Skadi
   class DashboardController < ::ApplicationController
+    layout false
+
     do_not_track! if defined?(do_not_track!)
 
     before_action :set_dashboard
