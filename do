@@ -27,6 +27,12 @@ fi
 
 if [ "$1" == "up" ] || [ "$1" == "u" ]
 then
+    if [ -f test/dummy/tmp/pids/server.pid ]
+    then
+      echo "Removing the existing server PID file"
+      rm test/dummy/tmp/pids/server.pid
+    fi
+
     echo Running: ${DOCKER_COMPOSE_COMMAND} up -d --remove-orphans
     ${DOCKER_COMPOSE_COMMAND} up -d --remove-orphans
     exit 0
