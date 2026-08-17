@@ -16,14 +16,17 @@ export type CommonDataset = {
   type: string;
 };
 
+export type BinaryOperator = "=" | "!=" | ">" | ">=" | "<=" | "<" | "like" | "not like";
+export type UnaryOperator = "empty" | "not empty";
+export type DatasetFilterOperator = BinaryOperator | UnaryOperator;
 export type BinarySchemaDatasetFilter = {
   field: string;
-  operator: "=" | "!=" | ">" | ">=" | "<=" | "<" | "like" | "not like";
+  operator: BinaryOperator;
   value: boolean | number | string | DateFilter;
 };
 export type UnarySchemaDatasetFilter = {
   field: string;
-  operator: "empty" | "not empty";
+  operator: UnaryOperator;
 };
 export type SchemaDatasetFilter = BinarySchemaDatasetFilter | UnarySchemaDatasetFilter;
 

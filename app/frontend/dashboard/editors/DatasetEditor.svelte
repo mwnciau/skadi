@@ -1,7 +1,7 @@
 <script lang="ts">
 import type {
   ChartConfig,
-  Dataset, FieldSchema, SchemaDatasetFilter,
+  Dataset, DatasetFilterOperator, FieldSchema, SchemaDatasetFilter,
 } from "../../types";
 import ExpandingSection from "../components/ExpandingSection.svelte";
 import Filter from "../components/Filter.svelte";
@@ -175,27 +175,46 @@ const DEFAULT_VALUES = {
   "string": "",
 };
 
+const defaultFilterValueForField = (fieldSchema: FieldSchema) => {
+  if (fieldSchema.type === "one_of" && fieldSchema.options) {
+    const firstOption = fieldSchema.options[0];
+
+    return typeof firstOption === "string" ? firstOption : firstOption.value;
+  }
+
+  return DEFAULT_VALUES[fieldSchema.type ?? "string"];
+}
+
 const addFilter = (e: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
   if (!isSchemaDataset(dataset)) {
     return;
   }
 
-
   const field = e.currentTarget.value;
   const fieldSchema = datasetFields[field];
 
-  let defaultValue: string | number | boolean;
-  if (fieldSchema.type === "one_of" && fieldSchema.options) {
-    const firstOption = fieldSchema.options[0];
-    defaultValue = typeof firstOption === "string" ? firstOption : firstOption.value;
-  } else {
-    defaultValue = DEFAULT_VALUES[fieldSchema.type ?? "string"];
-  }
-
   dataset.filters ??= [];
-  dataset.filters.push({field: field, operator: "=", value: defaultValue});
+  dataset.filters.push({field: field, operator: "=", value: defaultFilterValueForField(fieldSchema)});
 
   e.currentTarget.value = "";
+}
+
+const setFilterOperator = (index: number, event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
+  if (!isSchemaDataset(dataset) || !dataset.filters) {
+    return;
+  }
+  const newOperator = event.currentTarget.value as DatasetFilterOperator;
+  const filter = dataset.filters[index];
+  const fieldSchema = datasetFields[filter.field];
+
+  const wasUnary = isFilterUnary(filter);
+  filter.operator = newOperator;
+
+  if (isFilterUnary(filter)) {
+    delete (filter as Record<string,unknown>).value;
+  } else if (wasUnary || filter.value === undefined) {
+    filter.value = defaultFilterValueForField(fieldSchema);
+  }
 }
 
 const deleteFilter = (index: number) => {
@@ -385,9 +404,9 @@ const duplicate = () => {
           {@const fieldLabel = fieldConfig.label ?? formatString(filter.field)}
 
           <span>{fieldLabel}:</span>
-          <label class="h-full">
+          <label class="h-full {isFilterUnary(filter) ? "col-span-2 w-max" : ""}">
             <span class="sr-only">operator</span>
-            <select bind:value={filter.operator}>
+            <select onchange={(e) => setFilterOperator(index, e)}>
               {#each OPERATORS[fieldConfig.type ?? "string"] as operator}
                 <option>{operator}</option>
               {/each}
@@ -419,18 +438,19 @@ const duplicate = () => {
                 <span class="sr-only">{fieldLabel}</span>
               </Filter>
             {:else}
-              <Filter type={fieldConfig.type ?? "string"} model={filter} key="value" class="w-full" allowEmpty={true} showClear={fieldConfig.type !== "date"}>
+              <Filter type={fieldConfig.type ?? "string"} model={filter} key="value" class="w-full" allowEmpty={true} showClear={!fieldConfig.type || fieldConfig.type === "string"}>
                 <span class="sr-only">{fieldLabel}</span>
               </Filter>
             {/if}
-            <button
-              type="button"
-              class="unstyled text-night-800 hover:text-black hover:bg-night-50 p-2 cursor-pointer"
-              onclick={() => deleteFilter(index)}
-            >
-              <Icon name="delete" />
-            </button>
           {/if}
+
+          <button
+            type="button"
+            class="unstyled text-night-800 hover:text-black hover:bg-night-50 p-2 cursor-pointer"
+            onclick={() => deleteFilter(index)}
+          >
+            <Icon name="delete" />
+          </button>
 
           {#if fieldConfig.description}
             <p class="help-text -mt-1 col-span-4">{fieldConfig.description}</p>
