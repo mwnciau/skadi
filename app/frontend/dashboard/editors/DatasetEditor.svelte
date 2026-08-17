@@ -37,7 +37,7 @@ const { canDangerouslyUseSql, chartConfig, dataset, index, startOpen = false, on
 } = $props();
 
 const datasetIdOptions = $derived.by(() => {
-  if (isPercentageDataset(dataset)) {
+  if (!isPercentageDataset(dataset)) {
     return [];
   }
 
