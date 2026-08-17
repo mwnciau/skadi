@@ -3,6 +3,7 @@ module Skadi
     class Error < StandardError; end
     class ChartNotFoundError < Error; end
     class UnsupportedDatabaseError < Error; end
+    class UnsupportedOperatorError < Error; end
     class DatasetConfigurationError < Error; end
 
     validates_with DashboardValidator

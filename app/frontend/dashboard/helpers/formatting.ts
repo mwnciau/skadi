@@ -1,13 +1,15 @@
 export const formatString = (string: string) => {
-  return string
-    // Replace underscores with spaces
-    .replace(/_/g, " ")
-    // Capitalise the first letter
-    .replace(/^[a-z]/, (letter) => letter.toLocaleUpperCase())
-    // A few QoL replacements
-    .replace(/\bSql\b/g, "SQL")
-    .replace(/\bUtm\b/g, "UTM");
-}
+  return (
+    string
+      // Replace underscores with spaces
+      .replace(/_/g, " ")
+      // Capitalise the first letter
+      .replace(/^[a-z]/, (letter) => letter.toLocaleUpperCase())
+      // A few QoL replacements
+      .replace(/\bSql\b/g, "SQL")
+      .replace(/\bUtm\b/g, "UTM")
+  );
+};
 
 const months: Record<string, string> = {
   "01": "January",
@@ -57,4 +59,4 @@ export const formatDate = (date: unknown, format: "month" | "week" | "day"): str
     case "day":
       return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
   }
-}
+};

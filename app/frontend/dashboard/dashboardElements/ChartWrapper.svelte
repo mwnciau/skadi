@@ -104,77 +104,79 @@ $effect(() => {
 });
 </script>
 
-<div class="flex flex-col px-6 p-4 bg-white border border-night-50 {isEditingChart && "xl:full-width xl:flex-row xl:justify-center xl:items-start"} gap-4">
-  {#if isEditingChart}
-    <div class="mt-12">
-      <ChartEditor
-        {canDangerouslyUseSql}
-        {chartConfig}
-        reloadChartData={reloadChartData}
-        onClose={() => (isEditingChart = false)}
-        onSave={saveChartConfig}
-      />
-    </div>
-  {/if}
-
-  <div class="grow min-w-0 flex flex-col gap-4">
-    <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
-      <div class="mb-4">
-        <h2 class="text-night-950 text-xl font-semibold text-center">{localChartConfig.title}</h2>
-        {#if localChartConfig.description}
-          <p class="whitespace-pre-wrap w-max max-w-full mx-auto px-2 lg:px-12">{localChartConfig.description}</p>
-        {/if}
-      </div>
-      <div class="relative">
-        {#if data.length === 0}
-          <div class="aspect-video border border-ice-100">
-            <p class="absolute top-1/2 left-1/2 -translate-1/2 text-gray-600">
-              No data to display
-            </p>
-          </div>
-        {:else if localChartConfig.type === "table"}
-          <DynamicTable chartConfig={localChartConfig} {chartFilters} {chartMetadata} data={data as TableData} {loading} />
-        {:else if viewData && data.length !== 0}
-          <StaticDataTable chartConfig={localChartConfig} data={data as ChartData} />
-        {:else if localChartConfig.type === "line"}
-          <LineChart data={data as ChartData} />
-        {:else if localChartConfig.type === "bar"}
-          <BarChart chartConfig={localChartConfig} data={data as ChartData} />
-        {/if}
-      </div>
-    </div>
-
-    {#if loadError}
-      <div class="p-2 bg-dawn-50 border border-dawn-200 text-dawn-700">
-        <p>Something went wrong when trying to load the chart data.</p>
+<div class="{isEditingChart ? "xl:full-width" : ""}">
+  <div class="flex flex-col px-6 p-4 bg-white border border-night-50 {isEditingChart ? "mx-auto xl:max-w-384 xl:flex-row xl:justify-center xl:items-start" : ""} gap-4">
+    {#if isEditingChart}
+      <div class="mt-12">
+        <ChartEditor
+          {canDangerouslyUseSql}
+          {chartConfig}
+          reloadChartData={reloadChartData}
+          onClose={() => (isEditingChart = false)}
+          onSave={saveChartConfig}
+        />
       </div>
     {/if}
 
-    <div class="flex flex-wrap gap-2 items-center">
-      {#if editingEnabled && !isEditingChart}
-        <button type="button" onclick={() => (isEditingChart = true)}>Edit</button>
-        <button type="button" onclick={onDuplicate}>Duplicate</button>
-        {#if onMoveUp !== null }
-          <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
-        {/if}
-        {#if onMoveDown !== null }
-          <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
-        {/if}
+    <div class="sticky top-2 grow min-w-0 flex flex-col gap-4">
+      <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
+        <div class="mb-4">
+          <h2 class="text-night-950 text-xl font-semibold text-center">{localChartConfig.title}</h2>
+          {#if localChartConfig.description}
+            <p class="whitespace-pre-wrap w-max max-w-full mx-auto px-2 lg:px-12">{localChartConfig.description}</p>
+          {/if}
+        </div>
+        <div class="relative">
+          {#if data.length === 0}
+            <div class="aspect-video border border-ice-100">
+              <p class="absolute top-1/2 left-1/2 -translate-1/2 text-gray-600">
+                No data to display
+              </p>
+            </div>
+          {:else if localChartConfig.type === "table"}
+            <DynamicTable chartConfig={localChartConfig} {chartFilters} {chartMetadata} data={data as TableData} {loading} />
+          {:else if viewData && data.length !== 0}
+            <StaticDataTable chartConfig={localChartConfig} data={data as ChartData} />
+          {:else if localChartConfig.type === "line"}
+            <LineChart data={data as ChartData} />
+          {:else if localChartConfig.type === "bar"}
+            <BarChart chartConfig={localChartConfig} data={data as ChartData} />
+          {/if}
+        </div>
+      </div>
 
-        {#if confirmDelete}
-          <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
-          <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
-        {:else}
-          <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
-        {/if}
+      {#if loadError}
+        <div class="p-2 bg-dawn-50 border border-dawn-200 text-dawn-700">
+          <p>Something went wrong when trying to load the chart data.</p>
+        </div>
       {/if}
 
-      <div class="ml-auto"></div>
+      <div class="flex flex-wrap gap-2 items-center">
+        {#if editingEnabled && !isEditingChart}
+          <button type="button" onclick={() => (isEditingChart = true)}>Edit</button>
+          <button type="button" onclick={onDuplicate}>Duplicate</button>
+          {#if onMoveUp !== null }
+            <button type="button" class="sm px-1" onclick={onMoveUp}><Icon name="chevron_up" size={24} /></button>
+          {/if}
+          {#if onMoveDown !== null }
+            <button type="button" class="sm px-1" onclick={onMoveDown}><Icon name="chevron_down" size={24} /></button>
+          {/if}
 
-      <button type="button" onclick={() => fetchData(localChartConfig)}>Refresh</button>
-      {#if data.length !== 0 && chartConfig.type !== "table"}
-        <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
-      {/if}
+          {#if confirmDelete}
+            <button type="button" class="bg-dawn-100" onclick={onDelete}>Yes, delete this chart</button>
+            <button type="button" class="ghost text-gray-600" onclick={() => (confirmDelete = false)}>Cancel</button>
+          {:else}
+            <button type="button" class="bg-dawn-100" onclick={() => (confirmDelete = true)}>Delete</button>
+          {/if}
+        {/if}
+
+        <div class="ml-auto"></div>
+
+        <button type="button" onclick={() => fetchData(localChartConfig)}>Refresh</button>
+        {#if data.length !== 0 && chartConfig.type !== "table"}
+          <button type="button" onclick={() => (viewData = !viewData)}>{viewData ? "Show chart" : "Show data"}</button>
+        {/if}
+      </div>
     </div>
   </div>
 </div>

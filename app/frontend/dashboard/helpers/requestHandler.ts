@@ -1,11 +1,4 @@
-import type {
-  ChartConfig,
-  ChartFilters,
-  DashboardConfig,
-  RawChartResponseData,
-  RawResponse,
-  TabFilters
-} from "../../types";
+import type { ChartConfig, ChartFilters, DashboardConfig, RawResponse, TabFilters } from "../../types";
 
 const callingScript = document.querySelector<HTMLElement>("[data-dashboard-config]");
 const fetchDataPath = callingScript?.dataset?.fetchDataPath as string;

@@ -21,7 +21,7 @@ module Skadi
           end
         end
 
-        return {data: []} unless queries.any?
+        return { data: [] } unless queries.any?
 
         result = {
           data: [],
@@ -29,10 +29,11 @@ module Skadi
         Skadi::ApplicationRecord.connection.transaction do
           if chart["type"] == "table"
             # Note that the page starts with 1
-            page = untrusted_param_filters["page"].is_a?(Integer) ? untrusted_param_filters["page"] : 1
-
-            offset = (page - 1) * ITEMS_PER_PAGE
-            limit = ITEMS_PER_PAGE * PAGES_PER_CHUNK
+            page = if untrusted_param_filters["page"].is_a?(Integer) && untrusted_param_filters["page"] > 0
+              untrusted_param_filters["page"]
+            else
+              1
+            end
 
             # We cannot union more than one query when selecting multiple fields for the table dataset so just take the first one as a precaution
             query = queries.first
@@ -40,6 +41,10 @@ module Skadi
             result[:resultCount] = Skadi::Visit.connection.select_one("
                 SELECT COUNT(*) as count FROM (#{query}) q
             ")["count"]
+
+            last_page = [ 1, (result[:resultCount].to_f / ITEMS_PER_PAGE).ceil ].max
+            offset = ([ page, last_page ].min - 1) * ITEMS_PER_PAGE
+            limit = ITEMS_PER_PAGE * PAGES_PER_CHUNK
 
             result[:resultOffset] = offset
 
@@ -117,37 +122,66 @@ module Skadi
         return query.to_sql
       end
 
+      POSITIVE_OPERATORS = [ "=", ">", ">=", "<=", "<", "like" ].freeze
+      NEGATED_OPERATORS = [ "!=", "not like" ].freeze
+
       private def apply_schema_filters(dataset, schema, query)
         model = schema[:model]
 
-        schema[:fields].each do |field, field_config|
-          next unless field_config[:filter]
+        if dataset["filters"].is_a?(Array)
+          dataset["filters"].each do |filter|
+            next unless filter.is_a?(Hash)
 
-          # The date field is handled separately (combined with the chart filters)
-          next if field == :date
+            field = filter["field"]
+            field_config = schema[:fields][field.to_s.to_sym]
+            operator = filter["operator"]
+            value = filter["value"]
 
-          if field_config[:type] == :date
-            if dataset.key?("#{field}_from")
-              query = query.where("DATE(#{model.table_name}.#{field}) >= ?", dataset["#{field}_from"])
+            next if field_config.nil? || operator.nil?
+
+            field_type = field_config[:type] || :string
+            field_sql = if field_config[:sql]
+              field_config[:sql]
+            else
+              "#{model.table_name}.#{model.connection.quote_column_name(field)}"
             end
-            if dataset.key?("#{field}_to")
-              query = query.where("DATE(#{model.table_name}.#{field}) <= ?", dataset["#{field}_to"])
+
+            if field_type == :date
+              field_sql = "DATE(#{field_sql})"
             end
-          elsif dataset.key?(field.to_s)
-            field_sql = field_config[:sql] ? field_config[:sql] : "#{model.table_name}.#{model.connection.quote_column_name(field)}"
-            untrusted_value = dataset[field.to_s]
 
-            if field_config[:type].nil? || field_config[:type] == :string
-              like = Helpers::Sql.ilike(model)
-              if untrusted_value&.start_with?("!")
-                untrusted_value.delete_prefix!("!")
+            if POSITIVE_OPERATORS.include?(operator)
+              operator = Helpers::Sql.operator(schema[:model], filter["operator"])
 
-                query = query.where("#{field_sql} IS NULL OR #{field_sql} NOT #{like} ?", untrusted_value)
+              # For the non-negated operators, we consider an empty string the same as null
+              if field_type == :string && value == ""
+                query = query.where("#{field_sql} IS NULL OR #{field_sql} #{operator} ?", value)
               else
-                query = query.where("#{field_sql} #{like} ?", untrusted_value)
+                query = query.where("#{field_sql} #{operator} ?", value)
+              end
+            elsif NEGATED_OPERATORS.include?(operator)
+              operator = Helpers::Sql.operator(schema[:model], filter["operator"])
+
+              # For the negated operators, we change the behaviour of SQL so that nulls are considered different (rather than defaulting to false)
+              if field_type == :string && value == ""
+                query = query.where("#{field_sql} #{operator} ?", value)
+              else
+                query = query.where("#{field_sql} IS NULL OR #{field_sql} #{operator} ?", value)
+              end
+            elsif operator == "empty"
+              if field_type == :string
+                query = query.where("#{field_sql} = '' OR #{field_sql} IS NULL")
+              else
+                query = query.where("#{field_sql} IS NULL")
+              end
+            elsif operator == "not empty"
+              if field_type == :string
+                query = query.where("#{field_sql} != '' AND #{field_sql} IS NOT NULL")
+              else
+                query = query.where("#{field_sql} IS NOT NULL")
               end
             else
-              query = query.where("#{field_sql} = ?", dataset[field.to_s])
+              raise Dashboard::UnsupportedOperatorError.new("Unknown operator #{operator}")
             end
           end
         end
@@ -155,16 +189,16 @@ module Skadi
         return query
       end
 
-      private def apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
+      private def apply_chart_filters(_dataset, chart, schema, query, untrusted_param_filters)
         date_config = schema[:fields][:date]
 
         if date_config
           url_date_from = untrusted_param_filters["date_from"] if valid_date_string?(untrusted_param_filters["date_from"])
-          date_from = combine_dates(chart["date_from"], dataset["date_from"], url_date_from, type: :from)
+          date_from = combine_dates(chart["date_from"], url_date_from, type: :from)
           query = query.where("DATE(#{date_config[:sql]}) >= ?", date_from) unless date_from.nil?
 
           url_date_to = untrusted_param_filters["date_to"] if valid_date_string?(untrusted_param_filters["date_to"])
-          date_to = combine_dates(chart["date_to"], dataset["date_to"], url_date_to, type: :to)
+          date_to = combine_dates(chart["date_to"], url_date_to, type: :to)
           query = query.where("DATE(#{date_config[:sql]}) <= ?", date_to) unless date_to.nil?
         end
 
@@ -177,7 +211,6 @@ module Skadi
           end
 
           if chart["verified_visits"] == true
-            # Either this visit is linked to a verified visit, or it is not linked at all
             query = query.where("skadi_visits.verified = TRUE")
           end
 

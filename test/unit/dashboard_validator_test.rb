@@ -5,7 +5,7 @@ module Skadi::Unit
   class DashboardValidatorTest < TestCase
     include Helpers::DashboardConfigurationHelper
 
-    VALID_SQL = "SELECT created_at as date, NULL as split, 1 as count FROM skadi_visits"
+    VALID_SQL = "SELECT created_at as date, empty as split, 1 as count FROM skadi_visits"
 
     ##############################
     #        Happy paths         #
@@ -23,19 +23,18 @@ module Skadi::Unit
         visible: false,
         axis: "right",
 
-        date_from: "2020-01-01",
-        date_to: "2020-12-31",
-
         split_by: [ "referrer_domain" ],
-
-        landing_page: "landing_page",
-        referrer_domain: "referrer_domain",
-
-        utm_source: "utm_source",
-        utm_medium: "utm_medium",
-        utm_term: "utm_term",
-        utm_content: "utm_content",
-        utm_campaign: "utm_campaign",
+        filters: [
+          { field: "date", operator: ">=", value: "2020-01-01" },
+          { field: "date", operator: "<=", value: "2020-12-31" },
+          { field: "landing_page", operator: "=", value: "landing_page" },
+          { field: "referrer_domain", operator: "!=", value: "referrer_domain" },
+          { field: "utm_source", operator: "empty" },
+          { field: "utm_medium", operator: "not empty" },
+          { field: "utm_term", operator: "like", value: "utm_term" },
+          { field: "utm_content", operator: "not like", value: "utm_content" },
+          { field: "utm_campaign", operator: "=", value: "utm_campaign" },
+        ],
       )
 
       assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ views_dataset ]) ]) ]).validate!
@@ -53,16 +52,17 @@ module Skadi::Unit
         visible: false,
         axis: "right",
 
-        date_from: "2020-01-01",
-        date_to: "2020-12-31",
-
         split_by: %w[controller action],
 
-        action: "action",
-        controller: "controller",
-        path: "path",
-        verb: "GET",
-        version: "version",
+        filters: [
+          { field: "date", operator: ">=", value: "2020-01-01" },
+          { field: "date", operator: "<=", value: "2020-12-31" },
+          { field: "action", operator: "=", value: "action" },
+          { field: "controller", operator: "!=", value: "controller" },
+          { field: "path", operator: "empty" },
+          { field: "verb", operator: "=", value: "GET" },
+          { field: "version", operator: "like", value: "version" },
+        ],
       )
 
       assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ views_dataset ]) ]) ]).validate!
@@ -79,11 +79,11 @@ module Skadi::Unit
         type: "events",
         visible: false,
         axis: "right",
-
-        date_from: "2020-01-01",
-        date_to: "2020-12-31",
-
-        name: "name",
+        filters: [
+          { field: "date", operator: ">=", value: "2020-01-01" },
+          { field: "date", operator: "<=", value: "2020-12-31" },
+          { field: "name", operator: "=", value: "name" },
+        ],
       )
 
       assert build_dashboard([ build_tab(children: [ build_chart(datasets: [ events_dataset ]) ]) ]).validate!
@@ -219,7 +219,11 @@ module Skadi::Unit
     end
 
     test "validates table has one dataset" do
-      assert_chart_error("datasets must only contain one dataset for the table type", type: "table", datasets: [1, 2])
+      assert_chart_error("datasets must have one dataset for the table type", type: "table", datasets: [ 1, 2 ])
+    end
+
+    test "validates table dataset cannot be percentage" do
+      assert_chart_error("datasets[0].type cannot be percentage for the table type", type: "table", datasets: [ build_dataset(type: "percentage") ])
     end
 
     ##############################
@@ -258,28 +262,94 @@ module Skadi::Unit
       assert_dataset_error('split_by[0] "pie" must be one of', split_by: [ "pie" ])
     end
 
-    test "validates dataset string" do
-      [ 1, 3.14, true, {}, [], false ].each do |value|
-        assert_dataset_error("utm_source must be a string", utm_source: value)
-      end
+    test "validates dataset filter" do
+      assert_dataset_error("filters must be an array", filters: false)
+      assert_dataset_error("filters[0] must be a Hash", filters: [ 1 ])
+      assert_dataset_error("filters[0].field must be one of ", filters: [ {} ])
+      assert_dataset_error("filters[0].field must be one of ", filters: [ { field: 1 } ])
+      assert_dataset_error("filters[0].operator must be one of ", filters: [ { field: "utm_source" } ])
+      assert_dataset_error("filters[0].operator must be one of ", filters: [ { field: "utm_source", operator: "cake" } ])
+      assert_dataset_error("filters[0].value must be set", filters: [ { field: "utm_source", operator: "=" } ])
+      assert_dataset_error("filters[0].value must be set", filters: [ { field: "utm_source", operator: "=", value: nil } ])
     end
 
-    test "validates dataset string with options" do
-      [ 1, 3.14, "true", {}, [], false ].each do |value|
-        assert_dataset_error("verb #{value.inspect} must be one of", type: "views", verb: value)
-      end
-    end
-
-    test "validates dataset boolean" do
+    test "validates dataset boolean filter" do
       [ 1, 3.14, "true", {}, [], "false" ].each do |value|
-        assert_dataset_error("verified must be a boolean", type: "views", verified: value)
+        [ "=", "!=" ].each do |operator|
+          filters = [ { field: "verified", operator:, value: } ]
+
+          assert_dataset_error("filters[0].value must be a boolean", type: "views", filters:)
+        end
+      end
+
+      [ "empty", "not empty" ].each do |operator|
+        filters = [ { field: "date", operator:, value: "something" } ]
+
+        assert_dataset_error("filters[0].value is not a valid key", filters:)
       end
     end
 
-    test "validates dataset date" do
+    test "validates dataset date filter" do
       [ 1, 3.14, "true", {}, [], false, "9999-99-99" ].each do |value|
-        assert_dataset_error("date_from must be a date", date_from: value)
-        assert_dataset_error("date_to must be a date", date_to: value)
+        [ "=", ">", ">=", "<=", "<", "!=" ].each do |operator|
+          filters = [ { field: "date", operator:, value: } ]
+
+          assert_dataset_error("filters[0].value must be a date", filters:)
+        end
+      end
+
+      [ "empty", "not empty" ].each do |operator|
+        filters = [ { field: "date", operator:, value: "something" } ]
+
+        assert_dataset_error("filters[0].value is not a valid key", filters:)
+      end
+    end
+
+    test "validates dataset number filter" do
+      [ true, false, "true", {}, [], "false", "12" ].each do |value|
+        [ "=", ">", ">=", "<=", "<", "!=" ].each do |operator|
+          filters = [ { field: "count", operator:, value: } ]
+
+          assert_dataset_error("filters[0].value must be a number", type: "demographics", filters:)
+        end
+      end
+
+      [ "empty", "not empty" ].each do |operator|
+        filters = [ { field: "count", operator:, value: "something" } ]
+
+        assert_dataset_error("filters[0].value is not a valid key", type: "demographics", filters:)
+      end
+    end
+
+    test "validates dataset one of filter" do
+      [ 1, 3.14, true, {}, [], false ].each do |value|
+        [ "=", "!=" ].each do |operator|
+          filters = [ { field: "verb", operator:, value: } ]
+
+          assert_dataset_error("filters[0].value #{value.inspect} must be one of", type: "views", filters:)
+        end
+      end
+
+      [ "empty", "not empty" ].each do |operator|
+        filters = [ { field: "date", operator:, value: "something" } ]
+
+        assert_dataset_error("filters[0].value is not a valid key", filters:)
+      end
+    end
+
+    test "validates dataset string filter" do
+      [ 1, 3.14, true, {}, [], false ].each do |value|
+        [ "=", "!=", "like", "not like" ].each do |operator|
+          filters = [ { field: "utm_source", operator:, value: } ]
+
+          assert_dataset_error("filters[0].value must be a string", filters:)
+        end
+      end
+
+      [ "empty", "not empty" ].each do |operator|
+        filters = [ { field: "date", operator:, value: "something" } ]
+
+        assert_dataset_error("filters[0].value is not a valid key", filters:)
       end
     end
 

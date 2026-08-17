@@ -3,12 +3,6 @@ require_relative "test_case"
 module Skadi::Integration
   module DashboardController
     class InjectionTest < TestCase
-      setup do
-        Skadi.configuration.dashboard_view_controller_method = :skadi_dashboard_view
-        Skadi.configuration.dashboard_edit_controller_method = :skadi_dashboard_edit
-        Skadi.configuration.dashboard_dangerously_use_sql_controller_method = :skadi_dashboard_use_sql
-      end
-
       CHART_ID = "chart"
 
       INJECTION_STRINGS = [
@@ -28,11 +22,13 @@ module Skadi::Integration
         "a" * 10_000,
       ]
 
+      OPERATORS = [ "=", ">", ">=", "<=", "<", "!=", "empty", "not empty", "like", "not like" ]
+
       test "null byte handling" do
         # The SQLite driver treats null bytes as the end of string, so we just check that the error is caught
-        chart_configuration = build_chart(dataset: build_dataset(id: "\u0000"))
+        dashboard_with_dataset(id: "\u0000")
 
-        post skadi.dashboard_data_path, params: { configuration: chart_configuration }, as: :json
+        post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
 
         assert_response :unprocessable_content
         assert_equal %({"error":"SQLite3::SQLException: unrecognized token: \\"'\\":\\nSELECT '\\n       ^"}), response.body
@@ -53,6 +49,17 @@ module Skadi::Integration
             # Setting the date fields should return no rows
             assert_equal '{"data":[{"id":"dataset-1","date":null,"split":null,"count":1}]}', response.body
           end
+        end
+      end
+
+      test "url page field" do
+        [ -1, 0, *INJECTION_STRINGS ].each do |value|
+          dashboard_with_chart(id: CHART_ID, type: "table")
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID, page: value }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[],"resultCount":0,"resultOffset":0}', response.body
         end
       end
 
@@ -135,83 +142,103 @@ module Skadi::Integration
         assert_see '"date":"2020-01-06","split":null,"count":1}]'
       end
 
-      test "dataset string field" do
-        create :visit
-
-        INJECTION_STRINGS.each do |value|
-          dashboard_with_dataset(type: "visits", utm_source: value)
-
-          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
-
-          # The dashboard should be valid and no exception returned
-          assert_response :ok
-
-          # Setting the utm_source field should return no rows
-          assert_equal '{"data":[]}', response.body
-        end
-      end
-
       test "dataset field with sql" do
         create :visit
 
         INJECTION_STRINGS.each do |value|
-          dashboard_with_dataset(type: "visits", referrer_domain: value)
+          dashboard_with_dataset(type: "visits", filters: OPERATORS.map { |operator| { field: "referrer_domain", operator:, value: } })
 
           post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
 
-          # The dashboard should be valid and no exception returned
           assert_response :ok
-
-          # Setting the referrer_domain field should return no rows
           assert_equal '{"data":[]}', response.body
         end
       end
 
-      test "dataset string with options field" do
+      test "dataset filter fields" do
+        INJECTION_STRINGS.each do |field|
+          dashboard_with_dataset(type: "views", filters: [ { field:, operator: "=", value: "1" } ])
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[]}', response.body
+        end
+      end
+
+      test "dataset filter operators" do
+        INJECTION_STRINGS.each do |operator|
+          dashboard_with_dataset(type: "views", filters: [ { field: "verified", operator:, value: 1 } ])
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_see "Unknown operator"
+        end
+      end
+
+      test "dataset filter boolean field" do
         create :view
 
         INJECTION_STRINGS.each do |value|
-          dashboard_with_dataset(type: "views", verb: value)
+          dashboard_with_dataset(type: "views", filters: OPERATORS.map { |operator| { field: "verified", operator:, value: } })
 
           post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
 
-          # The dashboard should be valid and no exception returned
           assert_response :ok
-
-          # Setting the verb field should return no rows
           assert_equal '{"data":[]}', response.body
         end
       end
 
-      test "dataset boolean field" do
+      test "dataset filter date field" do
+        create :event
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "events", filters: OPERATORS.map { |operator| { field: "date", operator:, value: } })
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[]}', response.body
+        end
+      end
+
+      test "dataset filter number field" do
+        create :demographic
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "demographics", filters: OPERATORS.map { |operator| { field: "count", operator:, value: } })
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[]}', response.body
+        end
+      end
+
+
+      test "dataset filter string field" do
+        create :visit
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "visits", filters: OPERATORS.map { |operator| { field: "utm_source", operator:, value: } })
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[]}', response.body
+        end
+      end
+
+      test "dataset filter string with options field" do
         create :view
 
         INJECTION_STRINGS.each do |value|
-          dashboard_with_dataset(type: "views", verified: value)
+          dashboard_with_dataset(type: "views", filters: OPERATORS.map { |operator| { field: "verb", operator:, value: } })
 
           post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
 
-          # The dashboard should be valid and no exception returned
           assert_response :ok
-
-          # Setting the verified field should return no rows
           assert_equal '{"data":[]}', response.body
-        end
-      end
-
-      test "dataset date field" do
-        [ :date_from, :date_to ].each do |field|
-          INJECTION_STRINGS.each do |value|
-            dashboard_with_dataset(:type => "events", field => value)
-
-            post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
-
-            # The dashboard should be valid and no exception returned
-            assert_response :ok
-
-            # Setting the date fields should return no rows
-            assert_equal '{"data":[]}', response.body
-          end
         end
       end
 

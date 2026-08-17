@@ -78,9 +78,9 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
     localChartConfig.datasets.splice(1);
 
     // These fields are meaningless for the table type so we delete them
-    delete localChartConfig.datasets[0].visible
-    delete localChartConfig.datasets[0].axis
-    delete localChartConfig.datasets[0].split_by
+    ["visible", "axis", "split_by"].forEach((key) => {
+      delete (localChartConfig.datasets[0] as Record<string, unknown>)[key];
+    })
 
     delete localChartConfig.time_series;
   }

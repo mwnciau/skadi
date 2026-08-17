@@ -5,9 +5,6 @@ module Skadi
       FILTER_AND_SPLIT = { filter: true, split: true }
       private_constant :FILTER_AND_SPLIT
 
-      DATE_DESCRIPTION = "These dates are combined with the dashboard and chart's dates to further limit the date range returned by the dataset."
-      private_constant :DATE_DESCRIPTION
-
       # A hash where the key represents a dataset name and the value is its configuration
       def database_schema
         return @_database_schema if defined?(@_database_schema)
@@ -25,7 +22,7 @@ module Skadi
             fields: {
               # A hash with the following keys:
               # label: The label to show in the front end
-              # type: The datatype, one of :date, :string, :number, :boolean. Defaults to :string.
+              # type: The datatype, one of :one_of, :date, :string, :number, :boolean. Defaults to :string.
               # filter: True if this field can be filtered
               # split: True if this field can be split
               # sql: The SQL expression used to get this value for derived fields
@@ -35,7 +32,6 @@ module Skadi
                 type: :date,
                 filter: true,
                 sql: "skadi_visits.created_at",
-                description: DATE_DESCRIPTION,
               },
               landing_page: FILTER_AND_SPLIT,
               referrer_domain: {
@@ -57,7 +53,6 @@ module Skadi
                 type: :date,
                 filter: true,
                 sql: "skadi_views.created_at",
-                description: DATE_DESCRIPTION,
               },
               verified: {
                 type: :boolean,
@@ -71,6 +66,7 @@ module Skadi
               },
               path: FILTER_AND_SPLIT,
               verb: {
+                type: :one_of,
                 filter: true,
                 split: true,
                 description: "Typically, GET requests are page views, and POST, PUT, PATCH and DELETE are form submissions.",
@@ -88,7 +84,6 @@ module Skadi
                 type: :date,
                 filter: true,
                 sql: "skadi_events.created_at",
-                description: DATE_DESCRIPTION,
               },
               name: FILTER_AND_SPLIT,
               **(Skadi.configuration.dashboard_custom_event_fields || {}),
@@ -102,11 +97,14 @@ module Skadi
                 type: :date,
                 filter: true,
                 sql: "skadi_demographics.recorded_on",
-                description: DATE_DESCRIPTION,
               },
               uri: FILTER_AND_SPLIT,
               name: FILTER_AND_SPLIT,
               value: FILTER_AND_SPLIT,
+              count: {
+                **FILTER_AND_SPLIT,
+                type: :number,
+              },
             },
           },
           **(Skadi.configuration.dashboard_custom_schema || {}),

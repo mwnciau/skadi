@@ -16,10 +16,21 @@ export type CommonDataset = {
   type: string;
 };
 
+export type BinarySchemaDatasetFilter = {
+  field: string;
+  operator: "=" | "!=" | ">" | ">=" | "<=" | "<" | "like" | "not like";
+  value: boolean | number | string | DateFilter;
+};
+export type UnarySchemaDatasetFilter = {
+  field: string;
+  operator: "empty" | "not empty";
+};
+export type SchemaDatasetFilter = BinarySchemaDatasetFilter | UnarySchemaDatasetFilter;
+
 export type SchemaDataset = CommonDataset & {
   type: string;
   split_by?: string[];
-  [key: string]: string | boolean | number | DateFilter;
+  filters?: SchemaDatasetFilter[];
 };
 
 export type PercentageDataset = CommonDataset & {
@@ -33,7 +44,7 @@ export type SqlDataset = CommonDataset & {
   sql: string;
 };
 
-export type Dataset = (SchemaDataset | PercentageDataset | SqlDataset) & Record<string, string | boolean | number>;
+export type Dataset = SchemaDataset | PercentageDataset | SqlDataset;
 
 export type ChartConfig = {
   id: string;
@@ -86,7 +97,7 @@ export type RawResponse = {
   resultCount?: number;
   resultOffset?: number;
   data: RawChartResponseData | TableData;
-}
+};
 export type ChartDataset = {
   dataset: string;
   split: string;
@@ -101,7 +112,7 @@ export type TableData = TableRow[];
 
 export type FieldSchema = {
   label?: string;
-  type?: "date" | "string" | "number" | "boolean" | "percentage" | "sql";
+  type?: "boolean" | "date" | "number" | "one_of" | "string";
   filter?: boolean;
   split?: boolean;
   description?: string;

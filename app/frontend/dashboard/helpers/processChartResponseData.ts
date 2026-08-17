@@ -1,22 +1,23 @@
-import type { ChartConfig, ChartDataset, ChartDataPoint, Dataset, RawChartResponseData } from "../../types";
+import type { ChartConfig, ChartDataPoint, ChartDataset, Dataset, RawChartResponseData } from "../../types";
+import { isPercentageDataset } from "./datasets";
 import { formatDate } from "./formatting";
 
 type ChartResponseData = Record<string, ChartDataPoint[]>;
 
 export default (localChartConfig: ChartConfig, items: RawChartResponseData): ChartDataset[] => {
-    const responseData: Record<string, ChartDataPoint[]> = {};
+  const responseData: Record<string, ChartDataPoint[]> = {};
 
-    for (const item of items) {
-      const key: string = item.split ? `${item.id} ${item.split}` : item.id;
-      responseData[key] ??= [];
-      responseData[key].push({x: item.date, y: item.count});
-    }
+  for (const item of items) {
+    const key: string = item.split ? `${item.id} ${item.split}` : item.id;
+    responseData[key] ??= [];
+    responseData[key].push({ x: item.date, y: item.count });
+  }
 
-    processDerivedDatasets(localChartConfig, responseData);
-    fillDataGaps(localChartConfig, responseData);
-    formatDates(localChartConfig, responseData)
-    return createChartData(localChartConfig, responseData);
-}
+  processDerivedDatasets(localChartConfig, responseData);
+  fillDataGaps(localChartConfig, responseData);
+  formatDates(localChartConfig, responseData);
+  return createChartData(localChartConfig, responseData);
+};
 
 const createChartData = (chart: ChartConfig, responseData: ChartResponseData): ChartDataset[] => {
   return chart.datasets
@@ -70,9 +71,9 @@ const createChartData = (chart: ChartConfig, responseData: ChartResponseData): C
 
 const processDerivedDatasets = (chart: ChartConfig, data: ChartResponseData) => {
   for (const dataset of chart.datasets) {
-    if (dataset.type === "percentage") {
-      const numerator = data[dataset.numerator as string];
-      const denominator = data[dataset.denominator as string];
+    if (isPercentageDataset(dataset)) {
+      const numerator = data[dataset.numerator];
+      const denominator = data[dataset.denominator];
 
       if (!numerator || !denominator) {
         console.error(`Could not find numerator or denominator for percentage dataset ${dataset.id}`);
@@ -201,7 +202,7 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
 const timeSeriesToFormat = {
   monthly: "month",
   weekly: "week",
-  daily: "day"
+  daily: "day",
 };
 const formatDates = (chartConfig: ChartConfig, data: ChartResponseData) => {
   for (const dataset of chartConfig.datasets) {
@@ -209,7 +210,7 @@ const formatDates = (chartConfig: ChartConfig, data: ChartResponseData) => {
       continue;
     }
 
-    let dateFormat= timeSeriesToFormat[chartConfig.time_series] as "month" | "week" | "day";
+    const dateFormat = timeSeriesToFormat[chartConfig.time_series] as "month" | "week" | "day";
 
     // Loop through the returned data to find rows for this dataset
     for (const datasetId of Object.keys(data)) {

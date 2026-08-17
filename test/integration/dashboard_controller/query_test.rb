@@ -38,15 +38,6 @@ module Skadi::Integration
         end
       end
 
-      test "dataset date" do
-        DATES.each { |date| create :visit, created_at: date }
-
-        DATE_TEST_CASES.each do |testcase|
-          chart = build_chart(dataset: build_dataset(**testcase.except(:count)))
-          assert_results testcase[:count], configuration: chart
-        end
-      end
-
       test "combined dates" do
         DATES.each { |date| create :visit, created_at: date }
 
@@ -54,13 +45,17 @@ module Skadi::Integration
           { count: 10 },
           { count: 9, url: { date_from: "2020-01-12" } },
           { count: 8, url: { date_from: "2020-01-12" }, chart: { date_to: "2020-01-19" } },
-          { count: 7, url: { date_from: "2020-01-12" }, chart: { date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13" } },
-          { count: 6, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13" } },
-          { count: 5, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_from: "2020-01-14", date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13" } },
-          { count: 4, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_from: "2020-01-14", date_to: "2020-01-19" }, dataset: { date_from: "2020-01-13", date_to: "2020-01-17" } },
-          { count: 3, chart: { date_from: "2020-01-15" }, dataset: { date_to: "2020-01-17" } },
-          { count: 2, url: { date_from: "2020-01-16" }, dataset: { date_to: "2020-01-17" } },
-          { count: 1, chart: { date_from: "2020-01-17" }, dataset: { date_to: "2020-01-17" } },
+          { count: 7, url: { date_from: "2020-01-12" }, chart: { date_to: "2020-01-19" }, dataset: { filters: [ { field: "date", operator: ">=", value: "2020-01-13" } ] } },
+          { count: 6, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_to: "2020-01-19" }, dataset: { filters: [ { field: "date", operator: ">", value: "2020-01-12" } ] } },
+          { count: 5, url: { date_from: "2020-01-12", date_to: "2020-01-18" }, chart: { date_from: "2020-01-14", date_to: "2020-01-19" }, dataset: { filters: [ { field: "date", operator: ">=", value: "2020-01-13" } ] } },
+          { count: 4,
+            url: { date_from: "2020-01-12", date_to: "2020-01-18" },
+            chart: { date_from: "2020-01-14", date_to: "2020-01-19" },
+            dataset: { filters: [ { field: "date", operator: ">=", value: "2020-01-13" }, { field: "date", operator: "<=", value: "2020-01-17" } ] },
+          },
+          { count: 3, chart: { date_from: "2020-01-15" }, dataset: { filters: [ { field: "date", operator: "<=", value: "2020-01-17" } ] } },
+          { count: 2, url: { date_from: "2020-01-16" }, dataset: { filters: [ { field: "date", operator: "<", value: "2020-01-18" } ] } },
+          { count: 1, chart: { date_from: "2020-01-17" }, dataset: { filters: [ { field: "date", operator: "=", value: "2020-01-17" } ] } },
         ].each do |testcase|
           chart = build_chart(**(testcase[:chart] || {}), dataset: build_dataset(**(testcase[:dataset] || {})))
 
@@ -254,61 +249,128 @@ module Skadi::Integration
         assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|action 2", "count" => 1 }, results[3])
       end
 
-      test "dataset string filter" do
-        create :demographic, name: "demographic 1", count: 1, value: "value 1"
-        create :demographic, name: "demographic 1", count: 2, value: "value 2"
-        create :demographic, name: "demographic 2", count: 4
+      test "dataset boolean filter" do
+        create :view, verified: true
+        create :view, verified: true
+        create :view, verified: false
+
+        dataset = build_dataset(type: "views")
+        chart = build_chart(dataset: dataset)
+
+        assert_results 3, configuration: chart
+
+        dataset["filters"] = [ { field: "verified", operator: "=", value: true } ]
+        assert_results 2, configuration: chart
+
+        dataset["filters"] = [ { field: "verified", operator: "!=", value: false } ]
+        assert_results 2, configuration: chart
+
+        dataset["filters"] = [ { field: "verified", operator: "=", value: false } ]
+        assert_results 1, configuration: chart
+
+        dataset["filters"] = [ { field: "verified", operator: "!=", value: true } ]
+        assert_results 1, configuration: chart
+
+        dataset["filters"] = [ { field: "verified", operator: "not empty" } ]
+        assert_results 3, configuration: chart
+
+        dataset["filters"] = [ { field: "verified", operator: "empty" } ]
+        assert_results 0, configuration: chart
+      end
+
+      test "dataset date filter" do
+        DATES.each { |date| create :visit, created_at: date }
+
+        [
+          { count: 10 },
+          { count: 10, filters: [ { field: "date", operator: "not empty" } ] },
+          { count: 5, filters: [ { field: "date", operator: ">=", value: "2020-01-16" } ] },
+          { count: 5, filters: [ { field: "date", operator: "<=", value: "2020-01-15" } ] },
+          { count: 5, filters: [ { field: "date", operator: ">", value: "2020-01-11" }, { field: "date", operator: "<", value: "2020-01-17" } ] },
+          { count: 2, filters: [ { field: "date", operator: "!=", value: "2020-01-12" }, { field: "date", operator: "<=", value: "2020-01-13" } ] },
+          { count: 1, filters: [ { field: "date", operator: ">=", value: "2020-01-13" }, { field: "date", operator: "<=", value: "2020-01-13" } ] },
+          { count: 1, filters: [ { field: "date", operator: "=", value: "2020-01-13" } ] },
+          { count: 0, filters: [ { field: "date", operator: ">=", value: "2020-01-01" }, { field: "date", operator: "<=", value: "2020-01-05" } ] },
+          { count: 0, filters: [ { field: "date", operator: ">=", value: "2020-01-16" }, { field: "date", operator: "<=", value: "2020-01-12" } ] },
+          { count: 0, filters: [ { field: "date", operator: "empty" } ] },
+        ].each do |testcase|
+          chart = build_chart(dataset: build_dataset(**testcase.except(:count)))
+          assert_results testcase[:count], configuration: chart
+        end
+      end
+
+      test "dataset number filter" do
+        (1..10).each { |i| create :demographic, value: i.to_s, count: i }
 
         dataset = build_dataset(type: "demographics")
         chart = build_chart(dataset: dataset)
 
-        assert_results 7, configuration: chart
+        assert_results 55, configuration: chart
 
-        dataset["name"] = "demographic 1"
-        assert_results 3, configuration: chart
-
-        dataset["name"] = "demographic 2"
+        dataset["filters"] = [ { field: "count", operator: "=", value: 4 } ]
         assert_results 4, configuration: chart
 
-        dataset["name"] = "demographic"
-        assert_results 0, configuration: chart
+        dataset["filters"] = [ { field: "count", operator: "!=", value: 5 } ]
+        assert_results 50, configuration: chart
 
-        dataset["name"] = "demographic%"
-        assert_results 7, configuration: chart
+        dataset["filters"] = [ { field: "count", operator: ">", value: 3 } ]
+        assert_results 49, configuration: chart
 
-        dataset["name"] = "demographic _"
-        assert_results 7, configuration: chart
-
-        # Bypass validation so we can do some better testing
-        Skadi::Demographic.where(name: "demographic 2").update_all(value: "")
-        dataset.delete("name")
-
-        # Not empty
-        dataset["value"] = "!"
+        dataset["filters"] = [ { field: "count", operator: "<", value: 3 } ]
         assert_results 3, configuration: chart
 
-        # Also not empty
-        dataset["value"] = "_%"
+        dataset["filters"] = [ { field: "count", operator: ">=", value: 5 } ]
+        assert_results 45, configuration: chart
+
+        dataset["filters"] = [ { field: "count", operator: "<=", value: 4 } ]
+        assert_results 10, configuration: chart
+
+        dataset["filters"] = [ { field: "count", operator: "not empty" } ]
+        assert_results 55, configuration: chart
+
+        dataset["filters"] = [ { field: "count", operator: "empty" } ]
+        assert_results 0, configuration: chart
+      end
+
+      test "dataset string filter" do
+        create_list :visit, 3, utm_source: "source 1"
+        create_list :visit, 4, utm_source: "source 2"
+        create :visit, utm_source: ""
+        create :visit, utm_source: nil
+
+
+        dataset = build_dataset(type: "visits")
+        chart = build_chart(dataset: dataset)
+
+        assert_results 9, configuration: chart
+
+        dataset["filters"] = [ { field: "utm_source", operator: "=", value: "source 1" } ]
         assert_results 3, configuration: chart
 
-        # Should match everything
-        dataset["value"] = "%"
+        dataset["filters"] = [ { field: "utm_source", operator: "!=", value: "source 2" } ]
+        assert_results 5, configuration: chart
+
+        dataset["filters"] = [ { field: "utm_source", operator: "like", value: "sOuRcE 1" } ]
+        assert_results 3, configuration: chart
+
+        dataset["filters"] = [ { field: "utm_source", operator: "like", value: "source%" } ]
         assert_results 7, configuration: chart
 
-        # Should match nothing
-        dataset["value"] = "!%"
-        assert_results 0, configuration: chart
+        dataset["filters"] = [ { field: "utm_source", operator: "not like", value: "source _" } ]
+        assert_results 2, configuration: chart
 
-        # Empty
-        dataset["value"] = "!_%"
-        assert_results 4, configuration: chart
+        dataset["filters"] = [ { field: "utm_source", operator: "empty" } ]
+        assert_results 2, configuration: chart
 
-        # nil and empty values should be handled gracefully even though not possible in the front-end
-        dataset["value"] = nil
-        assert_results 0, configuration: chart
+        dataset["filters"] = [ { field: "utm_source", operator: "not empty" } ]
+        assert_results 7, configuration: chart
 
-        dataset["value"] = ""
-        assert_results 4, configuration: chart
+        # Test the special cases for empty strings
+        dataset["filters"] = [ { field: "utm_source", operator: "=", value: "" } ]
+        assert_results 2, configuration: chart
+
+        dataset["filters"] = [ { field: "utm_source", operator: "!=", value: "" } ]
+        assert_results 7, configuration: chart
       end
 
       test "dataset string filter with sql" do
@@ -322,31 +384,20 @@ module Skadi::Integration
 
         assert_results 4, configuration: chart
 
-        dataset["referrer_domain"] = "example.com"
+        dataset["filters"] = [ { field: "referrer_domain", operator: "=", value: "example.com" } ]
         assert_results 3, configuration: chart
 
-        dataset["referrer_domain"] = "other.example.com"
-        assert_results 1, configuration: chart
+        dataset["filters"] = [ { field: "referrer_domain", operator: "!=", value: "other.example.com" } ]
+        assert_results 3, configuration: chart
 
-        dataset["referrer_domain"] = "invalid.example.com"
+        dataset["filters"] = [ { field: "referrer_domain", operator: "=", value: "invalid.example.com" } ]
         assert_results 0, configuration: chart
-      end
 
-      test "dataset boolean filter" do
-        create :view, verified: true
-        create :view, verified: true
-        create :view, verified: false
+        dataset["filters"] = [ { field: "referrer_domain", operator: "empty" } ]
+        assert_results 0, configuration: chart
 
-        dataset = build_dataset(type: "views")
-        chart = build_chart(dataset: dataset)
-
-        assert_results 3, configuration: chart
-
-        dataset["verified"] = true
-        assert_results 2, configuration: chart
-
-        dataset["verified"] = false
-        assert_results 1, configuration: chart
+        dataset["filters"] = [ { field: "referrer_domain", operator: "not empty" } ]
+        assert_results 4, configuration: chart
       end
 
       test "percentage dataset" do

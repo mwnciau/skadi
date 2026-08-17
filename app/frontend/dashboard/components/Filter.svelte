@@ -16,10 +16,12 @@ let {
   rightValue = null,
   switchIndeterminate = false,
   allowEmpty = false,
+  showClear = true,
   trimOnBlur = false,
+  class: className = "",
   ...attributes
 } : {
-  type?: "contenteditable" | "date" | "number" | "select" | "switch" | "text" | "textarea";
+  type?: "contenteditable" | "date" | "number" | "select" | "switch" | "string" | "text" | "textarea";
   model: Record<string,unknown>;
   key: string;
   leftLabel?: string;
@@ -29,11 +31,14 @@ let {
   switchIndeterminate?: boolean,
 
   allowEmpty?: boolean;
+  showClear?: boolean;
   trimOnBlur?: boolean;
 
   children: Snippet;
   description?: string | Snippet | null;
   selectOptions?: (string | {label?: string, value: string})[] | Snippet | null;
+
+  class?: string;
   [key: string]: unknown;
 } = $props();
 
@@ -48,6 +53,8 @@ const switchValue = $derived.by(() => {
 
   return (model[key] === rightValue || (rightValue === null && model[key] === undefined));
 });
+
+const clearIsVisible = $derived(showClear && model[key]);
 
 let persistDelayMs = $derived(["date", "number", "text", "textarea", "contenteditable"].includes(type) ? 1000 : 250);
 let debounceTimeout: number;
@@ -125,18 +132,23 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
 </script>
 
 {#snippet clearButton()}
-  {#if model[key]}
+  {#if clearIsVisible}
     <button
       type="button"
-      class="unstyled text-night-800 hover:text-black hover:bg-night-50 p-2 cursor-pointer"
+      class="
+        unstyled
+        absolute inset-0 left-auto p-2
+        text-night-800 hover:text-black hover:bg-night-50
+        cursor-pointer
+      "
       onclick={() => { delete model[key] }}>
-      <Icon name="delete" />
+      <Icon name="clear" />
     </button>
   {/if}
 {/snippet}
 
 <!-- biome-ignore lint/a11y/noLabelWithoutControl: the control is added by the snippets -->
-<label>
+<label class={className}>
   {@render children()}
 
   {#if type === "contenteditable"}
@@ -149,23 +161,24 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
       {...attributes}
     >{model[key]}</p>
   {:else if type === "date"}
-    <div class="flex gap-1 items-center">
+    <div class="relative w-max">
       <input
         type="date"
         onblur={onBlur}
         oninput={setString}
         value={model[key]}
-        class="w-max"
+        class="w-max {clearIsVisible ? "pr-8" : ""}"
       >
       {@render clearButton()}
     </div>
   {:else if type === "number"}
-    <div class="flex gap-1 items-center">
+    <div class="relative w-max">
       <input
         type="number"
         onblur={onBlur}
         oninput={setString}
         value={model[key]}
+        class="{clearIsVisible ? "pr-8" : ""}"
       >
       {@render clearButton()}
     </div>
@@ -198,13 +211,14 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
       />
       {rightLabel}
     </div>
-  {:else if type === "text"}
-    <div class="flex gap-1 items-center">
+  {:else if type === "string" || type === "text"}
+    <div class="relative flex">
       <input
         type="text"
         onblur={onBlur}
         oninput={setString}
         value={model[key]}
+        class="grow {clearIsVisible ? "pr-8" : ""}"
       >
       {@render clearButton()}
     </div>

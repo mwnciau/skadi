@@ -3,13 +3,23 @@ module Skadi
     class Sql
       class << self
         # Provides the keyword for case insensitive LIKE
+        def operator(model, operator)
+          return case operator
+                 when "like"
+            ilike(model)
+                 when "not like"
+            "NOT #{ilike(model)}"
+                 else
+            operator
+                 end
+        end
+
+        # Provides the keyword for case insensitive LIKE
         def ilike(model)
           case model.connection.adapter_name
           when "PostgreSQL"
             "ILIKE"
-          when "Mysql2"
-            "LIKE"
-          when "SQLite"
+          when "Mysql2", "SQLite"
             "LIKE"
           else
             raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")

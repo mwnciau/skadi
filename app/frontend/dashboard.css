@@ -63,7 +63,7 @@
 
   input,
   select {
-    @apply px-2.5 py-2 max-w-120 border border-night-100 grow;
+    @apply px-2.5 py-2 max-w-120 border border-night-100 grow text-base leading-normal;
   }
 
   [contenteditable] {
