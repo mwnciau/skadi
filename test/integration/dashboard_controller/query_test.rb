@@ -483,7 +483,7 @@ module Skadi::Integration
         create :view, controller: "one", action: "two"
 
         # `action` is not marked as splittable so it should be ignored
-        dataset = build_dataset(type: "views", split_by: ["action"])
+        dataset = build_dataset(type: "views", split_by: [ "action" ])
         chart = build_chart(id: "chart", dataset: dataset)
         build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 

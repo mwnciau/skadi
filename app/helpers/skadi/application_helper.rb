@@ -19,19 +19,19 @@ module Skadi
 
       case type
         when :route
-        content_tag("script", "", {
-          src: Skadi::Engine.routes.url_helpers.tracking_script_path(v: Skadi::VERSION),
-          **tag_attributes,
-        })
+          content_tag("script", "", {
+            src: Skadi::Engine.routes.url_helpers.tracking_script_path(v: Skadi::VERSION),
+            **tag_attributes,
+          })
         when :inline
-        self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
-        content_tag(
-          "script",
-          skadi_script_src,
-          tag_attributes,
-        )
+          self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
+          content_tag(
+            "script",
+            skadi_script_src,
+            tag_attributes,
+          )
         else
-        raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
+          raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
       end
     end
   end

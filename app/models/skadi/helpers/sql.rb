@@ -17,35 +17,35 @@ module Skadi
         def ilike(model)
           case model.connection.adapter_name
             when "PostgreSQL"
-            "ILIKE"
+              "ILIKE"
             when "Mysql2", "SQLite"
-            "LIKE"
+              "LIKE"
             else
-            raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+              raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
           end
         end
 
         def string_before_separator(model, field, separator)
           case model.connection.adapter_name
             when "PostgreSQL"
-            "SPLIT_PART(#{model.table_name}.#{field}, '#{separator}', 1)"
+              "SPLIT_PART(#{model.table_name}.#{field}, '#{separator}', 1)"
             when "Mysql2"
-            "SUBSTRING_INDEX(#{model.table_name}.#{field}, '#{separator}', 1)"
+              "SUBSTRING_INDEX(#{model.table_name}.#{field}, '#{separator}', 1)"
             when "SQLite"
-            "SUBSTR(#{model.table_name}.#{field}, 1, INSTR(#{model.table_name}.#{field}, '#{separator}') - 1)"
+              "SUBSTR(#{model.table_name}.#{field}, 1, INSTR(#{model.table_name}.#{field}, '#{separator}') - 1)"
             else
-            raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+              raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
           end
         end
 
         def time_series(time_series, model, date_field)
           case time_series
             when "daily"
-            day_of_date(model, date_field)
+              day_of_date(model, date_field)
             when "weekly"
-            week_of_date(model, date_field)
+              week_of_date(model, date_field)
             when "monthly"
-            month_of_date(model, date_field)
+              month_of_date(model, date_field)
             else
             raise ::Skadi::Dashboard::DatasetConfigurationError.new("The time_series #{time_series} is invalid")
           end
@@ -58,11 +58,11 @@ module Skadi
         def week_of_date(model, date_field)
           case model.connection.adapter_name
             when "PostgreSQL"
-            "DATE_TRUNC('week', #{date_field})::date"
+              "DATE_TRUNC('week', #{date_field})::date"
             when "Mysql2"
-            "DATE_SUB(DATE(#{date_field}), INTERVAL WEEKDAY(#{date_field}) DAY)"
+              "DATE_SUB(DATE(#{date_field}), INTERVAL WEEKDAY(#{date_field}) DAY)"
             when "SQLite"
-            "DATE(#{date_field}, '-' || ((CAST(STRFTIME('%w', #{date_field}) AS INTEGER) + 6) % 7) || ' days')"
+              "DATE(#{date_field}, '-' || ((CAST(STRFTIME('%w', #{date_field}) AS INTEGER) + 6) % 7) || ' days')"
             else
             raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
           end
@@ -71,11 +71,11 @@ module Skadi
         def month_of_date(model, date_field)
           case model.connection.adapter_name
             when "PostgreSQL"
-            "DATE_TRUNC('month', #{date_field})::date"
+              "DATE_TRUNC('month', #{date_field})::date"
             when "Mysql2"
-            "DATE_FORMAT(#{date_field}, '%Y-%m-01')"
+              "DATE_FORMAT(#{date_field}, '%Y-%m-01')"
             when "SQLite"
-            "DATE(#{date_field}, 'start of month')"
+              "DATE(#{date_field}, 'start of month')"
             else
             raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
           end
