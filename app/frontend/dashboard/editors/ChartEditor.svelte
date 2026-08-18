@@ -1,6 +1,6 @@
 <script lang="ts">
 import { untrack } from "svelte";
-import type {ChartConfig} from "../../types";
+import type { ChartConfig, Dataset } from "../../types";
 import ExpandingSection from "../components/ExpandingSection.svelte";
 import Filter from "../components/Filter.svelte";
 import Icon from "../components/Icon.svelte";
@@ -109,7 +109,7 @@ const deleteDataset = (index: number) => {
 }
 
 const duplicateDataset = (index: number) => {
-  const newDataset = $state.snapshot(localChartConfig.datasets[index]);
+  const newDataset = $state.snapshot(localChartConfig.datasets[index]) as Dataset;
   newDataset.id = crypto.randomUUID();
   datasetIdToOpen = newDataset.id;
   newDataset.label = `Copy of ${newDataset.label}`
@@ -122,8 +122,10 @@ const moveUp = (index: number) => {
     return;
   }
 
-  // Splice returns the items that were removed, so this overwrites `index - 1` with `index`, then sets `index` to the removed item
-  localChartConfig.datasets[index] = localChartConfig.datasets.splice(index - 1, 1, localChartConfig.datasets[index])[0];
+  const thisDataset = localChartConfig.datasets[index];
+
+  localChartConfig.datasets[index] = localChartConfig.datasets[index - 1] as Dataset;
+  localChartConfig.datasets[index - 1] = thisDataset as Dataset;
 }
 
 const moveDown = (index: number) => {
@@ -131,8 +133,10 @@ const moveDown = (index: number) => {
     return;
   }
 
-  // Splice returns the items that were removed, so this overwrites `index` with `index + 1`, then sets `index + 1` to the removed item
-  localChartConfig.datasets[index + 1] = localChartConfig.datasets.splice(index, 1, localChartConfig.datasets[index + 1])[0];
+  const thisDataset = localChartConfig.datasets[index];
+
+  localChartConfig.datasets[index] = localChartConfig.datasets[index + 1] as Dataset;
+  localChartConfig.datasets[index + 1] = thisDataset as Dataset;
 }
 </script>
 

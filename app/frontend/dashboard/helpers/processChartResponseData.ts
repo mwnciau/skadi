@@ -54,7 +54,7 @@ const createChartData = (chart: ChartConfig, responseData: ChartResponseData): C
           }
         }
 
-        if (!chart.time_series) {
+        if (!chart.time_series && responseData[datasetId]?.[0]) {
           responseData[datasetId][0].x = label;
         }
 
@@ -62,7 +62,7 @@ const createChartData = (chart: ChartConfig, responseData: ChartResponseData): C
           dataset: datasetId,
           split: split,
           label: label,
-          data: responseData[datasetId],
+          data: responseData[datasetId] as ChartDataPoint[],
           axis: dataset.axis === "right" ? "right" : "left",
         };
       });
@@ -84,12 +84,17 @@ const processDerivedDatasets = (chart: ChartConfig, data: ChartResponseData) => 
 
       if (chart.time_series) {
         data[dataset.id] = populatePercentageData(numerator, denominator);
-      } else if (denominator[0]?.y !== null && numerator[0]?.y !== null && denominator[0].y !== 0) {
-        // If the denominator is zero, skip it to avoid division by zero
-        const yValue = numerator[0].y / denominator[0].y;
+      } else {
+        const denominatorY = denominator[0]?.y;
+        const numeratorY = numerator[0]?.y;
 
-        // If there is no time-series, there is only one item per dataset
-        data[dataset.id] = [{ x: dataset.label, y: Math.round(yValue * 1000) / 10 }];
+        if (denominatorY && typeof numeratorY === "number") {
+          // If the denominator is zero, skip it to avoid division by zero
+          const yValue = numeratorY / denominatorY;
+
+          // If there is no time-series, there is only one item per dataset
+          data[dataset.id] = [{ x: dataset.label, y: Math.round(yValue * 1000) / 10 }];
+        }
       }
     }
   }
@@ -108,13 +113,13 @@ const populatePercentageData = (numerator: ChartDataPoint[], denominator: ChartD
 
     // The labels match so populate the percentage for this label
     if (numeratorX === denominatorX) {
-      const numeratorY = numerator[n]?.y;
-      const denominatorY = denominator[d]?.y;
+      const numeratorY = numerator[n]?.y ?? null;
+      const denominatorY = denominator[d]?.y ?? null;
 
       if (numeratorY !== null && denominatorY !== null && denominatorY !== 0) {
         // If the denominator is zero, skip it to avoid division by zero
         percentageData.push({
-          x: numerator[n].x,
+          x: numerator[n]?.x ?? null,
           y: Math.round((numeratorY / denominatorY) * 1000) / 10,
         });
       }
@@ -152,23 +157,16 @@ const fillDataGaps = (chart: ChartConfig, data: Record<string, ChartDataPoint[]>
   const xValues: string[] = Array.from(uniqueXValues).sort();
   interpolateXValues(chart, xValues);
 
-  for (const dataset of Object.keys(data)) {
-    // Ensure the data is sorted by date
-    (data[dataset] as { x: string }[]).sort((a, b) => {
-      if (a.x > b.x) {
-        return 1;
-      }
-
-      if (a.x < b.x) {
-        return -1;
-      }
-
-      return 0;
-    });
+  for (const dataset of Object.values(data)) {
+    // Ensure the data is sorted by date, moving nulls to the end so as to not break gap-filling
+    dataset.sort((a, b) => (a.x ?? "\uffff").localeCompare(b.x ?? "\uffff"));
 
     for (let index = 0; index < xValues.length; index++) {
-      if (!data[dataset][index] || (data[dataset][index].x as string) > xValues[index]) {
-        data[dataset].splice(index, 0, { x: xValues[index], y: null });
+      const xValue = xValues[index] as string;
+      const dataPoint = dataset[index];
+
+      if (!dataPoint || (dataPoint.x ?? "") > xValue) {
+        dataset.splice(index, 0, { x: xValue, y: null });
       }
     }
   }
@@ -181,6 +179,12 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
 
   for (let i = 0; i < xValues.length - 1; i++) {
     const current = xValues[i];
+    const last = xValues[xValues.length - 1];
+
+    if (!current || !last) {
+      continue;
+    }
+
     const currentDate = new Date(current);
 
     if (chart.time_series === "daily") {
@@ -191,9 +195,9 @@ const interpolateXValues = (chart: ChartConfig, xValues: string[]) => {
       currentDate.setUTCMonth(currentDate.getUTCMonth() + 1);
     }
 
-    const next = currentDate.toISOString().split("T", 1)[0];
+    const next = currentDate.toISOString().substring(0, 10);
 
-    if (next !== xValues[i + 1] && next < xValues[xValues.length - 1]) {
+    if (next !== xValues[i + 1] && next < last) {
       xValues.splice(i + 1, 0, next);
     }
   }
@@ -213,12 +217,12 @@ const formatDates = (chartConfig: ChartConfig, data: ChartResponseData) => {
     const dateFormat = timeSeriesToFormat[chartConfig.time_series] as "month" | "week" | "day";
 
     // Loop through the returned data to find rows for this dataset
-    for (const datasetId of Object.keys(data)) {
+    for (const [datasetId, dataPoints] of Object.entries(data)) {
       if (!datasetId.startsWith(dataset.id)) {
         continue;
       }
 
-      for (const item of data[datasetId]) {
+      for (const item of dataPoints) {
         if (!item.x) {
           continue;
         }

@@ -45,18 +45,18 @@ export const formatDate = (date: unknown, format: "month" | "week" | "day"): str
     return `${date}`;
   }
 
-  const dateParts = date.substring(0, 10).split("-", 3) ?? [];
+  const [year, month, day] = date.substring(0, 10).split("-", 3);
 
-  if (dateParts.length < 3) {
+  if (!year || !month || !day) {
     return date;
   }
 
   switch (format) {
     case "month":
-      return `${months[dateParts[1]]} ${dateParts[0]}`;
+      return `${months[month]} ${year}`;
     case "week":
-      return `w/c ${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
+      return `w/c ${+day} ${shortMonths[month]} ${year.substring(2, 4)}`;
     case "day":
-      return `${+dateParts[2]} ${shortMonths[dateParts[1]]} ${dateParts[0].substring(2, 4)}`;
+      return `${+day} ${shortMonths[month]} ${year.substring(2, 4)}`;
   }
 };

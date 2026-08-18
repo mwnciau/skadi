@@ -1,6 +1,6 @@
 <script lang="ts">
 import { untrack } from "svelte";
-import type { DashboardTabConfig, TabFilters } from "../types.d.ts";
+import type { ChartConfig, DashboardTabConfig, TabFilters } from "../types.d.ts";
 import Filter from "./components/Filter.svelte";
 import ChartWrapper from "./dashboardElements/ChartWrapper.svelte";
 import TabEditor from "./editors/TabEditor.svelte";
@@ -15,7 +15,7 @@ let tabs = $state<DashboardTabConfig[]>(
 const canEdit = callingScript.dataset.canEdit === "true";
 const canDangerouslyUseSql = callingScript.dataset.canDangerouslyUseSql === "true";
 
-let selectedTab = $state<string>(tabs[0].id);
+let selectedTab = $state<string>((tabs[0] as DashboardTabConfig).id);
 let selectedTabConfig = $derived(tabs.find(dashboard => dashboard.id === selectedTab) as DashboardTabConfig);
 
 // untrack: these just define the default state and aren't meant to be tracked
@@ -71,7 +71,7 @@ const deleteChart = (index: number) => {
 }
 
 const duplicateChart = (index: number) => {
-  const newChart = $state.snapshot(selectedTabConfig.children[index]);
+  const newChart = $state.snapshot(selectedTabConfig.children[index]) as ChartConfig;
   // Note: the datasets in the new chart will have the same ids as the datasets in the copied chart, but this isn't problematic because datasets are never referenced directly apart from their chart.
   newChart.id = crypto.randomUUID();
   justAddedChartId = newChart.id;
@@ -85,8 +85,10 @@ const moveChartUp = (index: number) => {
     return;
   }
 
-  // Splice returns the items that were removed, so this overwrites `index - 1` with `index`, then sets `index` to the removed item
-  selectedTabConfig.children[index] = selectedTabConfig.children.splice(index - 1, 1, selectedTabConfig.children[index])[0];
+  const thisChart = selectedTabConfig.children[index];
+
+  selectedTabConfig.children[index] = selectedTabConfig.children[index - 1] as ChartConfig;
+  selectedTabConfig.children[index - 1] = thisChart as ChartConfig;
 }
 
 const moveChartDown = (index: number) => {
@@ -94,8 +96,10 @@ const moveChartDown = (index: number) => {
     return;
   }
 
-  // Splice returns the items that were removed, so this overwrites `index` with `index + 1`, then sets `index + 1` to the removed item
-  selectedTabConfig.children[index + 1] = selectedTabConfig.children.splice(index, 1, selectedTabConfig.children[index + 1])[0];
+  const thisChart = selectedTabConfig.children[index];
+
+  selectedTabConfig.children[index] = selectedTabConfig.children[index + 1] as ChartConfig;
+  selectedTabConfig.children[index + 1] = thisChart as ChartConfig;
 }
 
 const onDelete = () => {
@@ -105,7 +109,7 @@ const onDelete = () => {
     newTab("Tab 1");
   } else {
     const nextIndex = currentIndex === 0 ? 1 : currentIndex - 1;
-    selectedTab = tabs[nextIndex].id;
+    selectedTab = (tabs[nextIndex] as DashboardTabConfig).id;
   }
 
   tabs.splice(currentIndex, 1);

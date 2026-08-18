@@ -1,7 +1,7 @@
 <script lang="ts">
 import type {
   ChartConfig,
-  Dataset, DatasetFilterOperator, FieldSchema, SchemaDatasetFilter,
+  Dataset, DatasetFilterOperator, DatasetSchema, FieldSchema, SchemaDatasetFilter,
 } from "../../types";
 import ExpandingSection from "../components/ExpandingSection.svelte";
 import Filter from "../components/Filter.svelte";
@@ -69,7 +69,7 @@ const types = $derived([
   ...(chartConfig.type === "table" ? [] : ["percentage"]),
   "sql",
 ]);
-const datasetSchema = $derived(databaseSchema[dataset.type])
+const datasetSchema = $derived<DatasetSchema | undefined>(databaseSchema[dataset.type]);
 const datasetFields = $derived<Record<string,FieldSchema>>(databaseSchema[dataset.type]?.fields ?? {});
 const filterFields: string[] = $derived.by(() => {
   if (!datasetSchema) {
@@ -118,7 +118,7 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
   if (isSchemaDataset(dataset) && Array.isArray(dataset.filters)) {
     // Remove any filters that aren't compatible
     for (let i = 0; i < dataset.filters.length; i++) {
-      if (!isFilterValid(dataset.filters[i])) {
+      if (!isFilterValid(dataset.filters[i] as SchemaDatasetFilter)) {
         dataset.filters.splice(i, 1)
 
         // Decrement the loop index because we're removing an element
@@ -139,6 +139,9 @@ const isFilterValid = (filter: SchemaDatasetFilter) => {
   }
 
   const fieldSchema = datasetFields[filter.field];
+  if (!fieldSchema) {
+    return false;
+  }
 
   // Check the operator is compatible
   if (!OPERATORS[fieldSchema.type ?? "string"]?.includes(filter.operator)) {
@@ -181,7 +184,7 @@ const defaultFilterValueForField = (fieldSchema: FieldSchema) => {
   if (fieldSchema.type === "one_of" && fieldSchema.options) {
     const firstOption = fieldSchema.options[0];
 
-    return typeof firstOption === "string" ? firstOption : firstOption.value;
+    return typeof firstOption === "string" ? firstOption : firstOption?.value ?? "";
   }
 
   return DEFAULT_VALUES[fieldSchema.type ?? "string"];
@@ -194,6 +197,9 @@ const addFilter = (e: Event & {currentTarget: EventTarget & HTMLSelectElement}) 
 
   const field = e.currentTarget.value;
   const fieldSchema = datasetFields[field];
+  if (!fieldSchema) {
+    return;
+  }
 
   dataset.filters ??= [];
   dataset.filters.push({field: field, operator: "=", value: defaultFilterValueForField(fieldSchema)});
@@ -206,8 +212,11 @@ const setFilterOperator = (index: number, event: Event & {currentTarget: EventTa
     return;
   }
   const newOperator = event.currentTarget.value as DatasetFilterOperator;
-  const filter = dataset.filters[index];
+  const filter = dataset.filters[index] as SchemaDatasetFilter;
   const fieldSchema = datasetFields[filter.field];
+  if (!fieldSchema) {
+    return;
+  }
 
   const wasUnary = isFilterUnary(filter);
   filter.operator = newOperator;
@@ -402,20 +411,20 @@ const duplicate = () => {
 
       <div class="grid grid-cols-[auto_4rem_1fr_auto] gap-1 items-center">
         {#each (dataset.filters ?? []) as filter, index}
-          {@const fieldConfig = datasetFields[filter.field]}
+          {@const fieldConfig = datasetFields[filter.field] as FieldSchema | undefined}
           {@const fieldLabel = fieldConfig?.label ?? formatString(filter.field)}
 
           <span>{fieldLabel}:</span>
           <label class="h-full {isFilterUnary(filter) ? "col-span-2 w-max" : ""}">
             <span class="sr-only">operator</span>
             <select onchange={(e) => setFilterOperator(index, e)} value={filter.operator}>
-              {#each OPERATORS[fieldConfig.type ?? "string"] as operator}
+              {#each OPERATORS[fieldConfig?.type ?? "string"] as operator}
                 <option>{operator}</option>
               {/each}
             </select>
           </label>
           {#if !isFilterUnary(filter)}
-            {#if fieldConfig.type === "boolean"}
+            {#if fieldConfig?.type === "boolean"}
               <Filter
                 type="switch"
                 model={filter}
@@ -428,7 +437,7 @@ const duplicate = () => {
               >
                 <span class="sr-only">{fieldLabel}</span>
               </Filter>
-            {:else if fieldConfig.type === "one_of"}
+            {:else if fieldConfig?.type === "one_of"}
               <Filter
                 type="select"
                 model={filter}
@@ -440,7 +449,7 @@ const duplicate = () => {
                 <span class="sr-only">{fieldLabel}</span>
               </Filter>
             {:else}
-              <Filter type={fieldConfig.type ?? "string"} model={filter} key="value" class="w-full" allowEmpty={true} showClear={!fieldConfig.type || fieldConfig.type === "string"}>
+              <Filter type={fieldConfig?.type ?? "string"} model={filter} key="value" class="w-full" allowEmpty={true} showClear={!fieldConfig?.type || fieldConfig?.type === "string"}>
                 <span class="sr-only">{fieldLabel}</span>
               </Filter>
             {/if}
@@ -454,7 +463,7 @@ const duplicate = () => {
             <Icon name="delete" />
           </button>
 
-          {#if fieldConfig.description}
+          {#if fieldConfig?.description}
             <p class="help-text -mt-1 col-span-4">{fieldConfig.description}</p>
           {/if}
         {/each}

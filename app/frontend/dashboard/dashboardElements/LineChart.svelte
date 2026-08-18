@@ -106,6 +106,11 @@ $effect(() => {
           const activeElements = chart.tooltip?.getActiveElements();
           if (activeElements?.length) {
             const activePoint = activeElements[0];
+
+            if (!activePoint || !chart.scales.y) {
+              return;
+            }
+
             const ctx = chart.ctx;
             const x = activePoint.element.x;
             const topY = chart.scales.y.top;

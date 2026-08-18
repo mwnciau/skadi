@@ -3,8 +3,9 @@ import type {
   ChartConfig,
   ChartFilters,
   ChartMetadata,
-  DatasetSchema,
-  TableData
+  Dataset,
+  TableData,
+  TableRow
 } from "../../types";
 import Pagination from "../components/Pagination.svelte";
 import { databaseSchema } from "../helpers/databaseSchema";
@@ -42,8 +43,8 @@ const boundedPage = $derived(Math.max(1, Math.min(page, highestPage ?? 1)));
 // Keep track of the last valid data page so we can keep displaying old data while things load
 const dataOffset = $derived((((isLoading ? previousPage : boundedPage) - 1) % PAGES_PER_CHUNK) * ITEMS_PER_PAGE);
 
-const fields: string[] = $derived(Object.keys(data[0]));
-const schema: DatasetSchema = $derived(databaseSchema[chartConfig.datasets[0].type]);
+const fields: string[] = $derived(Object.keys(data[0] as TableRow));
+const schema = $derived(databaseSchema[(chartConfig.datasets[0] as Dataset).type]);
 
 const setPage = (newPage: number) => {
   if (!isPageInBounds(newPage)) {
@@ -62,7 +63,7 @@ const setPage = (newPage: number) => {
     <thead>
       <tr>
         {#each fields as field}
-          <th>{schema?.fields?.[field as keyof DatasetSchema]?.label ?? formatString(field)}</th>
+          <th>{schema?.fields?.[field]?.label ?? formatString(field)}</th>
         {/each}
       </tr>
     </thead>
@@ -72,7 +73,7 @@ const setPage = (newPage: number) => {
         {#if row}
           <tr>
             {#each fields as field}
-              {@const fieldType = schema?.fields?.[field as keyof DatasetSchema]?.type ?? "string"}
+              {@const fieldType = schema?.fields?.[field]?.type ?? "string"}
               <td>
                 {#if fieldType === "date"}
                   {formatDate(row[field] as string, "day")}

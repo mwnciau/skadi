@@ -106,7 +106,7 @@ const bucketise = (value: number, buckets: [number, number, number, number]): st
   }
 
   for (let i = 1; i < buckets.length; i++) {
-    if (value <= buckets[i]) {
+    if (value <= (buckets[i] as number)) {
       return `${buckets[i - 1]}ms to ${buckets[i]}ms`;
     }
   }
@@ -131,8 +131,10 @@ const addDemographic = (name: string, value: string | boolean | null, viewDemogr
 // The largest contentful paint is triggered multiple times during a page load, so we need to use the Observer API to keep track of each LCP as the page loads.
 new PerformanceObserver((entryList) => {
   const entries = entryList.getEntries();
-  const lastEntry = entries[entries.length - 1];
-  largestContentfulPaint = lastEntry.startTime;
+  const lastEntry = entries.at(-1);
+  if (lastEntry) {
+    largestContentfulPaint = lastEntry.startTime;
+  }
 }).observe({ type: largestContentfulPaintId, buffered: true });
 
 new PerformanceObserver((entryList, observer) => {

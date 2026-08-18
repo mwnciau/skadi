@@ -93,6 +93,8 @@ $effect(() => {
 </div>
 
 <script module lang="ts">
+  import type { ActiveElement } from "chart.js";
+
   const buildChart = (canvas: HTMLCanvasElement): Chart<"bar", {x: string, y: number}[], unknown> => {
     return new Chart(canvas, {
       type: "bar",
@@ -127,7 +129,7 @@ $effect(() => {
         onHover: (_event, activeElements, chart) => {
           let hoveredPosition : number | null;
           if (activeElements.length) {
-            hoveredPosition = (activeElements[0].element.x + activeElements[activeElements.length - 1].element.x) / 2
+            hoveredPosition = ((activeElements[0] as ActiveElement).element.x + (activeElements[activeElements.length - 1] as ActiveElement).element.x) / 2
           }
           else {
             hoveredPosition = null
@@ -147,7 +149,7 @@ $effect(() => {
         beforeDatasetsDraw(chart, _args, _options) {
           const { ctx, hoveredPosition, scales: { x, y } } = chart;
 
-          if (!hoveredPosition) {
+          if (!hoveredPosition || !x || !y) {
             return;
           }
 
