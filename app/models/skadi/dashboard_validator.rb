@@ -74,7 +74,7 @@ module Skadi
         dataset_type = COMMON_DATASET_FIELDS.dup
         dataset_type[:type] = dataset_name.to_s
 
-        split_by_fields = [ nil ]
+        split_by_fields = []
         filters = {}
 
         schema[:fields].each do |field, field_config|
@@ -88,7 +88,7 @@ module Skadi
           end
         end
 
-        dataset_type[:split_by] = ArrayOf.new(OneOf.new(split_by_fields, false)) if split_by_fields.length > 1
+        dataset_type[:split_by] = ArrayOf.new(OneOf.new(split_by_fields, false)) if split_by_fields.any?
         dataset_type[:filters] = ArrayOf.new(Filter.new(filters))
 
         @types[:"#{dataset_name}Dataset"] = dataset_type

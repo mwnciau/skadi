@@ -260,6 +260,7 @@ module Skadi::Unit
     test "validates dataset split_by" do
       assert_dataset_error("split_by must be an array", split_by: "pie")
       assert_dataset_error('split_by[0] "pie" must be one of', split_by: [ "pie" ])
+      assert_dataset_error('split_by[0] nil must be one of', split_by: [ nil ])
     end
 
     test "validates dataset filter" do
