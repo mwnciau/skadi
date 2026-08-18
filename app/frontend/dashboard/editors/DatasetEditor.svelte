@@ -106,7 +106,7 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
     "axis",
   ];
   if (isSchemaDataset(dataset)) {
-    allowedKeys.push("filters", "split_by");
+    allowedKeys.push("filters");
   }
 
   for (const key of Object.keys(dataset)) {
@@ -322,7 +322,7 @@ const duplicate = () => {
             {#each dataset.split_by as splitField}
               <div class="flex items-center gap-1">
                 <div class="font-medium">
-                  {datasetFields[splitField].label ?? formatString(splitField)}
+                  {datasetFields[splitField]?.label ?? formatString(splitField)}
                 </div>
                 <button
                   type="button"
@@ -401,7 +401,7 @@ const duplicate = () => {
       <div class="grid grid-cols-[auto_4rem_1fr_auto] gap-1 items-center">
         {#each (dataset.filters ?? []) as filter, index}
           {@const fieldConfig = datasetFields[filter.field]}
-          {@const fieldLabel = fieldConfig.label ?? formatString(filter.field)}
+          {@const fieldLabel = fieldConfig?.label ?? formatString(filter.field)}
 
           <span>{fieldLabel}:</span>
           <label class="h-full {isFilterUnary(filter) ? "col-span-2 w-max" : ""}">
