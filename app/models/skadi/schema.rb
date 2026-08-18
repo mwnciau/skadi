@@ -59,7 +59,9 @@ module Skadi
                 filter: true,
               },
               controller: FILTER_AND_SPLIT,
-              action: FILTER_AND_SPLIT,
+              action: {
+                filter: true,
+              },
               controller_and_action: {
                 split: true,
                 sql: "CONCAT(skadi_views.controller, '::', skadi_views.action)",

@@ -137,7 +137,7 @@ module Skadi
             operator = filter["operator"]
             value = filter["value"]
 
-            next if field_config.nil? || operator.nil?
+            next if field_config.nil? || operator.nil? || !field_config[:filter]
 
             field_type = field_config[:type] || :string
             field_sql = if field_config[:sql]

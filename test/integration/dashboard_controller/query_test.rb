@@ -338,7 +338,6 @@ module Skadi::Integration
         create :visit, utm_source: ""
         create :visit, utm_source: nil
 
-
         dataset = build_dataset(type: "visits")
         chart = build_chart(dataset: dataset)
 
@@ -465,6 +464,35 @@ module Skadi::Integration
         assert_equal 2, results.length
         assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => nil, "count" => 10 }, results[0])
         assert_equal({ "id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1 }, results[1])
+      end
+
+      test "only fields marked with filter: true can be filtered" do
+        create :view, controller: "one", action: "one"
+        create :view, controller: "one", action: "two"
+
+        # `controller_action` is not marked as filterable so it should be ignored
+        dataset = build_dataset(type: "views", filters: [ { field: "controller_action", operator: "=", value: "one::two" } ])
+        chart = build_chart(id: "chart", dataset: dataset)
+        build_dashboard(tab: build_tab(chart:)).save!(validate: false)
+
+        assert_results 2, chart_id: "chart"
+      end
+
+      test "only fields marked with split: true can be split" do
+        create :view, controller: "one", action: "one"
+        create :view, controller: "one", action: "two"
+
+        # `action` is not marked as splittable so it should be ignored
+        dataset = build_dataset(type: "views", split_by: ["action"])
+        chart = build_chart(id: "chart", dataset: dataset)
+        build_dashboard(tab: build_tab(chart:)).save!(validate: false)
+
+        post skadi.dashboard_data_path, params: { chart_id: "chart" }, as: :json
+
+        assert_response :ok
+        raw = JSON.parse(response.body)
+
+        assert_equal 1, raw
       end
 
       def results_for_chart(chart)

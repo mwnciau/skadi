@@ -354,6 +354,14 @@ module Skadi::Unit
       end
     end
 
+    test "validates only fields marked with filter: true can be filtered" do
+      assert_dataset_error("filters[0].field must be one of ", type: "views", filters: [ { field: "controller_action" } ])
+    end
+
+    test "validates only fields marked with split: true can be split" do
+      assert_dataset_error('split_by[0] "action" must be one of ', type: "views", split_by: ["action"])
+    end
+
     ##############################
     #   SQL dataset validation   #
     ##############################
