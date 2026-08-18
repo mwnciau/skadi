@@ -129,6 +129,18 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
     }
   }
 }
+
+const clearValue = () => {
+  if (debounceTimeout) {
+    clearTimeout(debounceTimeout);
+  }
+
+  if ((type === "text" || type === "string") && allowEmpty) {
+    model[key] = "";
+  } else {
+    delete model[key];
+  }
+}
 </script>
 
 {#snippet clearButton()}
@@ -141,7 +153,7 @@ const contentEditableSync = (node: HTMLElement, value: unknown) => {
         text-night-800 hover:text-black hover:bg-night-50
         cursor-pointer
       "
-      onclick={() => { delete model[key] }}>
+      onclick={clearValue}>
       <Icon name="clear" />
     </button>
   {/if}
