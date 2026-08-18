@@ -2,7 +2,6 @@ module Skadi
   module Helpers
     class Sql
       class << self
-        # Provides the keyword for case insensitive LIKE
         def operator(model, operator)
           return case operator
             when "like"
