@@ -36,3 +36,11 @@ Naming/MethodName:
 # Allow for explicit returns at the end of methods where they're not needed
 Style/RedundantReturn:
   Enabled: false
+
+# Indentation should never align elements
+Layout/CaseIndentation:
+  EnforcedStyle: end
+  IndentOneStep: true
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: start_of_line

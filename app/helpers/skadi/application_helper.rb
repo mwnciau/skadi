@@ -18,19 +18,19 @@ module Skadi
       tag_attributes[:data][:visit] = "1" if skadi.new_visit?
 
       case type
-      when :route
+        when :route
         content_tag("script", "", {
           src: Skadi::Engine.routes.url_helpers.tracking_script_path(v: Skadi::VERSION),
           **tag_attributes,
         })
-      when :inline
+        when :inline
         self.skadi_script_src ||= Engine.root.join("app", "assets", "builds", "skadi.js").read.html_safe
         content_tag(
           "script",
           skadi_script_src,
           tag_attributes,
         )
-      else
+        else
         raise InvalidSkadiTagType.new("Invalid type given to skadi_tag. Expecting :route, :inline, but got :#{type}.")
       end
     end

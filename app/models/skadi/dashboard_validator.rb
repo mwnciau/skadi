@@ -124,26 +124,26 @@ module Skadi
       end
 
       case type
-      when :string
+        when :string
         add_error(path, "must be a string", context:) unless value.is_a?(String)
         return
-      when :boolean
+        when :boolean
         add_error(path, "must be a boolean", context:) unless value == true || value == false
         return
-      when :number
+        when :number
         add_error(path, "must be a number", context:) unless value.is_a?(Numeric)
         return
-      when :date
+        when :date
         add_error(path, "must be a date", context:) unless value.is_a?(String) && value.match?(/\A\d{4}-[01]\d-[0-3]\d\z/)
         return
-      when :dataset_id
+        when :dataset_id
         add_error(path, "must be a dataset id", context:) unless context.dataset_ids.include?(value)
         return
-      when :sql
+        when :sql
         return validate_sql(value, path, context:)
-      when :Dataset
+        when :Dataset
         return validate_dataset(value, path, context:)
-      else
+        else
         return validate_custom_type(type, value, path, context:)
       end
     end
