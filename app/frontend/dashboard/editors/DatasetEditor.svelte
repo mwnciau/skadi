@@ -151,7 +151,9 @@ const isFilterValid = (filter: SchemaDatasetFilter) => {
     return !("value" in filter);
   }
 
-  switch (fieldSchema.type) {
+  const fieldType = fieldSchema.type ?? "string";
+
+  switch (fieldType) {
     case "one_of":
       return fieldSchema.options?.some((option) => {
         if (typeof option === "string") {
@@ -163,7 +165,7 @@ const isFilterValid = (filter: SchemaDatasetFilter) => {
     case "date":
       return typeof filter.value === "string" && filter.value.match(/^\d{4}-[01]\d-[0-3]\d$/);
     default:
-      return typeof filter.value === fieldSchema.type;
+      return typeof filter.value === fieldType;
   }
 }
 
