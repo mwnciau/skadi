@@ -233,20 +233,20 @@ module Skadi::Integration
       end
 
       test "dataset multiple split_by" do
-        create :view, controller: "controller 1", action: "action 1"
-        create :view, controller: "controller 1", action: "action 2"
-        create :view, controller: "controller 2", action: "action 1"
-        create :view, controller: "controller 2", action: "action 2"
+        create :view, controller: "controller 1", verb: "verb 1"
+        create :view, controller: "controller 1", verb: "verb 2"
+        create :view, controller: "controller 2", verb: "verb 1"
+        create :view, controller: "controller 2", verb: "verb 2"
 
-        dataset = build_dataset(type: "views", split_by: %w[controller action])
+        dataset = build_dataset(type: "views", split_by: %w[controller verb])
         chart = build_chart(dataset: dataset)
 
         results = results_for_chart(chart)
         assert_equal 4, results.length
-        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 1|~|action 1", "count" => 1 }, results[0])
-        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 1|~|action 2", "count" => 1 }, results[1])
-        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|action 1", "count" => 1 }, results[2])
-        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|action 2", "count" => 1 }, results[3])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 1|~|verb 1", "count" => 1 }, results[0])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 1|~|verb 2", "count" => 1 }, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|verb 1", "count" => 1 }, results[2])
+        assert_equal({ "id" => "dataset-1", "date" => nil, "split" => "controller 2|~|verb 2", "count" => 1 }, results[3])
       end
 
       test "dataset boolean filter" do
@@ -470,8 +470,8 @@ module Skadi::Integration
         create :view, controller: "one", action: "one"
         create :view, controller: "one", action: "two"
 
-        # `controller_action` is not marked as filterable so it should be ignored
-        dataset = build_dataset(type: "views", filters: [ { field: "controller_action", operator: "=", value: "one::two" } ])
+        # `controller_and_action` is not marked as filterable so it should be ignored
+        dataset = build_dataset(type: "views", filters: [ { field: "controller_and_action", operator: "=", value: "one::two" } ])
         chart = build_chart(id: "chart", dataset: dataset)
         build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
@@ -492,7 +492,7 @@ module Skadi::Integration
         assert_response :ok
         raw = JSON.parse(response.body)
 
-        assert_equal 1, raw
+        assert_equal 1, raw["data"].length
       end
 
       def results_for_chart(chart)

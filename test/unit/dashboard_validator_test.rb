@@ -52,7 +52,7 @@ module Skadi::Unit
         visible: false,
         axis: "right",
 
-        split_by: %w[controller action],
+        split_by: %w[controller_and_action],
 
         filters: [
           { field: "date", operator: ">=", value: "2020-01-01" },
@@ -355,11 +355,11 @@ module Skadi::Unit
     end
 
     test "validates only fields marked with filter: true can be filtered" do
-      assert_dataset_error("filters[0].field must be one of ", type: "views", filters: [ { field: "controller_action" } ])
+      assert_dataset_error("filters[0].field must be one of ", type: "views", filters: [ { field: "controller_and_action" } ])
     end
 
     test "validates only fields marked with split: true can be split" do
-      assert_dataset_error('split_by[0] "action" must be one of ', type: "views", split_by: ["action"])
+      assert_dataset_error('split_by[0] "action" must be one of ', type: "views", split_by: [ "action" ])
     end
 
     ##############################
