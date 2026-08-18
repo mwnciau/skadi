@@ -1,7 +1,7 @@
 To do:
 
 * FE validation of required fields in dashboard
-* More chart types: pie, table
+* More chart types
 * Funnel dataset
 * Join datasets?
 * Browser tests

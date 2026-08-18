@@ -408,7 +408,7 @@ const duplicate = () => {
           <span>{fieldLabel}:</span>
           <label class="h-full {isFilterUnary(filter) ? "col-span-2 w-max" : ""}">
             <span class="sr-only">operator</span>
-            <select onchange={(e) => setFilterOperator(index, e)}>
+            <select onchange={(e) => setFilterOperator(index, e)} value={filter.operator}>
               {#each OPERATORS[fieldConfig.type ?? "string"] as operator}
                 <option>{operator}</option>
               {/each}
