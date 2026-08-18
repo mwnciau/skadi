@@ -74,8 +74,16 @@ const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}
   if (newType === "table") {
     localChartConfig.type = "table";
 
-    // Delete all but the first dataset
-    localChartConfig.datasets.splice(1);
+    // Remove percentage datasets because they don't work with the table type
+    localChartConfig.datasets = localChartConfig.datasets.filter((dataset) => dataset.type !== "percentage");
+
+    // Ensure that at least one dataset still exists
+    if (localChartConfig.datasets.length === 0) {
+      addDataset();
+    } else {
+      // Delete all but the first dataset
+      localChartConfig.datasets.splice(1);
+    }
 
     // These fields are meaningless for the table type so we delete them
     ["visible", "axis", "split_by"].forEach((key) => {

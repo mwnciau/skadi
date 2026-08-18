@@ -66,7 +66,7 @@ const datasetIdOptions = $derived.by(() => {
 
 const types = $derived([
   ...Object.keys(databaseSchema),
-  "percentage",
+  ...(chartConfig.type === "table" ? [] : ["percentage"]),
   "sql",
 ]);
 const datasetSchema = $derived(databaseSchema[dataset.type])
@@ -92,7 +92,7 @@ let confirmDelete: boolean = $state(false);
 
 const setType = (event: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
   const newType = event.currentTarget.value as typeof dataset.type;
-  if (newType === dataset.type) {
+  if (newType === dataset.type || (chartConfig.type === "table" && dataset.type === "percentage")) {
     return;
   }
 
@@ -474,7 +474,7 @@ const duplicate = () => {
   {/if}
 
   <div class="flex flex-row gap-2 mt-4">
-    {#if dataset.type !== "sql" || canDangerouslyUseSql}
+    {#if (dataset.type !== "sql" || canDangerouslyUseSql) && chartConfig.type !== "table"}
       <!-- While technically allowed by the validation, there's no point in duplicating the dataset because it cannot be changed -->
       <button type="button" class="sm" onclick={duplicate}>Duplicate</button>
     {/if}
