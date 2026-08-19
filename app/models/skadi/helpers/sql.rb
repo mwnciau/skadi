@@ -47,7 +47,7 @@ module Skadi
             when "monthly"
               month_of_date(model, date_field)
             else
-            raise ::Skadi::Dashboard::DatasetConfigurationError.new("The time_series #{time_series} is invalid")
+              raise ::Skadi::Dashboard::DatasetConfigurationError.new("The time_series #{time_series} is invalid")
           end
         end
 
@@ -64,7 +64,7 @@ module Skadi
             when "SQLite"
               "DATE(#{date_field}, '-' || ((CAST(STRFTIME('%w', #{date_field}) AS INTEGER) + 6) % 7) || ' days')"
             else
-            raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+              raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
           end
         end
 
@@ -77,7 +77,7 @@ module Skadi
             when "SQLite"
               "DATE(#{date_field}, 'start of month')"
             else
-            raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
+              raise ::Skadi::Dashboard::UnsupportedDatabaseError.new("The database adapter #{model.connection.adapter_name} is not supported")
           end
         end
       end
