@@ -214,9 +214,6 @@ const setFilterOperator = (index: number, event: Event & {currentTarget: EventTa
   const newOperator = event.currentTarget.value as DatasetFilterOperator;
   const filter = dataset.filters[index] as SchemaDatasetFilter;
   const fieldSchema = datasetFields[filter.field];
-  if (!fieldSchema) {
-    return;
-  }
 
   const wasUnary = isFilterUnary(filter);
   filter.operator = newOperator;
@@ -224,7 +221,7 @@ const setFilterOperator = (index: number, event: Event & {currentTarget: EventTa
   if (isFilterUnary(filter)) {
     delete (filter as Record<string,unknown>).value;
   } else if (wasUnary || filter.value === undefined) {
-    filter.value = defaultFilterValueForField(fieldSchema);
+    filter.value = fieldSchema ? defaultFilterValueForField(fieldSchema) : "";
   }
 }
 
