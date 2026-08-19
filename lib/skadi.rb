@@ -12,10 +12,9 @@ require_relative "skadi/cookie_manager"
 require_relative "skadi/engine"
 require_relative "skadi/url"
 require_relative "skadi/user_agent"
+require_relative "skadi/version"
 
 module Skadi
-  VERSION = "0.3.0"
-
   # @return [Skadi::Configuration] The Skadi configuration
   mattr_accessor :configuration, default: Configuration.new
 
