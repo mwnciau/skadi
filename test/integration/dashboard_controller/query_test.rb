@@ -485,18 +485,53 @@ module Skadi::Integration
         # `action` is not marked as splittable so it should be ignored
         dataset = build_dataset(type: "views", split_by: [ "action" ])
         chart = build_chart(id: "chart", dataset: dataset)
-        build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
-        post skadi.dashboard_data_path, params: { chart_id: "chart" }, as: :json
+        results = results_for_chart(chart, validate: false)
 
-        assert_response :ok
-        raw = JSON.parse(response.body)
-
-        assert_equal 1, raw["data"].length
+        assert_equal 1, results.length
       end
 
-      def results_for_chart(chart)
-        post skadi.dashboard_data_path, params: { configuration: chart }, as: :json
+      test "belongs to association" do
+        create :view, visit: create(:visit, utm_source: "source")
+        create :view, visit: create(:visit, utm_source: "other")
+        create :view, visit: nil
+
+        dataset = build_dataset(type: "views", belongs_to: {visits: {filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
+        chart = build_chart(id: "chart", dataset: dataset)
+        assert_results(1, configuration: chart)
+
+        dataset["belongs_to"]["visits"] = {split_by: [ "utm_source" ] }
+        results = results_for_chart(chart)
+        assert_equal 3, results.length
+        assert_equal ["source", "other", nil], results.pluck("split")
+
+        dataset["belongs_to"]["visits"] = { required: true }
+        assert_results(2, configuration: chart)
+      end
+
+      test "invalid belongs to association is ignored" do
+        create :view, visit: create(:visit, utm_source: "source")
+        create :view, visit: create(:visit, utm_source: "other")
+        create :view, visit: nil
+
+        dataset = build_dataset(type: "views", belongs_to: {invalid_table: {filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
+        chart = build_chart(id: "chart", dataset: dataset)
+
+        results = results_for_chart(chart, validate: false)
+
+        assert_equal 1, results.length
+        assert_equal 3, results[0]["count"]
+      end
+
+      def results_for_chart(chart, validate: true)
+        if validate
+          post skadi.dashboard_data_path, params: { configuration: chart }, as: :json
+        else
+          Skadi::Dashboard.delete_all
+          build_dashboard(tab: build_tab(chart:)).save!(validate: false)
+
+          post skadi.dashboard_data_path, params: { chart_id: chart["id"] }, as: :json
+        end
 
         assert_response :ok
         raw = JSON.parse(response.body)

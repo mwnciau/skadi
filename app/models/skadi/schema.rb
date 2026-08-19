@@ -48,6 +48,7 @@ module Skadi
           views: {
             model: Skadi::View,
             visit_key: "visit_id",
+            belongs_to: [:visits],
             fields: {
               date: {
                 type: :date,
@@ -81,6 +82,7 @@ module Skadi
           events: {
             model: Skadi::Event,
             visit_key: "visit_id",
+            belongs_to: [:visits, :views],
             fields: {
               date: {
                 type: :date,

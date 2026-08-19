@@ -362,6 +362,11 @@ module Skadi::Unit
       assert_dataset_error('split_by[0] "action" must be one of ', type: "views", split_by: [ "action" ])
     end
 
+
+    test "validates only specified belongs_to are accepted" do
+      assert_dataset_error('belongs_to.visits must be one of ', type: "views", belongs_to: {demographics: {required: true}})
+    end
+
     ##############################
     #   SQL dataset validation   #
     ##############################
