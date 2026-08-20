@@ -491,19 +491,39 @@ module Skadi::Integration
         assert_equal 1, results.length
       end
 
+      TABLE_COLUMNS = {
+        "visits" => %w[date verified tracked cookies_enabled landing_page referrer_domain utm_source utm_medium utm_term utm_content utm_campaign],
+        "views" => %w[date verified controller action controller_and_action path verb version exit_page],
+        "events" => %w[date name],
+        "demographics" => %w[date uri name value count],
+      }
+
+      test "table charts select every field" do
+        create :view, visit: create(:visit)
+        create :event
+        create :demographic
+
+        TABLE_COLUMNS.each do |type, columns|
+          results = results_for_chart(build_chart(type: "table", dataset: build_dataset(type: type)))
+
+          assert_equal 1, results.length, "Expected one row for the #{type} table chart"
+          assert_equal columns, results[0].keys, "Unexpected columns for the #{type} table chart"
+        end
+      end
+
       test "belongs to association" do
         create :view, visit: create(:visit, utm_source: "source")
         create :view, visit: create(:visit, utm_source: "other")
         create :view, visit: nil
 
-        dataset = build_dataset(type: "views", belongs_to: {visits: {filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
+        dataset = build_dataset(type: "views", belongs_to: { visits: { filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
         chart = build_chart(id: "chart", dataset: dataset)
         assert_results(1, configuration: chart)
 
-        dataset["belongs_to"]["visits"] = {split_by: [ "utm_source" ] }
+        dataset["belongs_to"]["visits"] = { split_by: [ "utm_source" ] }
         results = results_for_chart(chart)
         assert_equal 3, results.length
-        assert_equal ["source", "other", nil], results.pluck("split")
+        assert_equal [ "source", "other", nil ], results.pluck("split")
 
         dataset["belongs_to"]["visits"] = { required: true }
         assert_results(2, configuration: chart)
@@ -514,7 +534,7 @@ module Skadi::Integration
         create :view, visit: create(:visit, utm_source: "other")
         create :view, visit: nil
 
-        dataset = build_dataset(type: "views", belongs_to: {invalid_table: {filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
+        dataset = build_dataset(type: "views", belongs_to: { invalid_table: { filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
         chart = build_chart(id: "chart", dataset: dataset)
 
         results = results_for_chart(chart, validate: false)

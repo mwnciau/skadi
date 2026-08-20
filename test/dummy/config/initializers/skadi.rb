@@ -9,7 +9,7 @@ Skadi.configure do |config|
   config.use_anonymity_sets = true
 
   config.dashboard_custom_event_fields = {
-    stars: { type: :number, filter: true, split: true, sql: "properties->>'starts'" },
+    stars: { type: :number, select: true, filter: true, split: true, sql: "properties->>'starts'" },
   }
 
   config.dashboard_custom_schema = {
@@ -17,6 +17,7 @@ Skadi.configure do |config|
       model: "DummyUser",
       fields: {
         username: {
+          select: true,
           split: true,
           filter: true,
         },

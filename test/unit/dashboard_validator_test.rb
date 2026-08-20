@@ -364,7 +364,7 @@ module Skadi::Unit
 
 
     test "validates only specified belongs_to are accepted" do
-      assert_dataset_error('belongs_to.visits must be one of ', type: "views", belongs_to: {demographics: {required: true}})
+      assert_dataset_error("belongs_to.visits must be one of ", type: "views", belongs_to: { demographics: { required: true } })
     end
 
     ##############################

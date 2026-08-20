@@ -2,8 +2,8 @@ module Skadi
   class Schema
     class << self
       # Extract out the most common field config into a const
-      FILTER_AND_SPLIT = { filter: true, split: true }
-      private_constant :FILTER_AND_SPLIT
+      SELECT_FILTER_AND_SPLIT = { select: true, filter: true, split: true }
+      private_constant :SELECT_FILTER_AND_SPLIT
 
       # A hash where the key represents a dataset name and the value is its configuration
       def database_schema
@@ -14,6 +14,7 @@ module Skadi
           # model: The model for this dataset
           # visit_key: used for chart-level visit filters
           # count_sql: The SQL expression used to count this field. Defaults to COUNT().
+          # belongs_to: A hash describing belongs_to relationships, e.g. {visits: {key: :visit_id}}
           # fields: A hash where the key represents a field and the value is its configuration
           visits: {
             model: Skadi::Visit,
@@ -23,6 +24,7 @@ module Skadi
               # A hash with the following keys:
               # label: The label to show in the front end
               # type: The datatype, one of :one_of, :date, :string, :number, :boolean. Defaults to :string.
+              # select: True if this field can be selected by the table chart
               # filter: True if this field can be filtered
               # split: True if this field can be split
               # sql: The SQL expression used to get this value for derived fields
@@ -30,66 +32,85 @@ module Skadi
               # description: used in the front end as help text for this field
               date: {
                 type: :date,
+                select: true,
                 filter: true,
                 sql: "skadi_visits.created_at",
               },
-              landing_page: FILTER_AND_SPLIT,
+              verified: {
+                **SELECT_FILTER_AND_SPLIT,
+                type: :boolean,
+              },
+              tracked: {
+                **SELECT_FILTER_AND_SPLIT,
+                type: :boolean,
+                sql: "(skadi_visits.tracking_token IS NOT NULL)",
+                description: "Whether the visit is tracked across multiple views and events using a cookie or anonymity set.",
+              },
+              cookies_enabled: {
+                **SELECT_FILTER_AND_SPLIT,
+                type: :boolean,
+                description: "Whether this visit is tracked across multiple days using cookies.",
+              },
+              landing_page: SELECT_FILTER_AND_SPLIT,
               referrer_domain: {
-                **FILTER_AND_SPLIT,
+                **SELECT_FILTER_AND_SPLIT,
                 sql: Helpers::Sql.string_before_separator(Skadi::Visit, "referrer", "/"),
               },
-              utm_source: FILTER_AND_SPLIT,
-              utm_medium: FILTER_AND_SPLIT,
-              utm_term: FILTER_AND_SPLIT,
-              utm_content: FILTER_AND_SPLIT,
-              utm_campaign: FILTER_AND_SPLIT,
+              utm_source: SELECT_FILTER_AND_SPLIT,
+              utm_medium: SELECT_FILTER_AND_SPLIT,
+              utm_term: SELECT_FILTER_AND_SPLIT,
+              utm_content: SELECT_FILTER_AND_SPLIT,
+              utm_campaign: SELECT_FILTER_AND_SPLIT,
             },
           },
           views: {
             model: Skadi::View,
             visit_key: "visit_id",
-            belongs_to: [:visits],
+            belongs_to: { visits: { key: :visit_id } },
             fields: {
               date: {
                 type: :date,
+                select: true,
                 filter: true,
                 sql: "skadi_views.created_at",
               },
               verified: {
+                **SELECT_FILTER_AND_SPLIT,
                 type: :boolean,
-                filter: true,
               },
-              controller: FILTER_AND_SPLIT,
+              controller: SELECT_FILTER_AND_SPLIT,
               action: {
+                select: true,
                 filter: true,
               },
               controller_and_action: {
+                select: true,
                 split: true,
                 sql: "CONCAT(skadi_views.controller, '::', skadi_views.action)",
               },
-              path: FILTER_AND_SPLIT,
+              path: SELECT_FILTER_AND_SPLIT,
               verb: {
+                **SELECT_FILTER_AND_SPLIT,
                 type: :one_of,
-                filter: true,
-                split: true,
                 description: "Typically, GET requests are page views, and POST, PUT, PATCH and DELETE are form submissions.",
                 options: %w[GET POST PUT PATCH DELETE],
               },
-              version: FILTER_AND_SPLIT,
-              exit_page: FILTER_AND_SPLIT,
+              version: SELECT_FILTER_AND_SPLIT,
+              exit_page: SELECT_FILTER_AND_SPLIT,
             },
           },
           events: {
             model: Skadi::Event,
             visit_key: "visit_id",
-            belongs_to: [:visits, :views],
+            belongs_to: { visits: { key: :visit_id }, views: { key: :view_id } },
             fields: {
               date: {
                 type: :date,
+                select: true,
                 filter: true,
                 sql: "skadi_events.created_at",
               },
-              name: FILTER_AND_SPLIT,
+              name: SELECT_FILTER_AND_SPLIT,
               **(Skadi.configuration.dashboard_custom_event_fields || {}),
             },
           },
@@ -99,14 +120,15 @@ module Skadi
             fields: {
               date: {
                 type: :date,
+                select: true,
                 filter: true,
                 sql: "skadi_demographics.recorded_on",
               },
-              uri: FILTER_AND_SPLIT,
-              name: FILTER_AND_SPLIT,
-              value: FILTER_AND_SPLIT,
+              uri: SELECT_FILTER_AND_SPLIT,
+              name: SELECT_FILTER_AND_SPLIT,
+              value: SELECT_FILTER_AND_SPLIT,
               count: {
-                **FILTER_AND_SPLIT,
+                **SELECT_FILTER_AND_SPLIT,
                 type: :number,
               },
             },

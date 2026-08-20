@@ -148,6 +148,7 @@ module Skadi
     #   {
     #     label: The label to show in the front end,
     #     type: The datatype, one of :date, :string, :number, :boolean. Defaults to :string if omitted.
+    #     select: `true` if this field can be selected by the table chart
     #     filter: `true` if this field can be filtered
     #     split: `true` if this field can be split
     #     sql: The SQL expression used to get this value for derived fields
@@ -164,7 +165,7 @@ module Skadi
       next false unless it.is_a?(Hash)
 
       next it.all? do |_key, item|
-        item.is_a?(Hash) && (item.keys.map(&:to_s) - %w[label type filter split sql option description]).empty?
+        item.is_a?(Hash) && (item.keys.map(&:to_s) - %w[label type select filter split sql options description]).empty?
       end
     end
 
