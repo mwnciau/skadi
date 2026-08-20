@@ -54,6 +54,8 @@ module Skadi::Unit
 
         split_by: %w[controller_and_action],
 
+        belongs_to: {visits: {required: true}},
+
         filters: [
           { field: "date", operator: ">=", value: "2020-01-01" },
           { field: "date", operator: "<=", value: "2020-12-31" },
@@ -79,6 +81,9 @@ module Skadi::Unit
         type: "events",
         visible: false,
         axis: "right",
+
+        belongs_to: {views: {filters: [{field: "version", operator: "empty"}], split_by: [:path]}},
+
         filters: [
           { field: "date", operator: ">=", value: "2020-01-01" },
           { field: "date", operator: "<=", value: "2020-12-31" },
@@ -363,8 +368,31 @@ module Skadi::Unit
     end
 
 
+    ##############################
+    #     Schema belongs_to      #
+    ##############################
+
     test "validates only specified belongs_to are accepted" do
-      assert_dataset_error("belongs_to.visits must be one of ", type: "views", belongs_to: { demographics: { required: true } })
+      assert_dataset_error("belongs_to.demographics is not a valid key", type: "views", belongs_to: { demographics: { required: true } })
+      assert_dataset_error("belongs_to.unknown is not a valid key", type: "views", belongs_to: { unknown: { required: true } })
+    end
+
+    test "validates belongs_to on table with no belongs_to" do
+      assert_dataset_error("belongs_to is not a valid key", type: "demographics", belongs_to: {})
+    end
+
+    test "validates belongs_to filters" do
+      assert_dataset_error("belongs_to.visits.filters[0].field must be one of", type: "views", belongs_to: { visits: { filters: [ { field: "invalid", operator: "empty" } ] } })
+      assert_dataset_error("belongs_to.visits.filters[0].value must be a boolean", type: "views", belongs_to: { visits: { filters: [ { field: "verified", operator: "=", value: "invalid" } ] } })
+    end
+
+    test "validates belongs_to split_by" do
+      assert_dataset_error('belongs_to.visits.split_by[0] "invalid" must be one of ', type: "views", belongs_to: { visits: { split_by: [ :invalid ] } })
+      assert_dataset_error('belongs_to.visits.split_by[0] "date" must be one of ', type: "views", belongs_to: { visits: { split_by: [ :date ] } })
+    end
+
+    test "validates belongs_to required" do
+      assert_dataset_error("belongs_to.visits.required must be a boolean", type: "views", belongs_to: { visits: { required: :invalid } })
     end
 
     ##############################

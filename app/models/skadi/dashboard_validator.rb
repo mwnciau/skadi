@@ -89,9 +89,30 @@ module Skadi
         end
 
         dataset_type[:split_by] = ArrayOf.new(OneOf.new(split_by_fields, false)) if split_by_fields.any?
-        dataset_type[:filters] = ArrayOf.new(Filter.new(filters))
+        dataset_type[:filters] = ArrayOf.new(Filter.new(filters)) if filters.any?
 
         @types[:"#{dataset_name}Dataset"] = dataset_type
+      end
+
+      # Second pass to add the validations for belongs_to fields
+      Schema.database_schema.each do |dataset_name, schema|
+        next unless schema[:belongs_to].is_a?(Hash) && schema[:belongs_to].any?
+
+        dataset_type = @types[:"#{dataset_name}Dataset"]
+
+        dataset_type[:belongs_to?] = {}
+        schema[:belongs_to].keys.each do |association|
+          target_table = @types[:"#{association}Dataset"]
+
+          # Double check that this association is actually in the schema
+          next unless target_table.is_a?(Hash)
+
+          association_type = {required: :boolean?}
+          association_type[:split_by] = target_table[:split_by] if target_table[:split_by]
+          association_type[:filters] = target_table[:filters] if target_table[:filters]
+
+          dataset_type[:belongs_to?][:"#{association}?"] = association_type
+        end
       end
 
       return @types
@@ -163,13 +184,21 @@ module Skadi
     private def validate_hash(type, value, path, context:)
       return add_error(path, "must be a hash", context:) unless value.is_a?(Hash)
 
-      extra_keys = value.keys.map(&:to_sym) - type.keys
+      valid_keys = type.keys.map do |key|
+        key.to_s.delete_suffix(??)
+      end
+
+      extra_keys = value.keys.map(&:to_s) - valid_keys
       extra_keys.each do |key|
         add_error("#{path}.#{key}", "is not a valid key", context:)
       end
 
       type.each do |item_key, item_type|
-        validate_type(item_type, value[item_key.to_s], "#{path}.#{item_key}", context:)
+        optional = item_key.end_with?(??)
+        key = item_key.to_s.delete_suffix(??)
+
+        next if optional && value[key].nil?
+        validate_type(item_type, value[key], "#{path}.#{key}", context:)
       end
     end
 
