@@ -1,6 +1,18 @@
-## 0.4.0 [2026-08-07
+## 0.4.0.beta.1 [2026-08-19]
 - Add the dashboard
-- 
+- Breaking: single consent and opt-out changed to more granular consent
+- Breaking: user_method configuration option changed to user_controller_method
+- DB: skadi_views.referrer removed
+- DB: skadi_visits.cookies_enabled added to track cookie consent for visits
+- DB: added additional indexes
+- DB: added skadi_dashboards table
+- Tracking script: fix requests not being queued
+- Tracking script: fix FCP not being recorded in Chrome
+- Tracking script: LCP now sent on page_hide instead of after a delay
+- Refactor asset controller to use ActionController::Metal
+- Fix skadi_tag crashing without a view
+- Development: migrated from standard to rubocop-rails-omakase plus customisations
+- Development: added biome and svelte-check to the front end
 
 ## 0.3.0 [2026-06-24]
 - Add user agent parser for browser, engine and operating system detection
