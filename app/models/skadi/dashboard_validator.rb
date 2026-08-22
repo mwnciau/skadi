@@ -107,7 +107,7 @@ module Skadi
           # Double check that this association is actually in the schema
           next unless target_table.is_a?(Hash)
 
-          association_type = {required: :boolean?}
+          association_type = { required: :boolean? }
           association_type[:split_by] = target_table[:split_by] if target_table[:split_by]
           association_type[:filters] = target_table[:filters] if target_table[:filters]
 

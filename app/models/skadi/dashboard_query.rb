@@ -110,6 +110,7 @@ module Skadi
       private def build_query_from_schema(dataset, chart, schema, untrusted_param_filters)
         query = schema[:model].all
 
+        query = apply_dataset_associations(dataset, chart, schema, query)
         query = apply_schema_filters(dataset, schema, query)
         query = apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
 
@@ -120,6 +121,46 @@ module Skadi
         end
 
         return query.to_sql
+      end
+
+      private def dataset_each_belongs_to(dataset, schema)
+        return unless dataset["belongs_to"].is_a?(Hash)
+
+        dataset["belongs_to"].each do |belongs_to_table, belongs_to_config|
+          next unless belongs_to_config.is_a?(Hash)
+
+          # Ensure the schema for the current dataset allows joining to the given table
+          belongs_to_table = belongs_to_table.to_sym
+          next unless schema[:belongs_to]&.key?(belongs_to_table)
+
+          # Ensure the schema for the joined table exists
+          belongs_to_schema = Schema.database_schema[belongs_to_table]
+          next unless belongs_to_schema
+
+          yield(belongs_to_table, belongs_to_config, belongs_to_schema)
+        end
+      end
+
+      private def apply_dataset_associations(dataset, chart, schema, query)
+        visits_joined = false
+
+        dataset_each_belongs_to(dataset, schema) do |belongs_to_table, belongs_to_config, belongs_to_schema|
+          join_type = belongs_to_config["required"] ? "INNER JOIN" : "LEFT JOIN"
+          model = belongs_to_schema[:model]
+
+          query = query.joins(%(#{join_type} #{model.table_name} ON #{model.table_name}.id = #{schema[:model].table_name}.#{schema[:belongs_to][belongs_to_table][:key]}))
+
+          visits_joined = true if belongs_to_table == :visits
+        end
+
+        # Join the visits if we need to
+        if !visits_joined && schema[:model] != Skadi::Visit && schema[:visit_key]
+          if chart["verified_visits"] == true || chart["visit_tracking"] || chart["unique_by"] == "visitor"
+              query = query.joins(%(INNER JOIN skadi_visits ON skadi_visits.id = #{schema[:model].table_name}.#{schema[:visit_key]}))
+          end
+        end
+
+        return query
       end
 
       POSITIVE_OPERATORS = [ "=", ">", ">=", "<=", "<", "like" ].freeze
@@ -186,6 +227,11 @@ module Skadi
           end
         end
 
+        dataset_each_belongs_to(dataset, schema) do |_table, belongs_to_config, belongs_to_schema|
+          # Ensure nested belongs_to filters, which aren't supported, don't get applied
+          query = apply_schema_filters(belongs_to_config.except("belongs_to"), belongs_to_schema, query)
+        end
+
         return query
       end
 
@@ -203,13 +249,6 @@ module Skadi
         end
 
         if schema[:visit_key]
-          # Join the visits if we need to
-          if chart["verified_visits"] == true || chart["visit_tracking"] || chart["unique_by"] == "visitor"
-            if schema[:model] != Skadi::Visit
-              query = query.joins(%(INNER JOIN skadi_visits ON skadi_visits.id = #{schema[:model].table_name}.#{schema[:visit_key]}))
-            end
-          end
-
           if chart["verified_visits"] == true
             query = query.where("skadi_visits.verified = TRUE")
           end
@@ -287,13 +326,18 @@ module Skadi
 
         if dataset["split_by"].is_a?(Array)
           dataset["split_by"].each do |field|
-            field_config = schema[:fields][field.to_sym]
+            field_config = schema[:fields][field.to_s.to_sym]
             if field_config && field_config[:split]
               safe_field = schema[:model].connection.quote_column_name(field)
 
               safe_split << (field_config[:sql] || %(#{schema[:model].table_name}.#{safe_field}))
             end
           end
+        end
+
+        # Now do the same thing for each belongs_to dataset
+        dataset_each_belongs_to(dataset, schema) do |_table, belongs_to_config, belongs_to_schema|
+          safe_split.append(*safe_split_columns(belongs_to_config.except("belongs_to"), belongs_to_schema))
         end
 
         return safe_split

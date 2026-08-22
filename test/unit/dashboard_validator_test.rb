@@ -54,7 +54,7 @@ module Skadi::Unit
 
         split_by: %w[controller_and_action],
 
-        belongs_to: {visits: {required: true}},
+        belongs_to: { visits: { required: true } },
 
         filters: [
           { field: "date", operator: ">=", value: "2020-01-01" },
@@ -82,7 +82,7 @@ module Skadi::Unit
         visible: false,
         axis: "right",
 
-        belongs_to: {views: {filters: [{field: "version", operator: "empty"}], split_by: [:path]}},
+        belongs_to: { views: { filters: [ { field: "version", operator: "empty" } ], split_by: [ :path ] } },
 
         filters: [
           { field: "date", operator: ">=", value: "2020-01-01" },

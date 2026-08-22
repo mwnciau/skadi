@@ -520,25 +520,56 @@ module Skadi::Integration
         chart = build_chart(id: "chart", dataset: dataset)
         assert_results(1, configuration: chart)
 
-        dataset["belongs_to"]["visits"] = { split_by: [ "utm_source" ] }
+        dataset[:belongs_to][:visits] = { split_by: [ "utm_source" ] }
         results = results_for_chart(chart)
         assert_equal 3, results.length
-        assert_equal [ "source", "other", nil ], results.pluck("split")
+        assert_equal [ nil, "other", "source" ], results.pluck("split")
 
-        dataset["belongs_to"]["visits"] = { required: true }
+        # This should test that a left join is made
+        dataset[:belongs_to][:visits] = { filters: [ { field: "utm_source", operator: "!=", value: "invalid" } ] }
+        assert_results(3, configuration: chart)
+
+        dataset[:belongs_to][:visits] = { filters: [ { field: "utm_source", operator: "not empty" } ] }
+        assert_results(2, configuration: chart)
+
+        dataset[:belongs_to][:visits] = { filters: [ { field: "utm_source", operator: "empty" } ] }
+        assert_results(1, configuration: chart)
+
+        # These should test that an inner join is made
+        dataset[:belongs_to][:visits] = { required: true, filters: [ { field: "utm_source", operator: "!=", value: "invalid" } ] }
+        assert_results(2, configuration: chart)
+
+        dataset[:belongs_to][:visits] = { required: true }
         assert_results(2, configuration: chart)
       end
 
       test "invalid belongs to association is ignored" do
-        create :view, visit: create(:visit, utm_source: "source")
-        create :view, visit: create(:visit, utm_source: "other")
-        create :view, visit: nil
+        create :event, visit: create(:visit, utm_source: "source")
+        create :event, visit: create(:visit, utm_source: "other")
+        create :event, visit: nil
 
-        dataset = build_dataset(type: "views", belongs_to: { invalid_table: { filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
+        dataset = build_dataset(type: "events", belongs_to: { invalid_table: { filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
         chart = build_chart(id: "chart", dataset: dataset)
 
         results = results_for_chart(chart, validate: false)
+        assert_equal 1, results.length
+        assert_equal 3, results[0]["count"]
 
+        # A table in the schema, but not listed as a valid belongs_to table
+        dataset[:belongs_to] = { demographics: { required: true } }
+        results = results_for_chart(chart, validate: false)
+        assert_equal 1, results.length
+        assert_equal 3, results[0]["count"]
+
+        # A valid table but with an incorrect type config
+        dataset[:belongs_to] = { visits: :invalid }
+        results = results_for_chart(chart, validate: false)
+        assert_equal 1, results.length
+        assert_equal 3, results[0]["count"]
+
+        # A nested belongs_to is ignored
+        dataset[:belongs_to] = { views: { belongs_to: { visits: { required: true, filters: [ { field: "utm_source", operator: "empty" } ], split_by: [ "utm_content" ] } } } }
+        results = results_for_chart(chart, validate: false)
         assert_equal 1, results.length
         assert_equal 3, results[0]["count"]
       end
