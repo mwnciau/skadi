@@ -351,11 +351,31 @@ module Skadi::Unit
     end
 
     test "validates only fields marked with filter: true can be filtered" do
-      assert_dataset_error("filters[0].field must be one of ", type: "views", filters: [ { field: "controller_and_action" } ])
+      assert_dataset_valid(type: "views", filters: [ { field: "controller", operator: "empty" } ])
+
+      assert_dataset_error("filters must be an array", type: "views", filters: "invalid")
+      assert_dataset_error("filters[0] must be a Hash", type: "views", filters: [ "invalid" ])
+      assert_dataset_error("filters[0].field must be one of ", type: "views", filters: [ { field: "controller_and_action", operator: "empty" } ])
     end
 
     test "validates only fields marked with split: true can be split" do
+      assert_dataset_valid(type: "views", split_by: [ "controller" ])
+
+      assert_dataset_error("split_by must be an array", type: "views", split_by: "invalid")
       assert_dataset_error('split_by[0] "action" must be one of ', type: "views", split_by: [ "action" ])
+    end
+
+    test "validates only fields marked with select: true can be selected" do
+      assert_dataset_valid(type: "views", selects: [ "id" ])
+
+      assert_dataset_error("selects must be an array", type: "views", selects: "invalid")
+      assert_dataset_error('selects[0] "invalid" must be one of', type: "views", selects: [ "invalid" ])
+    end
+
+    test "validates selects has included the right tables" do
+      assert_dataset_valid(type: "views", belongs_to: { visits: {} }, selects: [ "visits.utm_source" ])
+
+      assert_dataset_error('selects[0] "visits.utm_source" requires a join with the visits table', type: "views", selects: [ "visits.utm_source" ])
     end
 
     ##############################

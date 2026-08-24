@@ -32,6 +32,9 @@ module Skadi
               # sql: The SQL expression used to get this value for derived fields
               # options: A list of possible values
               # description: used in the front end as help text for this field
+              id: {
+                select: true,
+              },
               date: {
                 type: :date,
                 select: true,
@@ -69,6 +72,9 @@ module Skadi
             model: Skadi::View,
             belongs_to: { visits: { key: :visit_id } },
             fields: {
+              id: {
+                select: true,
+              },
               date: {
                 type: :date,
                 select: true,
@@ -85,7 +91,6 @@ module Skadi
                 filter: true,
               },
               controller_and_action: {
-                select: true,
                 split: true,
                 sql: "CONCAT(skadi_views.controller, '::', skadi_views.action)",
               },
@@ -104,6 +109,9 @@ module Skadi
             model: Skadi::Event,
             belongs_to: { visits: { key: :visit_id }, views: { key: :view_id } },
             fields: {
+              id: {
+                select: true,
+              },
               date: {
                 type: :date,
                 select: true,

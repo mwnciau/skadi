@@ -150,9 +150,9 @@ module Skadi::Integration
             { value => {} },
             { visits: { required: value } },
             { visits: { split_by: value } },
-            { visits: { split_by: [value] } },
+            { visits: { split_by: [ value ] } },
             { visits: { filters: value } },
-            { visits: { filters: [value] } },
+            { visits: { filters: [ value ] } },
             { visits: { filters: [ { field: value, operator: "=", value: "" } ] } },
           ].each do |belongs_to|
             dashboard_with_dataset(type: "events", belongs_to: belongs_to)
@@ -180,6 +180,28 @@ module Skadi::Integration
 
           assert_response :ok
           assert_equal '{"data":[]}', response.body
+        end
+      end
+
+      test "dataset selects" do
+        create :visit
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_chart(id: CHART_ID, type: "table", dataset: build_dataset(selects: value))
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[{"error":"No fields selected"}],"resultCount":1,"resultOffset":0}', response.body
+        end
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_chart(id: CHART_ID, type: "table", dataset: build_dataset(selects: [ value ]))
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[{"error":"No fields selected"}],"resultCount":1,"resultOffset":0}', response.body
         end
       end
 

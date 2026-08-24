@@ -115,7 +115,7 @@ module Skadi
         query = apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
 
         query = if chart["type"] == "table"
-          select_table_query(schema, query)
+          select_table_query(dataset, schema, query)
         else
           select_split_and_group_chart_query(dataset, chart, schema, query)
         end
@@ -240,17 +240,41 @@ module Skadi
         return query
       end
 
-      private def select_table_query(schema, query)
-        model = schema[:model]
-        select_fields = schema[:fields].map do |key, field_config|
-          quoted_field = model.connection.quote_column_name(key)
+      private def select_table_query(dataset, schema, query)
+        return query.select("'No fields selected' as error") unless dataset["selects"].nil? || dataset["selects"].is_a?(Array)
+
+        selects = dataset["selects"]&.any? ? dataset["selects"] : nil
+
+        # Fall back to selecting all the fields
+        selects ||= schema[:fields].keys.map(&:to_s)
+
+        select_fields = selects.map do |field|
+          table, field = field.split(".", 2) if field.include?(".")
+          next unless table.nil? || (schema[:belongs_to]&.key?(table.to_sym) && dataset["belongs_to"].is_a?(Hash) && dataset["belongs_to"][table].is_a?(Hash))
+
+          field_schema = table.nil? ? schema : Schema.database_schema[table.to_sym]
+          next unless field_schema
+
+          field_config = field_schema[:fields][field.to_sym]
+
+          next unless field_config && field_config[:select]
+
+          quoted_field = field_schema[:model].connection.quote_column_name(field)
+          quoted_fieldname = if table.nil?
+            quoted_field
+          else
+            field_schema[:model].connection.quote_column_name("#{table}.#{field}")
+          end
 
           if field_config[:sql]
-            "#{field_config[:sql]} AS #{quoted_field}"
+            "#{field_config[:sql]} AS #{quoted_fieldname}"
           else
-            "#{model.table_name}.#{quoted_field}"
+            "#{field_schema[:model].table_name}.#{quoted_field} AS #{quoted_fieldname}"
           end
         end
+
+        select_fields.compact!
+        select_fields = [ "'No fields selected' as error" ] unless select_fields.any?
 
         return query.select(*select_fields)
       end

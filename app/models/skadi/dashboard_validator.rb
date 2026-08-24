@@ -71,10 +71,12 @@ module Skadi
         dataset_type = COMMON_DATASET_FIELDS.dup
         dataset_type[:type] = dataset_name.to_s
 
+        select_fields = []
         split_by_fields = []
         filters = {}
 
         schema[:fields].each do |field, field_config|
+          select_fields << field.to_s if field_config[:select]
           split_by_fields << field.to_s if field_config[:split]
           next unless field_config[:filter]
 
@@ -82,6 +84,12 @@ module Skadi
             filters[field] = OneOf.new(allowed_values: field_config[:options], allow_missing: true)
           else
             filters[field] = field_config[:type] || :string
+          end
+        end
+
+        schema[:belongs_to]&.keys&.each do |belongs_to_table|
+          Schema.database_schema[belongs_to_table][:fields].each do |field, field_config|
+           select_fields << "#{belongs_to_table}.#{field}" if field_config[:select]
           end
         end
 
@@ -98,6 +106,7 @@ module Skadi
           nil,
         ], allow_missing: true)
 
+        dataset_type[:selects] = ArrayOf.new(OneOf.new(select_fields, false)) if select_fields.any?
         dataset_type[:split_by] = ArrayOf.new(OneOf.new(split_by_fields, false)) if split_by_fields.any?
         dataset_type[:filters] = ArrayOf.new(Filter.new(filters)) if filters.any?
 
@@ -265,6 +274,20 @@ module Skadi
       return add_error("#{path}.type", "is not a valid dataset type", context:) unless self.class.types.include?(type_name)
 
       validate_type(self.class.types[type_name], value, path, context:)
+
+      # Perform additional validation of the select fields to ensure the right table is included
+
+      if value["selects"].is_a?(Array)
+        value["selects"].each_with_index do |field, index|
+          next unless field.is_a?(String) && field.include?(".")
+          table, _ = field.split(".", 2)
+
+          # Ensure that the relevant table is joined
+          if !value["belongs_to"]&.key?(table)
+            add_error("#{path}.selects[#{index}]", "#{field.inspect} requires a join with the #{table} table", context:)
+          end
+        end
+      end
 
       # Perform additional validation of the count_by to ensure the right table is included
       # Early return if the count is the default or is not a string

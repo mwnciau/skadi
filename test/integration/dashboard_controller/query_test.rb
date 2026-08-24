@@ -468,13 +468,13 @@ module Skadi::Integration
       end
 
       TABLE_COLUMNS = {
-        "visits" => %w[date verified tracked cookies_enabled landing_page referrer_domain utm_source utm_medium utm_term utm_content utm_campaign],
-        "views" => %w[date verified controller action controller_and_action path verb version exit_page],
-        "events" => %w[date name],
+        "visits" => %w[id date verified tracked cookies_enabled landing_page referrer_domain utm_source utm_medium utm_term utm_content utm_campaign],
+        "views" => %w[id date verified controller action path verb version exit_page],
+        "events" => %w[id date name],
         "demographics" => %w[date uri name value count],
       }
 
-      test "table charts select every field" do
+      test "table empty selects gets every field" do
         create :view, visit: create(:visit)
         create :event
         create :demographic
@@ -483,8 +483,65 @@ module Skadi::Integration
           results = results_for_chart(build_chart(type: "table", dataset: build_dataset(type: type)))
 
           assert_equal 1, results.length, "Expected one row for the #{type} table chart"
-          assert_equal columns, results[0].keys, "Unexpected columns for the #{type} table chart"
+          assert_equal columns, results.first.keys, "Unexpected columns for the #{type} table chart"
         end
+      end
+
+      test "table empty selects does not get unselectable fields" do
+        create :view
+
+        results = results_for_chart(build_chart(type: "table", dataset: build_dataset(type: "views")))
+
+        refute results.first.key?("controller_and_action")
+      end
+
+      test "table selects given fields" do
+        create :view
+
+        dataset = build_dataset(type: "views")
+        chart = build_chart(type: "table", dataset: dataset)
+
+        dataset["selects"] = [ "verified" ]
+        results = results_for_chart(chart)
+        assert_equal [ "verified" ], results.first.keys
+
+        dataset["selects"] = [ "id", "path" ]
+        results = results_for_chart(chart)
+        assert_equal [ "id", "path" ], results.first.keys
+
+        # Order should be preserved
+        dataset["selects"] = [ "path", "id" ]
+        results = results_for_chart(chart)
+        assert_equal [ "path", "id" ], results.first.keys
+
+        dataset["selects"] = [ "controller_and_action" ]
+        results = results_for_chart(chart, validate: false)
+        assert_equal({ "error" => "No fields selected" }, results.first)
+
+        dataset["selects"] = [ "controller_and_action", "id" ]
+        results = results_for_chart(chart, validate: false)
+        assert_equal [ "id" ], results.first.keys
+
+        # Fields without the joined table should be ignored
+        dataset["selects"] = [ "visits.utm_source" ]
+        results = results_for_chart(chart, validate: false)
+        assert_equal({ "error" => "No fields selected" }, results.first)
+
+        dataset["selects"] = [ "path", "visits.utm_source" ]
+        dataset["belongs_to"] = { visits: {} }
+        results = results_for_chart(chart, validate: false)
+        assert_equal [ "path", "visits.utm_source" ], results.first.keys
+
+        # Non-joinable tables should be ignored
+        dataset["selects"] = [ "events.utm_source" ]
+        dataset.delete("belongs_to")
+        results = results_for_chart(chart, validate: false)
+        assert_equal({ "error" => "No fields selected" }, results.first)
+
+        # Invalid tables should be ignored
+        dataset["selects"] = [ "invalid.utm_source" ]
+        results = results_for_chart(chart, validate: false)
+        assert_equal({ "error" => "No fields selected" }, results.first)
       end
 
       test "belongs to association" do
