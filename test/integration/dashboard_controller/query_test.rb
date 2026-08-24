@@ -156,7 +156,7 @@ module Skadi::Integration
         assert_results 5, configuration: true_chart
       end
 
-      test "chart unique_by" do
+      test "chart count_by" do
         cookie_visit = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
         cookie_visit_2 = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
 
@@ -172,44 +172,80 @@ module Skadi::Integration
           create :view, visit: visit
           create :event, visit: visit
         end
+        create(:event, visit: nil, view: create(:view))
 
         # Visits cannot be connected to demographics so we just make one
         create :demographic, count: 5
 
         dataset = build_dataset(type: "visits")
-        nil_chart = build_chart(unique_by: nil, dataset:)
-        visit_chart = build_chart(unique_by: "visit", dataset:)
-        visitor_chart = build_chart(unique_by: "visitor", dataset:)
+        chart = build_chart(dataset:)
 
         # Visits: 6 total visits
-        assert_results 6, configuration: nil_chart
-        assert_results 6, configuration: visit_chart
-        # 2 different non-nil tracking tokens
-        assert_results 2, configuration: visitor_chart
+        dataset.delete("count_by")
+        assert_results 6, configuration: chart
 
-        # Views
-        dataset["type"] = "views"
-        # 7 total views
-        assert_results 7, configuration: nil_chart
-        # 6 with a visit
-        assert_results 6, configuration: visit_chart
+        dataset["count_by"] = nil
+        assert_results 6, configuration: chart
+
+        dataset["count_by"] = "visits"
+        assert_results 6, configuration: chart
+
         # 2 different non-nil tracking tokens
-        assert_results 2, configuration: visitor_chart
+        dataset["count_by"] = "visitors"
+        assert_results 2, configuration: chart
+
+        dataset["type"] = "views"
+
+        dataset.delete("count_by")
+        assert_results 8, configuration: chart
+
+        dataset["count_by"] = "views"
+        assert_results 8, configuration: chart
+
+        # Count by foreign key
+        dataset["count_by"] = "visits"
+        assert_results 6, configuration: chart
+
+        # "visitors" should be ignored because the chart isn't joined. Bypass the failing validation to test it.
+        dataset["count_by"] = "visitors"
+        results = results_for_chart(chart, validate: false)
+        assert_equal 8, results.first["count"]
+
+        dataset["count_by"] = "visitors"
+        dataset["belongs_to"] = { visits: {} }
+        assert_results 2, configuration: chart
 
         # Events
         dataset["type"] = "events"
-        # 7 total events
-        assert_results 7, configuration: nil_chart
-        # 6 with a visit
-        assert_results 6, configuration: visit_chart
-        # 2 different non-nil tracking tokens
-        assert_results 2, configuration: visitor_chart
+        dataset.delete("belongs_to")
 
-        # Demographics: not affected by this setting
+        dataset.delete("count_by")
+        assert_results 8, configuration: chart
+
+        dataset["count_by"] = "events"
+        assert_results 8, configuration: chart
+
+        # Count by foreign key
+        dataset["count_by"] = "visits"
+        assert_results 6, configuration: chart
+
+        dataset["count_by"] = "views"
+        assert_results 1, configuration: chart
+
+        # "visitors" should be ignored because the chart isn't joined. Bypass the failing validation to test it.
+        dataset["count_by"] = "visitors"
+        results = results_for_chart(chart, validate: false)
+        assert_equal 8, results.first["count"]
+
+        dataset["count_by"] = "visitors"
+        dataset["belongs_to"] = { visits: {} }
+        assert_results 2, configuration: chart
+
         dataset["type"] = "demographics"
-        assert_results 5, configuration: nil_chart
-        assert_results 5, configuration: visitor_chart
-        assert_results 5, configuration: visit_chart
+        dataset.delete("belongs_to")
+        dataset["count_by"] = "demographics"
+
+        assert_results 5, configuration: chart
       end
 
       test "dataset split_by" do
@@ -582,6 +618,9 @@ module Skadi::Integration
           build_dashboard(tab: build_tab(chart:)).save!(validate: false)
 
           post skadi.dashboard_data_path, params: { chart_id: chart["id"] }, as: :json
+
+          # Clean up the database after adding a potentially invalid chart
+          Skadi::Dashboard.delete_all
         end
 
         assert_response :ok

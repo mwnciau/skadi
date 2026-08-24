@@ -367,7 +367,6 @@ module Skadi::Unit
       assert_dataset_error('split_by[0] "action" must be one of ', type: "views", split_by: [ "action" ])
     end
 
-
     ##############################
     #     Schema belongs_to      #
     ##############################
@@ -393,6 +392,35 @@ module Skadi::Unit
 
     test "validates belongs_to required" do
       assert_dataset_error("belongs_to.visits.required must be a boolean", type: "views", belongs_to: { visits: { required: :invalid } })
+    end
+
+    ##############################
+    #       Schema counts        #
+    ##############################
+
+    test "validates only specified counts are accepted" do
+      [ "views", "visits", "visitors" ].each do |count_by|
+        assert_dataset_valid(type: "views", count_by:, belongs_to: { visits: {} })
+      end
+
+      [ "events", "views", "visits", "visitors" ].each do |count_by|
+        assert_dataset_valid(type: "events", count_by:, belongs_to: { visits: {} })
+      end
+
+      # Demographics overrides its default count, so check it still works
+      assert_dataset_valid(type: "demographics", count_by: "demographics")
+
+      [ "events", "demographics", 2, false, "invalid" ].each do |count_by|
+        assert_dataset_error("count_by #{count_by.inspect} must be one of", count_by:)
+        assert_dataset_error("count_by #{count_by.inspect} must be one of", type: "views", count_by:)
+      end
+    end
+
+    test "validate count_by visitors requires belongs_to visits" do
+      assert_dataset_valid(type: "visits", count_by: "visitors")
+
+      assert_dataset_error('count_by "visitors" requires a join with the visits table', type: "views", count_by: "visitors")
+      assert_dataset_error('count_by "visitors" requires a join with the visits table', type: "events", count_by: "visitors")
     end
 
     ##############################
@@ -514,6 +542,24 @@ module Skadi::Unit
 
     private def assert_dataset_error(error, **dataset_config)
       assert_chart_error("datasets[0].#{error}", datasets: [ build_dataset(**dataset_config) ])
+    end
+
+    private def assert_configuration_valid(configuration)
+      dashboard = build_dashboard(configuration)
+
+      assert dashboard.valid?, "Expected the dashboard configuration to be valid, but got:\n#{dashboard.errors[:configuration].join("\n")}"
+    end
+
+    private def assert_tab_valid(**tab_config)
+      assert_configuration_valid([ build_tab(**tab_config) ])
+    end
+
+    private def assert_chart_valid(**chart_config)
+      assert_tab_valid(children: [ build_chart(**chart_config) ])
+    end
+
+    private def assert_dataset_valid(**dataset_config)
+      assert_chart_valid(datasets: [ build_dataset(**dataset_config) ])
     end
   end
 end

@@ -19,6 +19,9 @@ module Skadi
           visits: {
             model: Skadi::Visit,
             visit_key: "id",
+            counts: {
+              visitors: { sql: "COUNT(DISTINCT skadi_visits.tracking_token)" },
+            },
             # If the table has a date field, the fields Hash expects a value for :date
             fields: {
               # A hash with the following keys:
@@ -116,7 +119,9 @@ module Skadi
           },
           demographics: {
             model: Demographic,
-            count_sql: "COALESCE(SUM(skadi_demographics.count), 0)",
+            counts: {
+              demographics: { label: "Count", sql: "COALESCE(SUM(skadi_demographics.count), 0)" },
+            },
             fields: {
               date: {
                 type: :date,

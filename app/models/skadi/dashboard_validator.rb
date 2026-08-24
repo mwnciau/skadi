@@ -88,6 +88,19 @@ module Skadi
           end
         end
 
+        dataset_type[:count_by] = OneOf.new(allowed_values: [
+          dataset_name.to_s,
+          # This may result in duplication if the default is overridden, but it will still function correctly
+          *schema[:counts]&.keys&.map(&:to_s),
+          *schema[:belongs_to]&.keys&.flat_map do |belongs_to_table|
+            [
+              belongs_to_table.to_s,
+              *Schema.database_schema[belongs_to_table][:counts]&.keys&.map(&:to_s),
+            ]
+          end,
+          nil,
+        ], allow_missing: true)
+
         dataset_type[:split_by] = ArrayOf.new(OneOf.new(split_by_fields, false)) if split_by_fields.any?
         dataset_type[:filters] = ArrayOf.new(Filter.new(filters)) if filters.any?
 
@@ -251,10 +264,30 @@ module Skadi
     private def validate_dataset(value, path, context:)
       return add_error(path, "must be a hash", context:) unless value.is_a?(Hash)
 
-      type = :"#{value["type"]}Dataset"
-      return add_error("#{path}.type", "is not a valid dataset type", context:) unless self.class.types.include?(type)
+      type_name = :"#{value["type"]}Dataset"
+      return add_error("#{path}.type", "is not a valid dataset type", context:) unless self.class.types.include?(type_name)
 
-      validate_type(type, value, path, context:)
+      validate_type(self.class.types[type_name], value, path, context:)
+
+      # Perform additional validation of the count_by to ensure the right table is included
+      # Early return if the count is the default or is not a string
+      return if !value["count_by"].is_a?(String) || value["count_by"] == value["type"]
+
+      count_by = value["count_by"].to_sym
+
+      # Early return if the count is defined or is a foreign key on the current dataset
+      schema = Schema.database_schema[value["type"].to_sym]
+      return if schema[:counts]&.key?(count_by) || schema[:belongs_to]&.key?(count_by)
+
+      # Find the table that has the given count as one of its counts
+      owner = schema[:belongs_to]&.keys&.find do |table|
+        Schema.database_schema[table][:counts]&.key?(count_by)
+      end
+
+      # Ensure that the relevant table is joined
+      if owner && !value["belongs_to"]&.key?(owner.to_s)
+        add_error("#{path}.count_by", "#{value["count_by"].inspect} requires a join with the #{owner} table", context:)
+      end
     end
 
     private def validate_custom_type(type, value, path, context:)

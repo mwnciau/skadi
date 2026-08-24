@@ -110,7 +110,7 @@ module Skadi
       private def build_query_from_schema(dataset, chart, schema, untrusted_param_filters)
         query = schema[:model].all
 
-        query = apply_dataset_associations(dataset, chart, schema, query)
+        query = apply_schema_associations(dataset, chart, schema, query)
         query = apply_schema_filters(dataset, schema, query)
         query = apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
 
@@ -141,7 +141,7 @@ module Skadi
         end
       end
 
-      private def apply_dataset_associations(dataset, chart, schema, query)
+      private def apply_schema_associations(dataset, chart, schema, query)
         visits_joined = false
 
         dataset_each_belongs_to(dataset, schema) do |belongs_to_table, belongs_to_config, belongs_to_schema|
@@ -287,7 +287,7 @@ module Skadi
         safe_id = model.connection.quote(dataset["id"])
         safe_date = "NULL"
         safe_split = "NULL"
-        safe_count = "COUNT(*)"
+        safe_count = dataset_count(dataset, schema)
         safe_group = split_columns.dup
 
         if chart["time_series"].present? && schema[:fields][:date]
@@ -303,14 +303,6 @@ module Skadi
           safe_split = "CONCAT(#{split_columns.join(", '|~|', ")})"
         end
 
-        if schema[:count_sql]
-          safe_count = schema[:count_sql]
-        elsif chart["unique_by"] == "visit" && schema[:visit_key]
-          safe_count = "COUNT(DISTINCT #{schema[:model].table_name}.#{schema[:visit_key]})"
-        elsif chart["unique_by"] == "visitor" && schema[:visit_key]
-          safe_count = "COUNT(DISTINCT skadi_visits.tracking_token)"
-        end
-
         return query
             .select(
               "#{safe_id} AS id",
@@ -319,6 +311,32 @@ module Skadi
               "#{safe_count} AS count",
             )
             .group(safe_group)
+      end
+
+      private def dataset_count(dataset, schema)
+        # Fall back to the name of the current dataset if not set
+        count_by = dataset["count_by"].is_a?(String) ? dataset["count_by"].to_sym : dataset["type"].to_sym
+
+        # Match against the current schema's defined counts, allowing for overriding the default
+        return schema[:counts][count_by][:sql] if schema[:counts]&.[](count_by)
+
+        # Fallback to basic count if counting by the schema table
+        return "COUNT(*)" if count_by == dataset["type"].to_sym
+
+        # If the table is joined, then we can count by using the table's defined counts
+        dataset_each_belongs_to(dataset, schema) do |_table, _config, belongs_to_schema|
+          return belongs_to_schema[:counts][count_by][:sql] if belongs_to_schema[:counts]&.[](count_by)
+        end
+
+        # Fall back to counting by the foreign key
+        if schema[:belongs_to].is_a?(Hash)
+          schema[:belongs_to].each do |table, config|
+            return "COUNT(DISTINCT #{schema[:model].table_name}.#{config[:key]})" if table == count_by
+          end
+        end
+
+        # For invalid configs, we just fallback to a basic count
+        return "COUNT(*)"
       end
 
       private def safe_split_columns(dataset, schema)
