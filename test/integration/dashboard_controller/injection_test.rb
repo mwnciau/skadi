@@ -76,24 +76,6 @@ module Skadi::Integration
         end
       end
 
-      test "chart filters" do
-        create :visit
-
-        [ :visit_tracking, :verified_visits, :unique_by ].each do |field|
-          INJECTION_STRINGS.each do |value|
-            dashboard_with_chart(:id => CHART_ID, field => value)
-
-            post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
-
-            # The dashboard should be valid and no exception returned
-            assert_response :ok
-
-            # Setting the visit_tracking field to a non-boolean value should be ignored
-            assert_equal '{"data":[{"id":"dataset-1","date":null,"split":null,"count":1}]}', response.body
-          end
-        end
-      end
-
       test "chart date field" do
         create :visit
 
@@ -128,6 +110,22 @@ module Skadi::Integration
         end
       end
 
+      test "dataset count_by" do
+        create :event, created_at: "2020-01-06"
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "events", count_by: value)
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          # The dashboard should be valid and no exception returned
+          assert_response :ok
+
+          # Setting the count_by shouldn't affect the rows being returned
+          assert_see '"date":"2020-01-06","split":null,"count":1}]'
+        end
+      end
+
       test "dataset split_by" do
         create :event, created_at: "2020-01-06"
 
@@ -140,6 +138,49 @@ module Skadi::Integration
 
         # Setting the split_by shouldn't affect the rows being returned
         assert_see '"date":"2020-01-06","split":null,"count":1}]'
+      end
+
+      test "dataset belongs_to" do
+        create :event, created_at: "2020-01-06"
+
+        INJECTION_STRINGS.each do |value|
+          [
+            value,
+            { visits: value },
+            { value => {} },
+            { visits: { required: value } },
+            { visits: { split_by: value } },
+            { visits: { split_by: [value] } },
+            { visits: { filters: value } },
+            { visits: { filters: [value] } },
+            { visits: { filters: [ { field: value, operator: "=", value: "" } ] } },
+          ].each do |belongs_to|
+            dashboard_with_dataset(type: "events", belongs_to: belongs_to)
+
+            post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+            assert_response :ok
+            assert_see(/\A\{"data":\[/)
+          end
+        end
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "events", belongs_to: { visits: { filters: [ { field: "utm_source", operator: value, value: "" } ] } })
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :unprocessable_content
+          assert_see '{"error":"Unknown operator'
+        end
+
+        INJECTION_STRINGS.each do |value|
+          dashboard_with_dataset(type: "events", belongs_to: { visits: { filters: [ { field: "utm_source", operator: "=", value: value } ] } })
+
+          post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+          assert_response :ok
+          assert_equal '{"data":[]}', response.body
+        end
       end
 
       test "dataset field with sql" do

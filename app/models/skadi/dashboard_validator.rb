@@ -50,9 +50,6 @@ module Skadi
           time_series: OneOf.new(allowed_values: %w[daily weekly monthly].freeze, allow_missing: true).freeze,
           date_from: :date?,
           date_to: :date?,
-          verified_visits: :boolean?,
-          unique_by: OneOf.new(allowed_values: %w[visit visitor].freeze, allow_missing: true).freeze,
-          visit_tracking: OneOf.new(allowed_values: %w[any anonymity_set cookie].freeze, allow_missing: true).freeze,
           datasets: ArrayOf.new(:Dataset, 1),
         },
         percentageDataset: {

@@ -96,66 +96,6 @@ module Skadi::Integration
         assert_equal({ "id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1 }, results[1])
       end
 
-      test "chart visit_tracking" do
-        create :visit, tracking_token: nil, cookies_enabled: false
-        create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: false
-        create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
-
-        nil_chart = build_chart(visit_tracking: nil)
-        any_chart = build_chart(visit_tracking: "any")
-        anonymity_set_chart = build_chart(visit_tracking: "anonymity_set")
-        cookie_chart = build_chart(visit_tracking: "cookie")
-
-        assert_results 3, configuration: nil_chart
-        assert_results 2, configuration: any_chart
-        assert_results 1, configuration: anonymity_set_chart
-        assert_results 1, configuration: cookie_chart
-      end
-
-      test "chart verified_visits" do
-        verified_visit = create :visit, verified: true
-        unverified_visit = create :visit, verified: false
-
-        create :view, visit: verified_visit
-        create :view, visit: unverified_visit
-        create :view, visit: nil
-
-        create :event, visit: verified_visit
-        create :event, visit: unverified_visit
-        create :event, visit: nil
-
-        # Visits cannot be connected to demographics so we just make one
-        create :demographic, count: 5
-
-        dataset = build_dataset(type: "visits")
-        nil_chart = build_chart(verified_visits: nil, dataset:)
-        true_chart = build_chart(verified_visits: true, dataset:)
-        false_chart = build_chart(verified_visits: false, dataset:)
-
-        # Visits
-        assert_results 2, configuration: nil_chart
-        assert_results 2, configuration: false_chart
-        assert_results 1, configuration: true_chart
-
-        # Views
-        dataset["type"] = "views"
-        assert_results 3, configuration: nil_chart
-        assert_results 3, configuration: false_chart
-        assert_results 1, configuration: true_chart
-
-        # Events
-        dataset["type"] = "events"
-        assert_results 3, configuration: nil_chart
-        assert_results 3, configuration: false_chart
-        assert_results 1, configuration: true_chart
-
-        # Demographics
-        dataset["type"] = "demographics"
-        assert_results 5, configuration: nil_chart
-        assert_results 5, configuration: false_chart
-        assert_results 5, configuration: true_chart
-      end
-
       test "chart count_by" do
         cookie_visit = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true
         cookie_visit_2 = create :visit, tracking_token: TRACKING_TOKEN, cookies_enabled: true

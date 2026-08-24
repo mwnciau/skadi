@@ -110,7 +110,7 @@ module Skadi
       private def build_query_from_schema(dataset, chart, schema, untrusted_param_filters)
         query = schema[:model].all
 
-        query = apply_schema_associations(dataset, chart, schema, query)
+        query = apply_schema_associations(dataset, schema, query)
         query = apply_schema_filters(dataset, schema, query)
         query = apply_chart_filters(dataset, chart, schema, query, untrusted_param_filters)
 
@@ -141,23 +141,12 @@ module Skadi
         end
       end
 
-      private def apply_schema_associations(dataset, chart, schema, query)
-        visits_joined = false
-
+      private def apply_schema_associations(dataset, schema, query)
         dataset_each_belongs_to(dataset, schema) do |belongs_to_table, belongs_to_config, belongs_to_schema|
           join_type = belongs_to_config["required"] ? "INNER JOIN" : "LEFT JOIN"
           model = belongs_to_schema[:model]
 
           query = query.joins(%(#{join_type} #{model.table_name} ON #{model.table_name}.id = #{schema[:model].table_name}.#{schema[:belongs_to][belongs_to_table][:key]}))
-
-          visits_joined = true if belongs_to_table == :visits
-        end
-
-        # Join the visits if we need to
-        if !visits_joined && schema[:model] != Skadi::Visit && schema[:visit_key]
-          if chart["verified_visits"] == true || chart["visit_tracking"] || chart["unique_by"] == "visitor"
-              query = query.joins(%(INNER JOIN skadi_visits ON skadi_visits.id = #{schema[:model].table_name}.#{schema[:visit_key]}))
-          end
         end
 
         return query
@@ -246,20 +235,6 @@ module Skadi
           url_date_to = untrusted_param_filters["date_to"] if valid_date_string?(untrusted_param_filters["date_to"])
           date_to = combine_dates(chart["date_to"], url_date_to, type: :to)
           query = query.where("DATE(#{date_config[:sql]}) <= ?", date_to) unless date_to.nil?
-        end
-
-        if schema[:visit_key]
-          if chart["verified_visits"] == true
-            query = query.where("skadi_visits.verified = TRUE")
-          end
-
-          if chart["visit_tracking"] == "any"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL")
-          elsif chart["visit_tracking"] == "anonymity_set"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL AND skadi_visits.cookies_enabled = FALSE")
-          elsif chart["visit_tracking"] == "cookie"
-            query = query.where("skadi_visits.tracking_token IS NOT NULL AND skadi_visits.cookies_enabled = TRUE")
-          end
         end
 
         return query

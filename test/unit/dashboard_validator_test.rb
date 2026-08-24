@@ -187,7 +187,6 @@ module Skadi::Unit
       title: :string,
       date_from: :date,
       date_to: :date,
-      verified_visits: :boolean,
     }
     CHART_FIELDS.each do |field, type|
       test "validates chart #{field}" do
@@ -199,16 +198,8 @@ module Skadi::Unit
       assert_chart_error('type "pie" must be one of', type: "pie")
     end
 
-    test "validates chart unique_by" do
-      assert_chart_error('unique_by "pie" must be one of', unique_by: "pie")
-    end
-
     test "validates chart time_series" do
       assert_chart_error('time_series "yearly" must be one of', time_series: "yearly")
-    end
-
-    test "validates chart visit_tracking" do
-      assert_chart_error("visit_tracking [] must be one of", visit_tracking: [])
     end
 
     test "validates chart datasets is an array" do

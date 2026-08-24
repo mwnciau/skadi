@@ -12,13 +12,12 @@ module Skadi
         @_database_schema ||= {
           # A hash with the following keys:
           # model: The model for this dataset
-          # visit_key: used for chart-level visit filters
-          # count_sql: The SQL expression used to count this field. Defaults to COUNT().
+          # counts: A hash describing how this table can be counted, e.g. visitors: { sql: "COUNT(DISTINCT skadi_visits.tracking_token)" }
+          #         If the name of the count matches the table, the specified count overwrites the default of `COUNT(*)`
           # belongs_to: A hash describing belongs_to relationships, e.g. {visits: {key: :visit_id}}
           # fields: A hash where the key represents a field and the value is its configuration
           visits: {
             model: Skadi::Visit,
-            visit_key: "id",
             counts: {
               visitors: { sql: "COUNT(DISTINCT skadi_visits.tracking_token)" },
             },
@@ -68,7 +67,6 @@ module Skadi
           },
           views: {
             model: Skadi::View,
-            visit_key: "visit_id",
             belongs_to: { visits: { key: :visit_id } },
             fields: {
               date: {
@@ -104,7 +102,6 @@ module Skadi
           },
           events: {
             model: Skadi::Event,
-            visit_key: "visit_id",
             belongs_to: { visits: { key: :visit_id }, views: { key: :view_id } },
             fields: {
               date: {

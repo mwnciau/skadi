@@ -22,15 +22,17 @@ module Skadi
             "title" => "Visits and Checkouts",
             "time_series" => "weekly",
 
-            "verified_visits" => true,
-            "unique_by" => "visit",
-            "visit_tracking" => "any",
-
             "datasets" => [
               {
                 "id" => "7cec5a7a-7bf7-403f-b15e-b2e45944182e",
-                "label" => "Visits",
-                "type" => "visits",
+                "label" => "Views",
+                "type" => "views",
+                "count_by" => "visitors",
+                "belongs_to" => {
+                  "visits" => { "filters" => [
+                    { "field" => "verified", "operator" => "=", "value" => true },
+                  ] },
+                },
               }.freeze,
             ].freeze,
           }.freeze,
