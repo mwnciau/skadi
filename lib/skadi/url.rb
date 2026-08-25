@@ -33,8 +33,9 @@ module Skadi
 
     # Strips non-whitelisted query params and normalises URLs
     # @param url [String]
+    # @param request [ActionDispatch::Request, nil] the current request - used to truncate the current host from URLs
     # @return [String, nil]
-    def self.redact_and_normalise_url(url)
+    def self.redact_and_normalise_url(url, request: nil)
       return nil unless url.is_a?(String) && url.present?
 
       uri = URI.parse(url[0, Skadi.configuration.max_url_length])
@@ -45,16 +46,23 @@ module Skadi
 
       result = +""
 
+      interesting_scheme = uri.scheme.present? && ![ "http", "https" ].include?(uri.scheme)
       # Only record interesting schemes, e.g. "android-app://"
-      result += "#{uri.scheme}://" if uri.scheme.present? && ![ "http", "https" ].include?(uri.scheme)
+      result += "#{uri.scheme}://" if interesting_scheme
 
-      result += uri.host if uri.host.present?
+      host_with_port = +""
+      if uri.host.present?
+        host_with_port << uri.host
+        # Only include port if it's non-standard
+        host_with_port << ":#{uri.port}" if uri.port != uri.default_port
+      end
 
-      # Only include port if it's non-standard
-      result << ":#{uri.port}" if uri.port != uri.default_port
+      is_local = request.present? && host_with_port == request.host_with_port
+      result << host_with_port if interesting_scheme || Skadi.configuration.store_domain_in_views || !is_local
 
+      path = uri.path&.start_with?("/") ? uri.path : "/#{uri.path}"
       # Normalise the trailing slash
-      result << ((uri.path == "" || uri.path == "/") ? "/" : uri.path.chomp("/")) unless uri.path.nil?
+      result << (path == "/" ? "/" : path.delete_suffix("/"))
 
       result << (param_string.present? ? "?#{param_string}" : "")
 

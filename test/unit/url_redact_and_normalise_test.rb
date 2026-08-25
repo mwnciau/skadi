@@ -68,22 +68,23 @@ module Skadi::Unit
 
     test "redact_and_normalise_url truncates URLs to configured length" do
       Skadi.configuration.max_url_length = 2048
-      url_2048 = Skadi::Url.redact_and_normalise_url("example.com/" + ("a" * 2048))
+      url_2048 = Skadi::Url.redact_and_normalise_url("http://example.com/" + ("a" * 2048))
 
       Skadi.configuration.max_url_length = 4096
-      url_4096 = Skadi::Url.redact_and_normalise_url("example.com/" + ("a" * 4096))
+      url_4096 = Skadi::Url.redact_and_normalise_url("http://example.com/" + ("a" * 4096))
 
-      assert_equal 2048, url_2048.length
-      assert_equal 4096, url_4096.length
+      # 7 characters shorter due to the scheme being removed
+      assert_equal 2041, url_2048.length
+      assert_equal 4089, url_4096.length
     end
 
     test "redact_and_normalise_url truncation doesn't break url parsing" do
-      Skadi.configuration.max_url_length = 17
+      Skadi.configuration.max_url_length = 24
 
-      # Truncates to "example.com/?abc["
-      url = Skadi::Url.redact_and_normalise_url("example.com/?abc[]=123")
+      # Truncates to "http://example.com/?abc["
+      url = Skadi::Url.redact_and_normalise_url("http://example.com/?abc[]=123")
 
-      assert_equal "example.com", url
+      assert_equal "example.com/", url
     end
 
     test "redact_and_normalise_url only keeps whitelisted params" do
@@ -138,6 +139,54 @@ module Skadi::Unit
       url = Skadi::Url.redact_and_normalise_url("chrome-extension://aggiodmmpapjpafbkppkkcchmlbgciia/popup.html")
 
       assert_equal "chrome-extension://aggiodmmpapjpafbkppkkcchmlbgciia/popup.html", url
+    end
+
+    test "redact_and_normalise_url excludes domain from local urls" do
+      request = build_request("https://example.com/current")
+
+      url = Skadi::Url.redact_and_normalise_url("https://example.com/foo/bar", request: request)
+
+      assert_equal "/foo/bar", url
+    end
+
+    test "redact_and_normalise_url keeps domain for external urls" do
+      request = build_request("https://example.com/current")
+
+      url = Skadi::Url.redact_and_normalise_url("https://other.com/foo/bar", request: request)
+
+      assert_equal "other.com/foo/bar", url
+    end
+
+    test "redact_and_normalise_url keeps domain for non-standard requests" do
+      request = build_request("https://example.com/current")
+
+      url = Skadi::Url.redact_and_normalise_url("ftp://example.com/foo/bar", request: request)
+
+      assert_equal "ftp://example.com/foo/bar", url
+    end
+
+    test "redact_and_normalise_url keeps domain for local urls when store_domain_in_views is set" do
+      Skadi.configuration.store_domain_in_views = true
+
+      request = build_request("https://example.com/current")
+
+      url = Skadi::Url.redact_and_normalise_url("https://example.com/foo/bar", request: request)
+
+      assert_equal "example.com/foo/bar", url
+    end
+
+    test "redact_and_normalise_url matches local urls with non-standard ports" do
+      request = build_request("https://example.com:3000/current")
+
+      local = Skadi::Url.redact_and_normalise_url("https://example.com:3000/foo/bar", request: request)
+      external = Skadi::Url.redact_and_normalise_url("https://example.com/foo/bar", request: request)
+
+      assert_equal "/foo/bar", local
+      assert_equal "example.com/foo/bar", external
+    end
+
+    private def build_request(url)
+      ActionDispatch::Request.new(Rack::MockRequest.env_for(url))
     end
   end
 end

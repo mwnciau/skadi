@@ -42,7 +42,7 @@ module Skadi
         tracking_token: tracking_token,
         user_id: user_id,
 
-        referrer: request ? Skadi::Url.redact_and_normalise_url(request.referrer) : nil,
+        referrer: request ? Skadi::Url.redact_and_normalise_url(request.referrer, request: request) : nil,
         landing_page: request ? Skadi::Url.view_path_from_request(request) : nil,
 
         utm_source: request ? request.query_parameters["utm_source"] : nil,

@@ -1,3 +1,6 @@
+## 0.4.0.beta.2 [UNRELEASED]
+- Remove server host from referrer and exit page URLs
+
 ## 0.4.0.beta.1 [2026-08-19]
 - Add the dashboard
 - Breaking: single consent and opt-out changed to more granular consent

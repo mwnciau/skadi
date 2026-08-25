@@ -12,6 +12,25 @@ module Skadi::Integration
         assert_equal "example.com/", view.reload.exit_page
       end
 
+      test "excludes domain from exit page on the same host" do
+        view = create :view, visit: nil
+
+        post skadi.tracking_endpoint_path, params: { view: view.token, exit_page: "https://example.com/foo" }, as: :json, headers: { "HOST" => "example.com" }
+
+        assert_response :no_content
+        assert_equal "/foo", view.reload.exit_page
+      end
+
+      test "keeps domain from exit page on the same host when store_domain_in_views is set" do
+        Skadi.configuration.store_domain_in_views = true
+        view = create :view, visit: nil
+
+        post skadi.tracking_endpoint_path, params: { view: view.token, exit_page: "https://example.com/foo" }, as: :json, headers: { "HOST" => "example.com" }
+
+        assert_response :no_content
+        assert_equal "example.com/foo", view.reload.exit_page
+      end
+
       test "tracks relative exit page" do
         view = create :view, visit: nil
 
