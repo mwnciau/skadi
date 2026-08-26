@@ -545,9 +545,14 @@ module Skadi::Integration
       end
 
       test "belongs to association" do
-        create :view, visit: create(:visit, utm_source: "source")
+        visit = create(:visit, utm_source: "source")
+        view = create :view, visit: visit
         create :view, visit: create(:visit, utm_source: "other")
         create :view, visit: nil
+
+        create :event, view: view, visit: nil
+        create :event, view: nil, visit: visit
+        create :event, view: view, visit: visit
 
         dataset = build_dataset(type: "views", belongs_to: { visits: { filters: [ { field: "utm_source", operator: "=", value: "source" } ] } })
         chart = build_chart(id: "chart", dataset: dataset)
@@ -556,7 +561,7 @@ module Skadi::Integration
         dataset[:belongs_to][:visits] = { split_by: [ "utm_source" ] }
         results = results_for_chart(chart)
         assert_equal 3, results.length
-        assert_equal [ nil, "other", "source" ], results.pluck("split")
+        assert_equal [ "", "other", "source" ], results.pluck("split").map(&:to_s).sort
 
         # This should test that a left join is made
         dataset[:belongs_to][:visits] = { filters: [ { field: "utm_source", operator: "!=", value: "invalid" } ] }
@@ -574,6 +579,19 @@ module Skadi::Integration
 
         dataset[:belongs_to][:visits] = { required: true }
         assert_results(2, configuration: chart)
+
+        dataset[:type] = "events"
+        dataset.delete(:belongs_to)
+        assert_results(3, configuration: chart)
+
+        dataset[:belongs_to] = {visits: {required: true}}
+        assert_results(2, configuration: chart)
+
+        dataset[:belongs_to] = {views: {required: true}}
+        assert_results(2, configuration: chart)
+
+        dataset[:belongs_to] = {visits: {required: true}, views: {required: true}}
+        assert_results(1, configuration: chart)
       end
 
       test "invalid belongs to association is ignored" do
