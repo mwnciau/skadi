@@ -243,7 +243,7 @@ const clearValue = () => {
   {/if}
 
   {#if typeof description === "string"}
-    <span class="help-text">
+    <span class="help-text mb-1">
       {description}
     </span>
   {:else}

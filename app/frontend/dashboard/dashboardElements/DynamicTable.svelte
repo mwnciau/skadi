@@ -1,15 +1,9 @@
 <script lang="ts">
-import type {
-  ChartConfig,
-  ChartFilters,
-  ChartMetadata,
-  Dataset,
-  TableData,
-  TableRow
-} from "../../types";
+import type { ChartConfig, ChartFilters, ChartMetadata, TableData, TableRow } from "../../types";
 import Pagination from "../components/Pagination.svelte";
 import { databaseSchema } from "../helpers/databaseSchema";
-import { formatDate, formatString } from "../helpers/formatting";
+import { datasetFieldLabel, isDynamicDataset, parseDatasetField } from "../helpers/datasets";
+import { formatDate } from "../helpers/formatting";
 
 // Mimics app/models/skadi/dashboard_query.rb:4
 const ITEMS_PER_PAGE = 10;
@@ -43,14 +37,40 @@ const boundedPage = $derived(Math.max(1, Math.min(page, highestPage ?? 1)));
 // Keep track of the last valid data page so we can keep displaying old data while things load
 const dataOffset = $derived((((isLoading ? previousPage : boundedPage) - 1) % PAGES_PER_CHUNK) * ITEMS_PER_PAGE);
 
-const fields: string[] = $derived(Object.keys(data[0] as TableRow));
-const schema = $derived(databaseSchema[(chartConfig.datasets[0] as Dataset).type]);
+const dataset = $derived(chartConfig.datasets[0]);
+const fields: {
+  label: string;
+  value: string;
+  type: string;
+}[] = $derived.by(() => {
+  let fields: string[];
+  if (dataset && isDynamicDataset(dataset)) {
+    if (dataset.selects?.length) {
+      fields = dataset.selects;
+    } else if (databaseSchema[dataset.type]) {
+      fields = Object.keys(databaseSchema[dataset.type]?.fields ?? {});
+    }
+  }
+
+  // Fall back to using fields provided in the data
+  fields ??= Object.keys(data[0] as TableRow)
+
+  return fields.flatMap((rawField) => {
+    if (!dataset) {
+      return [];
+    }
+
+    const {datasetType, field, fieldSchema} = parseDatasetField(dataset, rawField)
+
+    return [{label: datasetFieldLabel(field, datasetType), value: rawField, type: fieldSchema?.type ?? "string"}];
+  });
+})
 
 const setPage = (newPage: number) => {
   if (!isPageInBounds(newPage)) {
     previousPage = page;
 
-    // Set the new page, triggering a fetch. Make sure it's a multiple of items per page + 1 so going backwards doesn't constantly require a request.
+    // Set the new page, triggering a fetch. Make sure it's a multiple of items per page + 1, so going backwards doesn't constantly require a request.
     chartFilters.page = newPage - ((newPage - 1) % PAGES_PER_CHUNK);
   }
 
@@ -63,7 +83,7 @@ const setPage = (newPage: number) => {
     <thead>
       <tr>
         {#each fields as field}
-          <th>{schema?.fields?.[field]?.label ?? formatString(field)}</th>
+          <th>{field.label}</th>
         {/each}
       </tr>
     </thead>
@@ -73,14 +93,13 @@ const setPage = (newPage: number) => {
         {#if row}
           <tr>
             {#each fields as field}
-              {@const fieldType = schema?.fields?.[field]?.type ?? "string"}
               <td>
-                {#if fieldType === "date"}
-                  {formatDate(row[field] as string, "day")}
-                {:else if fieldType === "boolean"}
-                  {row[field] ? "Yes" : "No"}
+                {#if field.type === "date"}
+                  {formatDate(row[field.value] as string, "day")}
+                {:else if field.type === "boolean"}
+                  {row[field.value] ? "Yes" : "No"}
                 {:else}
-                  {row[field]}
+                  {row[field.value]}
                 {/if}
               </td>
             {/each}

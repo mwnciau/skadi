@@ -118,7 +118,7 @@ $effect(() => {
       </div>
     {/if}
 
-    <div class="sticky top-2 grow min-w-0 flex flex-col gap-4">
+    <div class="sticky top-18 grow min-w-0 flex flex-col gap-4">
       <div class={isEditingChart ? "flex-1 min-w-0 max-w-256" : ""}>
         <div class="mb-4">
           <h2 class="text-night-950 text-xl font-semibold text-center">{localChartConfig.title}</h2>

@@ -30,10 +30,19 @@ export type UnarySchemaDatasetFilter = {
 };
 export type SchemaDatasetFilter = BinarySchemaDatasetFilter | UnarySchemaDatasetFilter;
 
-export type SchemaDataset = CommonDataset & {
-  type: string;
+export type DynamicDatasetBelongsTo = {
+  required?: boolean;
   split_by?: string[];
   filters?: SchemaDatasetFilter[];
+};
+
+export type DynamicDataset = CommonDataset & {
+  type: string;
+  count_by?: string;
+  selects?: string[];
+  split_by?: string[];
+  filters?: SchemaDatasetFilter[];
+  belongs_to?: Record<string, DynamicDatasetBelongsTo>;
 };
 
 export type PercentageDataset = CommonDataset & {
@@ -47,7 +56,7 @@ export type SqlDataset = CommonDataset & {
   sql: string;
 };
 
-export type Dataset = SchemaDataset | PercentageDataset | SqlDataset;
+export type Dataset = DynamicDataset | PercentageDataset | SqlDataset;
 
 export type ChartConfig = {
   id: string;
@@ -57,9 +66,6 @@ export type ChartConfig = {
   time_series?: "daily" | "weekly" | "monthly";
   date_from?: DateFilter;
   date_to?: DateFilter;
-  verified_visits?: boolean;
-  unique_by?: "visit" | "visitor";
-  visit_tracking?: "any" | "anonymity_set" | "cookie";
   datasets: Dataset[];
 };
 
@@ -116,6 +122,7 @@ export type TableData = TableRow[];
 export type FieldSchema = {
   label?: string;
   type?: "boolean" | "date" | "number" | "one_of" | "string";
+  select?: boolean;
   filter?: boolean;
   split?: boolean;
   description?: string;
@@ -129,6 +136,9 @@ export type FieldSchema = {
 };
 
 export type DatasetSchema = {
+  label?: string;
+  belongs_to?: string[];
+  counts?: Record<string, { label?: string }>;
   fields: Record<string, FieldSchema>;
 };
 

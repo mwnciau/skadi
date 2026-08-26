@@ -153,6 +153,10 @@
       @apply bg-night-50/40;
     }
   }
+
+  .pill {
+    @apply py-0.5 px-1.5 bg-night-50/50;
+  }
 }
 
 @utility full-width {
