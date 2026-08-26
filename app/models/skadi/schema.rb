@@ -147,19 +147,22 @@ module Skadi
         }
       end
 
+      ALLOWED_FRONTEND_DATASET_KEYS = [ :fields, :belongs_to, :counts ].freeze
+
       def frontend_schema
         return @_frontend_schema if defined?(@_frontend_schema)
 
         # Redact the SQL from the dashboard schema
         schema = database_schema.deep_dup
         schema.each_value do |dataset|
+          dataset[:belongs_to] = dataset[:belongs_to].keys if dataset.key?(:belongs_to)
+
           dataset.keys.each do |key|
-            dataset.delete(key) unless key == :fields
+            dataset.delete(key) unless ALLOWED_FRONTEND_DATASET_KEYS.include?(key)
           end
 
-          dataset[:fields].each_value do |field|
-            field.delete(:sql)
-          end
+          dataset[:counts]&.each_value { |field| field.delete(:sql) }
+          dataset[:fields].each_value { |field| field.delete(:sql) }
         end
 
         @_frontend_schema = schema
