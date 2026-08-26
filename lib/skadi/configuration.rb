@@ -164,6 +164,8 @@ module Skadi
       next true if it.nil?
       next false unless it.is_a?(Hash)
 
+      it.deep_symbolize_keys!
+
       next it.all? do |_key, item|
         item.is_a?(Hash) && (item.keys.map(&:to_s) - %w[label type select filter split sql options description]).empty?
       end
@@ -177,6 +179,8 @@ module Skadi
         error! "Skadi.configuration.dashboard_custom_schema must be a hash"
         next false
       end
+
+      it.deep_symbolize_keys!
 
       tables_valid = it.all? do |_table_name, table_schema|
         unless table_schema.is_a?(Hash)
