@@ -580,7 +580,7 @@ module Skadi::Integration
         dataset[:belongs_to][:visits] = { required: true }
         assert_results(2, configuration: chart)
 
-        dataset[:type] = "events"
+        dataset["type"] = "events"
         dataset.delete(:belongs_to)
         assert_results(3, configuration: chart)
 
