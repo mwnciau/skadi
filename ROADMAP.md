@@ -3,7 +3,6 @@ To do:
 * FE validation of required fields in dashboard
 * More chart types
 * Funnel dataset
-* Join datasets?
 * Browser tests
 * Front end tests
 * Side-by-side charts

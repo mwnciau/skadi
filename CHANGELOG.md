@@ -1,5 +1,6 @@
 ## 0.4.0.beta.2 [UNRELEASED]
 - Remove server host from referrer and exit page URLs
+- Update dashboard datasets to allow belongs_to joining, and remove chart level filters
 
 ## 0.4.0.beta.1 [2026-08-19]
 - Add the dashboard
