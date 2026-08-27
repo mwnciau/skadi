@@ -9,3 +9,5 @@ To do:
 * Queue loading data on the dashboard
 * Add script support for sprockets and the other one
 * Add support for turbo
+* add events for consent changes?
+* run user agent parser on latest data
