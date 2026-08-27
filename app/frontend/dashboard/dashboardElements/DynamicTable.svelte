@@ -48,7 +48,9 @@ const fields: {
     if (dataset.selects?.length) {
       fields = dataset.selects;
     } else if (databaseSchema[dataset.type]) {
-      fields = Object.keys(databaseSchema[dataset.type]?.fields ?? {});
+      fields = Object.entries(databaseSchema[dataset.type]?.fields ?? {})
+        // Only select the selectable fields
+        .flatMap(([field, fieldConfig]) => fieldConfig.select ? [field] : []);
     }
   }
 
