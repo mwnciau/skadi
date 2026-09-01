@@ -1,3 +1,8 @@
+## 0.4.0.beta.3 [2026-09-01]
+- Add "Traffic type" demographic to count bot vs human traffic
+- Change demographic names to be more consistent
+- Fix dashboard association filters not displaying when no other filters are visible
+
 ## 0.4.0.beta.2 [2026-08-27]
 - Remove server host from referrer and exit page URLs
 - Update dashboard datasets to allow belongs_to joining, and remove chart level filters
