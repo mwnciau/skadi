@@ -126,6 +126,12 @@ module Skadi::Unit
       assert_values_are_invalid(:track_bots, nil, "true", "false", 123)
     end
 
+    test "count_bots validates" do
+      assert_values_are_valid(:count_bots, true, false)
+
+      assert_values_are_invalid(:count_bots, nil, "true", "false", 123)
+    end
+
     private def assert_values_are_valid(attribute, *values)
       values.each do |value|
         Skadi.configuration.send("#{attribute}=", value)

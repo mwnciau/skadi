@@ -29,7 +29,8 @@ module Skadi
       @events = []
       @demographics = []
 
-      @do_not_track = bot_protection && Skadi.configuration.do_not_track_bots? && user_agent.bot?
+      @untracked_bot = bot_protection && Skadi.configuration.do_not_track_bots? && user_agent.bot?
+      @do_not_track = false
       @new_visit = false
     end
 
@@ -37,6 +38,12 @@ module Skadi
     # info.
     def _prepare
       return if do_not_track?
+
+      # We queue the bot demographic regardless of if the request is detected as a bot or not
+      queue_bot_demographics
+
+      # If this is a bot visit and bot tracking is disabled, do not generate request metrics
+      return if untracked_bot?
 
       build_visit
       build_view
@@ -58,6 +65,13 @@ module Skadi
     # Internal. Saves the visit, view and any events or demographics after the controller action.
     def _persist
       return if do_not_track?
+
+      if untracked_bot?
+        # Persist demogaphics so that bot counts are persisted
+        Demographic.create_or_increment_all(@demographics) if @demographics.any?
+
+        return
+      end
 
       @visit&.save
       if @view
@@ -88,6 +102,12 @@ module Skadi
       @do_not_track
     end
 
+    # Whether the current request has been detected as a bot and we're not tracking them
+    # @return [Boolean]
+    def untracked_bot?
+      @untracked_bot
+    end
+
     # Disable tracking for the current request
     def do_not_track!
       @do_not_track = true
@@ -107,6 +127,8 @@ module Skadi
     # @param [String] value
     # @param [TrueClass, FalseClass] action_specific
     def demographic(name, value, action_specific: false, uri: nil)
+      return if untracked_bot?
+
       raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as first parameter, got #{name.is_a?(String) ? "empty string" : name.class.name}" unless name.is_a?(String) && name.present?
       raise ArgumentError.new "Skadi::ControllerDelegate.demographic expects String as second parameter, got #{value.is_a?(String) ? "empty string" : value.class.name}" unless value.is_a?(String) && value.present?
 
@@ -123,6 +145,8 @@ module Skadi
     # @param [Hash] properties
     # @param [TrueClass, FalseClass] sensitive
     def event(name, properties = {}, sensitive: false)
+      return if untracked_bot?
+
       raise ArgumentError.new "Skadi::ControllerDelegate.event expects String as first parameter, got #{name.is_a?(String) ? "empty string" : name.class.name}" unless name.is_a?(String) && name.present?
       raise ArgumentError.new "Skadi::ControllerDelegate.event expects Hash as second parameter, got #{properties.class.name}" unless properties.is_a?(Hash)
 
@@ -306,6 +330,13 @@ module Skadi
       demographic "Browser engine", user_agent.engine
       demographic "Browser engine version", "#{user_agent.engine} #{user_agent.engine_version}"
       demographic "Operating system", user_agent.os
+    end
+
+    private def queue_bot_demographics
+      return unless Skadi.configuration.count_bots
+
+      # We manually queue it to avoid the `untracked_bot?` early return of #demographic
+      @demographics << { name: "Traffic type", value: user_agent.bot? ? "Bot" : "Human", uri: request.route_uri_pattern }
     end
 
     private def logged_in_user
