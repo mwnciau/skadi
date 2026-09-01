@@ -27,11 +27,6 @@ let consent: Consent = {};
 const _window = window;
 const _document = document;
 
-// Reuse these strings to save space
-const contentfulPaint = "-contentful-paint";
-const firstContentfulPaintId = `first${contentfulPaint}`;
-const largestContentfulPaintId = `largest${contentfulPaint}`;
-
 type SkadiOptions = {
   // The URI for the current page to be appended to view-specific demographic data
   uri: string;
@@ -135,23 +130,23 @@ new PerformanceObserver((entryList) => {
   if (lastEntry) {
     largestContentfulPaint = lastEntry.startTime;
   }
-}).observe({ type: largestContentfulPaintId, buffered: true });
+}).observe({ type: `largest-contentful-paint`, buffered: true });
 
 new PerformanceObserver((entryList, observer) => {
-  const paintTiming = entryList.getEntriesByName(firstContentfulPaintId)[0];
+  const paintTiming = entryList.getEntriesByName(`first-contentful-paint`)[0];
 
   if (paintTiming) {
-    addDemographic(firstContentfulPaintId, bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]), true);
+    addDemographic("FCP", bucketise(paintTiming.startTime, [1000, 1800, 3000, 4500]), true);
     observer.disconnect();
   }
 }).observe({ type: "paint", buffered: true });
 
 _window.addEventListener("load", () => {
   if (options.visit === "1") {
-    addDemographic("timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
-    addDemographic("locale", Intl.NumberFormat().resolvedOptions().locale);
-    addDemographic("screen-size", `${_window.innerWidth}x${_window.innerHeight}`);
-    addDemographic("input-device", _window.matchMedia("(pointer: fine)").matches ? "mouse" : "touch");
+    addDemographic("Timezone", Intl.DateTimeFormat().resolvedOptions().timeZone);
+    addDemographic("Locale", Intl.NumberFormat().resolvedOptions().locale);
+    addDemographic("Screen size", `${_window.innerWidth}x${_window.innerHeight}`);
+    addDemographic("Input device", _window.matchMedia("(pointer: fine)").matches ? "mouse" : "touch");
   }
 
   // Always send a beacon on page load to send the FCP and also verify the view
@@ -172,7 +167,7 @@ _document.addEventListener("click", (event: MouseEvent) => {
 });
 
 _window.addEventListener("pagehide", () => {
-  addDemographic(largestContentfulPaintId, bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]), true);
+  addDemographic("LCP", bucketise(largestContentfulPaint, [1500, 2500, 4000, 6000]), true);
 
   // Flags that the page is unloading so the beacon sends the exit page
   useExitPage = true;
