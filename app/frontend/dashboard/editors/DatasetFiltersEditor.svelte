@@ -13,6 +13,18 @@ const {
   filterFields: {label: string, value: string}[];
 } = $props();
 
+const hasFilters = $derived.by(() => {
+  if (dataset.filters?.length) {
+    return true;
+  }
+
+  if (!dataset.belongs_to) {
+    return false;
+  }
+
+  // Check if any of the belongs_to datasets have defined filters
+  return Object.values(dataset.belongs_to).some((belongs_to) => belongs_to.filters?.length)
+})
 
 const addFilter = (e: Event & {currentTarget: EventTarget & HTMLSelectElement}) => {
   if (!isDynamicDataset(dataset)) {
@@ -72,7 +84,7 @@ const removeFilter = (index: number, belongsToTable: string | null) => {
     Filters
   </p>
 
-  {#if Array.isArray(dataset.filters)}
+  {#if hasFilters}
     <div class="grid grid-cols-[auto_4rem_1fr_auto] gap-1 items-center">
       {#each (dataset.filters ?? []) as filter, index}
         <DatasetFilterEditor
@@ -104,7 +116,7 @@ const removeFilter = (index: number, belongsToTable: string | null) => {
     </div>
   {/if}
 
-  <label class="{dataset.filters?.length ? "mt-4" : ""}">
+  <label class="{hasFilters ? "mt-4" : ""}">
     <span class="sr-only">Add a filter</span>
     <select
       onchange={addFilter}
