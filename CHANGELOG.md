@@ -1,3 +1,8 @@
+## 0.4.0.beta.4 [2026-09-03]
+- Add initializer to install script
+- Change migration generator to detect the Rails database engine from config
+- Use :jsonb data type for SQLite 3.45.0+
+
 ## 0.4.0.beta.3 [2026-09-01]
 - Add "Traffic type" demographic to count bot vs human traffic
 - Change demographic names to be more consistent
