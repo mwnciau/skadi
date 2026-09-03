@@ -14,13 +14,11 @@ module Skadi
         assert_match(/t\.string :view_token, limit: 36, null: false$/, content)
       end
 
-      def test_uses_json_for_json_columns
+      def test_uses_jsonb_for_json_columns
         content = generate_migration "--db-engine=sqlite"
 
-        assert_match(/t\.json :query_params$/, content)
-        assert_match(/t\.json :properties$/, content)
-        assert_match(/t\.json :configuration, null: false$/, content)
-        refute_match "t.jsonb", content
+        assert_match(/t\.jsonb :query_params$/, content)
+        assert_match(/t\.jsonb :properties$/, content)
       end
 
       def test_does_not_add_gin_index

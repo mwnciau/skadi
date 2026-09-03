@@ -37,10 +37,40 @@ module Skadi
       private
 
       def user_id_type = options[:user_id_type].to_sym
-      def db_engine = options[:db_engine].to_sym
+      def db_engine = options[:db_engine].to_sym || detect_db_engine || :postgres
       def uuid_column_type = (db_engine == :postgres) ? :uuid : :string
       def uuid_column_options = (db_engine == :postgres) ? "" : ", limit: 36"
-      def json_column_type = (db_engine == :postgres) ? :jsonb : :json
+      def json_column_type
+        @_json_column_type ||= case db_engine
+          when :mysql
+            :json
+          when :postgres
+            :jsonb
+          when :sqlite
+            if defined?(ActiveRecord::Base) && ActiveRecord::Base.connection.database_version >= "3.45.0"
+              :jsonb
+            else
+              :json
+            end
+          else
+            :json
+        end
+      end
+
+      def detect_db_engine
+        return unless defined? ActiveRecord::Base
+
+        return case ActiveRecord::Base.connection_db_config.adapter
+          when "postgresql"
+            :postgres
+          when "mysql2"
+            :mysql
+          when "sqlite3"
+            :sqlite
+          else
+            nil
+        end
+      end
     end
   end
 end
