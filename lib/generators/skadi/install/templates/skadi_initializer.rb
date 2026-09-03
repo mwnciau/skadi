@@ -60,23 +60,25 @@ Skadi.configure do |config|
   # }
 
   # Add your own database tables to the Skadi dashboard.
-  # @see [Skadi::Schema] for examples
+  # @see [Skadi::Schema] for format and examples.
   #
-  config.dashboard_custom_schema = {
-    form_responses: {
-      model: "FormResponse",
-      fields: {
-        date: {
-          type: :date,
-          filter: true,
-          sql: "form_responses.created_at",
-        },
-        form_name: {
-          split: true,
-          filter: true,
-        },
-        data: {},
-      },
-    },
-  }
+  # config.dashboard_custom_schema = {
+  #   user: {
+  #     model: "User",
+  #     fields: {
+  #       username: {
+  #         select: true,
+  #         filter: true,
+  #         split: true,
+  #       },
+  #       name: {
+  #         label: "Full name",
+  #         sql: "CONCAT(users.first_name, " ", users.last_name)",
+  #         select: true,
+  #         filter: true,
+  #         split: true,
+  #       },
+  #     },
+  #   },
+  # }
 end

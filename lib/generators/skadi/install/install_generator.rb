@@ -14,8 +14,7 @@ module Skadi
       VALID_DB_ENGINES = [ :postgres, :mysql, :sqlite ]
       class_option :db_engine,
         type: :string,
-        default: "postgres",
-        desc: "Database engine (postgres, mysql, sqlite)"
+        desc: "Database engine (postgres, mysql, sqlite). Auto-detected from the app's database config when omitted."
 
       VALID_USER_ID_TYPES = [ :bigint, :integer, :uuid, :string ]
       class_option :user_id_type,
@@ -33,11 +32,15 @@ module Skadi
           "db/migrate/install_skadi.rb"
       end
 
+      def create_initializer
+        template "skadi_initializer.rb", "config/initializers/skadi.rb"
+      end
+
       # Thor requires us to use a private block rather than private on individual definitions
       private
 
       def user_id_type = options[:user_id_type].to_sym
-      def db_engine = options[:db_engine].to_sym || detect_db_engine || :postgres
+      def db_engine = (options[:db_engine] || detect_db_engine || :sqlite).to_sym
       def uuid_column_type = (db_engine == :postgres) ? :uuid : :string
       def uuid_column_options = (db_engine == :postgres) ? "" : ", limit: 36"
       def json_column_type
@@ -52,24 +55,25 @@ module Skadi
             else
               :json
             end
-          else
-            :json
         end
+      rescue StandardError
+        # ActiveRecord::Base.connection can throw if the database cannot be reached, in which case we fallback to :json
+        return @_json_column_type ||= :json
       end
 
       def detect_db_engine
         return unless defined? ActiveRecord::Base
 
-        return case ActiveRecord::Base.connection_db_config.adapter
+        case ActiveRecord::Base.connection_db_config.adapter
           when "postgresql"
-            :postgres
-          when "mysql2"
-            :mysql
+          :postgres
+          when "mysql2", "trilogy"
+          :mysql
           when "sqlite3"
-            :sqlite
-          else
-            nil
+          :sqlite
         end
+      rescue StandardError
+        nil
       end
     end
   end

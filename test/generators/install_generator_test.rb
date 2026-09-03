@@ -13,13 +13,22 @@ module Skadi
         assert_match(/class InstallSkadi < ActiveRecord::Migration\[\d+\.\d+\]$/, content)
       end
 
-      def test_defaults_to_postgres_db_engine
+      def test_creates_intializer
+        run_generator
+
+        assert_file "config/initializers/skadi.rb" do |content|
+          assert valid_ruby_syntax?(content)
+          assert_match /Skadi.configure/, content
+        end
+      end
+
+      def test_auto_detects_db_engine_from_app_config
         content = generate_migration
 
-        # Check for postgres specific column types
-        assert_match "t.jsonb", content
-        assert_match "t.uuid", content
-        assert_match "using: :gin", content
+        # The dummy app is configured to use sqlite3
+        assert_match "t.string :visit_token, limit: 36", content
+        refute_match "t.uuid", content
+        refute_match "using: :gin", content
       end
 
       def test_raises_on_invalid_db_engine
