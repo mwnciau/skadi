@@ -47,7 +47,7 @@ Skadi.configure do |config|
   #     # Defaults to :string if omitted.
   #     type: :one_of,
   #     # Options for filtering in the dashboard when the :one_of type is used
-  #     options: %w[GET POST PUT PATCH DELETE]
+  #     options: %w[GET POST PUT PATCH DELETE],
   #     # Whether this field can be selected for tables
   #     select: true,
   #     # Whether users can filter by this field
@@ -73,7 +73,7 @@ Skadi.configure do |config|
   #       },
   #       name: {
   #         label: "Full name",
-  #         sql: "CONCAT(users.first_name, " ", users.last_name)",
+  #         sql: "CONCAT(users.first_name, ' ', users.last_name)",
   #         select: true,
   #         filter: true,
   #         split: true,
