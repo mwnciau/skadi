@@ -584,13 +584,13 @@ module Skadi::Integration
         dataset.delete(:belongs_to)
         assert_results(3, configuration: chart)
 
-        dataset[:belongs_to] = {visits: {required: true}}
+        dataset[:belongs_to] = { visits: { required: true } }
         assert_results(2, configuration: chart)
 
-        dataset[:belongs_to] = {views: {required: true}}
+        dataset[:belongs_to] = { views: { required: true } }
         assert_results(2, configuration: chart)
 
-        dataset[:belongs_to] = {visits: {required: true}, views: {required: true}}
+        dataset[:belongs_to] = { visits: { required: true }, views: { required: true } }
         assert_results(1, configuration: chart)
       end
 

@@ -18,7 +18,7 @@ module Skadi
 
         assert_file "config/initializers/skadi.rb" do |content|
           assert valid_ruby_syntax?(content)
-          assert_match /Skadi.configure/, content
+          assert_match(/Skadi.configure/, content)
         end
       end
 
