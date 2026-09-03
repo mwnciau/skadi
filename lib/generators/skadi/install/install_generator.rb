@@ -66,11 +66,11 @@ module Skadi
 
         case ActiveRecord::Base.connection_db_config.adapter
           when "postgresql"
-          :postgres
+            :postgres
           when "mysql2", "trilogy"
-          :mysql
+            :mysql
           when "sqlite3"
-          :sqlite
+            :sqlite
         end
       rescue StandardError
         nil
