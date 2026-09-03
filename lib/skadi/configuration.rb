@@ -117,13 +117,17 @@ module Skadi
     attr_accessor :cookie_domain
     validates(:cookie_domain, "string or nil", default: nil) { |it| it.nil? || (it.present? && it.is_a?(String)) }
 
-    # Whether to track visits by suspected bots, detected via the browser user agent. Defaults to `Rails.env.local?` (true
-    # for development and testing environments, and false for production/other environments).
+    # Whether to track visits by suspected bots, detected via the browser user agent. Defaults to `Rails.env.local?` (true for development and testing environments, and false for production/other environments).
     attr_accessor :track_bots
     validates(:track_bots, "boolean", default: Rails.env.local?) { |it| it == true || it == false }
 
     # Helper method to return the inverse of :track_bots
     def do_not_track_bots? = !@track_bots
+
+    # Whether to record a per-action count of bot vs. non-bot views as a demographic.  Defaults to false.
+    # @return [Boolean]
+    attr_accessor :count_bots
+    validates(:count_bots, "boolean", default: false) { |it| it == true || it == false }
 
     ###########################
     # Dashboard configuration #
