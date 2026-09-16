@@ -442,6 +442,37 @@ module Skadi::Integration
         assert_equal({ "id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1 }, results[1])
       end
 
+      test "sql dataset results are ordered by split and date" do
+        dataset = build_dataset(id: "sql", type: "sql")
+        chart = build_chart(time_series: "daily", dataset: dataset)
+
+        # Deliberately return rows out of split/date order, and with no ORDER BY of its own
+        dataset["sql"] = <<~SQL
+          SELECT 'zebra' as split, '2020-01-15' as date, 1 as count
+          UNION ALL SELECT 'apple' as split, '2020-01-20' as date, 3 as count
+          UNION ALL SELECT 'apple' as split, '2020-01-10' as date, 2 as count
+          UNION ALL SELECT 'zebra' as split, '2020-01-05' as date, 4 as count
+        SQL
+
+        assert_equal [
+          { "id" => "sql", "date" => "2020-01-10", "split" => "apple", "count" => 2 },
+          { "id" => "sql", "date" => "2020-01-20", "split" => "apple", "count" => 3 },
+          { "id" => "sql", "date" => "2020-01-05", "split" => "zebra", "count" => 4 },
+          { "id" => "sql", "date" => "2020-01-15", "split" => "zebra", "count" => 1 },
+        ], results_for_chart(chart)
+      end
+
+      test "multiple sql datasets are combined correctly despite each having its own ORDER BY" do
+        first = build_dataset(id: "first", type: "sql", sql: "SELECT NULL as split, NULL as date, 3 as count")
+        second = build_dataset(id: "second", type: "sql", sql: "SELECT NULL as split, NULL as date, 4 as count")
+        chart = build_chart(datasets: [ first, second ])
+
+        assert_equal [
+          { "id" => "first", "date" => nil, "split" => nil, "count" => 3 },
+          { "id" => "second", "date" => nil, "split" => nil, "count" => 4 },
+        ], results_for_chart(chart)
+      end
+
       test "only fields marked with filter: true can be filtered" do
         create :view, controller: "one", action: "one"
         create :view, controller: "one", action: "two"
