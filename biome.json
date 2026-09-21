@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": false,
-    "includes": ["**", "!app/assets/builds/*", "!test/fixtures/user_agent/*.json"]
+    "includes": ["**", "!app/assets/builds/*", "!test/fixtures/user_agent/*.json", "!tmp", "!storage", "!public", "!vendor"]
   },
   "formatter": {
     "enabled": true,
