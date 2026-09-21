@@ -53,7 +53,7 @@ module Skadi
             ")
           else
             result[:data] = Skadi::ApplicationRecord.connection.unprepared_statement do
-              Skadi::Visit.connection.select_all(queries.join(" UNION ALL "))
+              Skadi::Visit.connection.select_all(queries.map { |query| "(#{query})" }.join(" UNION ALL "))
             end
           end
 
@@ -89,6 +89,8 @@ module Skadi
               (#{dataset["sql"]}) AS t
             #{safe_where}
             GROUP BY
+                #{safe_group.join(", ")}
+            ORDER BY
                 #{safe_group.join(", ")}
           "
       end
