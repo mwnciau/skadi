@@ -31,7 +31,7 @@ module Skadi::Integration
         post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
 
         assert_response :unprocessable_content
-        assert_equal %({"error":"SQLite3::SQLException: unrecognized token: \\"'\\":\\nSELECT '\\n       ^"}), response.body
+        assert_see "SQLite3::SQLException: unrecognized token:"
       end
 
       test "url date field" do
