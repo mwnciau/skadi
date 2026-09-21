@@ -202,10 +202,10 @@ module Skadi::Integration
         results = results_for_chart(chart)
         assert_equal 5, results.length
         assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "GET", "count" => 1 }, results[0])
-        assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "GET", "count" => 1 }, results[1])
-        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "POST", "count" => 1 }, results[2])
-        assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "POST", "count" => 2 }, results[3])
-        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "PUT", "count" => 1 }, results[4])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "POST", "count" => 1 }, results[1])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-01", "split" => "PUT", "count" => 1 }, results[2])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "GET", "count" => 1 }, results[3])
+        assert_equal({ "id" => "dataset-1", "date" => "2020-01-02", "split" => "POST", "count" => 2 }, results[4])
       end
 
       test "dataset multiple split_by" do
@@ -442,7 +442,7 @@ module Skadi::Integration
         assert_equal({ "id" => "dataset-1", "date" => "2020-02-01", "split" => nil, "count" => 1 }, results[1])
       end
 
-      test "sql dataset results are ordered by split and date" do
+      test "sql dataset results are ordered by date then split" do
         dataset = build_dataset(id: "sql", type: "sql")
         chart = build_chart(time_series: "daily", dataset: dataset)
 
@@ -455,16 +455,16 @@ module Skadi::Integration
         SQL
 
         assert_equal [
-          { "id" => "sql", "date" => "2020-01-10", "split" => "apple", "count" => 2 },
-          { "id" => "sql", "date" => "2020-01-20", "split" => "apple", "count" => 3 },
           { "id" => "sql", "date" => "2020-01-05", "split" => "zebra", "count" => 4 },
+          { "id" => "sql", "date" => "2020-01-10", "split" => "apple", "count" => 2 },
           { "id" => "sql", "date" => "2020-01-15", "split" => "zebra", "count" => 1 },
+          { "id" => "sql", "date" => "2020-01-20", "split" => "apple", "count" => 3 },
         ], results_for_chart(chart)
       end
 
       test "multiple sql datasets are combined correctly despite each having its own ORDER BY" do
-        first = build_dataset(id: "first", type: "sql", sql: "SELECT NULL as split, NULL as date, 3 as count")
-        second = build_dataset(id: "second", type: "sql", sql: "SELECT NULL as split, NULL as date, 4 as count")
+        first = build_dataset(id: "first", type: "sql", sql: "SELECT NULL as split, NULL as date, 3 as count ORDER BY 1")
+        second = build_dataset(id: "second", type: "sql", sql: "SELECT NULL as split, NULL as date, 4 as count ORDER BY 2")
         chart = build_chart(datasets: [ first, second ])
 
         assert_equal [

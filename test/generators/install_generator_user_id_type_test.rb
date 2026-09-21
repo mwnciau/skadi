@@ -20,7 +20,7 @@ module Skadi
       end
 
       def test_type_uuid_on_postgres
-        content = generate_migration "--user-id-type=uuid"
+        content = generate_migration "--user-id-type=uuid", "--db-engine=postgres"
 
         assert_match(/t\.references :user, type: :uuid, index: false$/, content)
       end
