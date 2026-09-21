@@ -1,3 +1,8 @@
+## 0.4.0.beta.5 [2026-09-21]
+- Fix inconsistent ordering of SQL datasets
+- Add CI
+- Change development and testing environments to use Rails edge
+
 ## 0.4.0.beta.4 [2026-09-03]
 - Add initializer to install script
 - Change migration generator to detect the Rails database engine from config
