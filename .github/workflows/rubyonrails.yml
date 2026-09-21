@@ -27,8 +27,8 @@ jobs:
       - name: Install js dependencies
         run: npm install
 
-      - name: Run biome rules
-        run: npx @biomejs/biome check
+      - name: Run frontend coding standards
+        run: npm run cs
 
       # Step 3: Run the tests
 
