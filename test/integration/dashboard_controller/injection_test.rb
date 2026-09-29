@@ -205,7 +205,7 @@ module Skadi::Integration
         end
       end
 
-      test "dataset field with sql" do
+      test "dataset field filters" do
         create :visit
 
         INJECTION_STRINGS.each do |value|
@@ -320,13 +320,18 @@ module Skadi::Integration
         assert_see "SQLException"
       end
 
-      # This method bypasses validation allowing us to test dashboard data endpoint, not the validation
-      private def dashboard_with_dataset(**dataset_options)
-        Skadi::Dashboard.delete_all
-        dashboard = build_dashboard(tab: build_tab(chart: build_chart(id: CHART_ID, time_series: "weekly", dataset: build_dataset(**dataset_options))))
-        dashboard.save!(validate: false)
+      test "table chart sql dataset with obvious side effects" do
+        create :visit
 
-        return dashboard
+        dashboard_with_chart(id: CHART_ID, type: "table", dataset: build_dataset(type: "sql", sql: "DELETE FROM skadi_visits WHERE 1=1 OR 1='date split count'"))
+
+        post skadi.dashboard_data_path, params: { chart_id: CHART_ID }, as: :json
+
+        # The side effect should not have run
+        assert_equal 1, Skadi::Visit.count
+
+        assert_response :unprocessable_content
+        assert_see "SQLException"
       end
 
       # This method bypasses validation allowing us to test dashboard data endpoint, not the validation
@@ -336,6 +341,11 @@ module Skadi::Integration
         dashboard.save!(validate: false)
 
         return dashboard
+      end
+
+      # This method bypasses validation allowing us to test dashboard data endpoint, not the validation
+      private def dashboard_with_dataset(**dataset_options)
+        return dashboard_with_chart(id: CHART_ID, time_series: "weekly", dataset: build_dataset(**dataset_options))
       end
     end
   end

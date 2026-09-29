@@ -71,6 +71,17 @@ module Skadi
       end
 
       private def build_sql_query(dataset, chart, untrusted_param_filters)
+        # The table chart can display arbitrary data so we allow any columns
+        if chart["type"] == "table"
+          # We still wrap in a subquery to prevent data modification
+          return "
+            SELECT
+              *
+            FROM
+              (#{dataset["sql"]}) AS t
+          "
+        end
+
         model = Skadi::Visit
 
         safe_group = [ "t.split" ]
