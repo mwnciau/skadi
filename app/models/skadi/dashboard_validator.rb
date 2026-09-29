@@ -137,10 +137,10 @@ module Skadi
       return @types
     end
 
-    Context = Struct.new(:record, :allowed_sql_strings, :dataset_ids)
+    Context = Struct.new(:record, :allowed_sql_strings, :dataset_ids, :chart_type)
 
     def validate(record)
-      context = Context.new(record, nil, [])
+      context = Context.new(record, nil, [], nil)
 
       validate_type(ArrayOf.new(:DashboardTabConfig, 1), record.configuration, "configuration", context:)
     end
@@ -262,7 +262,7 @@ module Skadi
         return add_error(path, "must be a string", context:)
       end
 
-      unless [ "date", "split", "count" ].all? { |it| value.include?(it) }
+      unless context.chart_type == "table" || [ "date", "split", "count" ].all? { |it| value.include?(it) }
         add_error(path, "must include the fields date, split and count", context:)
       end
     end
@@ -314,6 +314,8 @@ module Skadi
       return add_error(path, "Unknown type #{type.inspect}", context:) unless self.class.types.key?(type)
 
       if type == :ChartConfig && value.is_a?(Hash)
+        context.chart_type = value["type"]
+
         context.dataset_ids = []
 
         if value["datasets"].is_a?(Array)

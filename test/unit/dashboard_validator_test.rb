@@ -130,6 +130,17 @@ module Skadi::Unit
       assert dashboard.validate!
     end
 
+    test "arbitrary sql for table chart" do
+      sql_dataset = build_dataset(
+        type: "sql",
+        sql: "SELECT 1 as fieldname",
+      )
+      dashboard = build_dashboard([ build_tab(children: [ build_chart(type: "table", datasets: [ sql_dataset ]) ]) ])
+      dashboard.can_dangerously_use_sql = true
+
+      assert dashboard.validate!
+    end
+
     ##############################
     #       Tab validation       #
     ##############################
