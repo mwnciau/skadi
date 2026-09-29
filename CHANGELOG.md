@@ -1,3 +1,6 @@
+## 0.4.0.beta.6 [2026-09-29]
+- Remove restrictions on SQL for table datasets
+
 ## 0.4.0.beta.5 [2026-09-21]
 - Fix inconsistent ordering of SQL datasets
 - Add CI
